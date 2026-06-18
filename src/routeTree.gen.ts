@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRutaRouteImport } from './routes/_authenticated/ruta'
+import { Route as AuthenticatedCobranzaRouteImport } from './routes/_authenticated/cobranza'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 
 const AuthRoute = AuthRouteImport.update({
@@ -34,6 +35,11 @@ const AuthenticatedRutaRoute = AuthenticatedRutaRouteImport.update({
   path: '/ruta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCobranzaRoute = AuthenticatedCobranzaRouteImport.update({
+  id: '/cobranza',
+  path: '/cobranza',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -44,12 +50,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/cobranza': typeof AuthenticatedCobranzaRoute
   '/ruta': typeof AuthenticatedRutaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/cobranza': typeof AuthenticatedCobranzaRoute
   '/ruta': typeof AuthenticatedRutaRoute
 }
 export interface FileRoutesById {
@@ -58,19 +66,21 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
+  '/_authenticated/cobranza': typeof AuthenticatedCobranzaRoute
   '/_authenticated/ruta': typeof AuthenticatedRutaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/clientes' | '/ruta'
+  fullPaths: '/' | '/auth' | '/clientes' | '/cobranza' | '/ruta'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/clientes' | '/ruta'
+  to: '/' | '/auth' | '/clientes' | '/cobranza' | '/ruta'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/clientes'
+    | '/_authenticated/cobranza'
     | '/_authenticated/ruta'
   fileRoutesById: FileRoutesById
 }
@@ -110,6 +120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRutaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cobranza': {
+      id: '/_authenticated/cobranza'
+      path: '/cobranza'
+      fullPath: '/cobranza'
+      preLoaderRoute: typeof AuthenticatedCobranzaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/clientes': {
       id: '/_authenticated/clientes'
       path: '/clientes'
@@ -122,11 +139,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
+  AuthenticatedCobranzaRoute: typeof AuthenticatedCobranzaRoute
   AuthenticatedRutaRoute: typeof AuthenticatedRutaRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
+  AuthenticatedCobranzaRoute: AuthenticatedCobranzaRoute,
   AuthenticatedRutaRoute: AuthenticatedRutaRoute,
 }
 

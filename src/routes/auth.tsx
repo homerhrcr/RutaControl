@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Milk } from "lucide-react";
+import logo from "@/assets/logo-la-rivera.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

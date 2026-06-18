@@ -44,7 +44,7 @@ function ReportesPage() {
       const [ventasRes, abonosRes, detalleRes] = await Promise.all([
         supabase
           .from("ventas")
-          .select("total, fecha, tipo_pago, cliente_id")
+          .select("total, fecha, metodo_pago, cliente_id")
           .gte("fecha", start.toISOString())
           .order("fecha", { ascending: true }),
         supabase
@@ -53,7 +53,7 @@ function ReportesPage() {
           .gte("fecha", start.toISOString()),
         supabase
           .from("detalle_ventas")
-          .select("nombre_producto, cantidad, subtotal, venta_id"),
+          .select("nombre_producto, cantidad, total_linea, venta_id"),
       ]);
 
       const ventas = ventasRes.data ?? [];

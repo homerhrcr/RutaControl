@@ -20,6 +20,8 @@ import {
   LogOut,
   Milk,
   Map,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 
 interface NavItem {

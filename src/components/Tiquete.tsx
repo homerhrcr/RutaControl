@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { formatCRC, formatDateTime } from "@/lib/format";
-import { Printer, MessageCircle, X } from "lucide-react";
+import { Printer, MessageCircle, X, Copy } from "lucide-react";
 import type { CartItem } from "@/lib/data";
 
 export interface TiqueteData {

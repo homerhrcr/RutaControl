@@ -5,6 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { useOfflineQueue } from "@/lib/offline";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo-la-rivera.png.asset.json";
 import {
   LayoutDashboard,
   Truck,

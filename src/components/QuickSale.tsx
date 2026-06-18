@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useProductos, registrarVenta, type CartItem, useVentasCliente } from "@/lib/data";
+import { queueVenta } from "@/lib/offline";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCRC } from "@/lib/format";

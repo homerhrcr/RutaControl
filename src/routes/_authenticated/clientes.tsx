@@ -37,7 +37,7 @@ const empty = {
   canton: "",
   provincia: "",
   referencia: "",
-  ruta_id: "",
+  ruta_ids: [] as string[],
   latitud: null as number | null,
   longitud: null as number | null,
 };

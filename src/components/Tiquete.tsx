@@ -20,8 +20,7 @@ export interface TiqueteData {
 }
 
 const EMPRESA = {
-  nombre: "MarHo",
-  detalle: "Punto de Venta",
+  nombre: "Lácteos La Rivera",
   telefono: "Tel: 2000-0000",
 };
 
@@ -34,18 +33,16 @@ function buildTexto(t: TiqueteData) {
     (i) => `${i.cantidad} x ${i.nombre}  ${formatCRC(i.precio * i.cantidad)}`,
   );
   return [
-    `*${EMPRESA.nombre} — ${EMPRESA.detalle}*`,
+    `*${EMPRESA.nombre}*`,
     `Tiquete #${consecutivo(t.venta_id)}`,
     formatDateTime(t.fecha),
     `Cliente: ${t.cliente_nombre}`,
     "--------------------------------",
     ...lineas,
     "--------------------------------",
-    `Subtotal: ${formatCRC(t.subtotal)}`,
     t.descuento > 0 ? `Descuento: -${formatCRC(t.descuento)}` : null,
     `*TOTAL: ${formatCRC(t.total)}*`,
     `Pago: ${t.metodo === "contado" ? "Contado" : "Crédito"}`,
-    t.metodo === "credito" && t.fecha_limite ? `Vence: ${t.fecha_limite}` : null,
     "",
     "¡Gracias por su compra!",
   ]
@@ -127,7 +124,6 @@ export function Tiquete({
           >
             <div className="c">
               <div className="b big">{EMPRESA.nombre}</div>
-              <div>{EMPRESA.detalle}</div>
               <div>{EMPRESA.telefono}</div>
             </div>
             <div className="sep" />
@@ -162,10 +158,6 @@ export function Tiquete({
               </div>
             ))}
             <div className="sep" />
-            <div className="row">
-              <span>Subtotal</span>
-              <span>{formatCRC(data.subtotal)}</span>
-            </div>
             {data.descuento > 0 && (
               <div className="row">
                 <span>Descuento</span>
@@ -180,12 +172,6 @@ export function Tiquete({
               <span>Pago</span>
               <span>{data.metodo === "contado" ? "Contado" : "Crédito"}</span>
             </div>
-            {data.metodo === "credito" && data.fecha_limite && (
-              <div className="row">
-                <span>Vence</span>
-                <span>{data.fecha_limite}</span>
-              </div>
-            )}
             <div className="sep" />
             <div className="c">¡Gracias por su compra!</div>
           </div>

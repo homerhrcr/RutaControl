@@ -16,7 +16,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Search, MapPin, Phone, Crosshair, MessageCircle } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Crosshair, MessageCircle, History } from "lucide-react";
+import { HistorialCliente } from "@/components/HistorialCliente";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,
@@ -44,6 +45,7 @@ function ClientesPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(empty);
   const [busy, setBusy] = useState(false);
+  const [histCliente, setHistCliente] = useState<{ id: string; nombre: string } | null>(null);
 
   const filtered = useMemo(
     () => (clientes ?? []).filter((c) => c.nombre.toLowerCase().includes(search.toLowerCase())),
@@ -162,6 +164,13 @@ function ClientesPage() {
                   )}
                 </button>
                 <div className="flex shrink-0 flex-col gap-1">
+                  <button
+                    onClick={() => setHistCliente({ id: c.id, nombre: c.nombre })}
+                    className="grid h-8 w-8 place-items-center rounded-lg bg-muted text-foreground"
+                    title="Historial de compras"
+                  >
+                    <History className="h-4 w-4" />
+                  </button>
                   {c.telefono && (
                     <a
                       href={`https://wa.me/506${c.telefono.replace(/\D/g, "")}`}
@@ -277,6 +286,12 @@ function ClientesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <HistorialCliente
+        cliente={histCliente}
+        open={!!histCliente}
+        onClose={() => setHistCliente(null)}
+      />
     </div>
   );
 }

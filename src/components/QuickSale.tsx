@@ -141,7 +141,10 @@ export function QuickSale({
         fecha: venta.fecha ?? new Date().toISOString(),
         cliente_nombre: cliente.nombre,
         cliente_telefono: (clienteFull as any)?.telefono ?? null,
-        vendedor: user.email ?? null,
+        vendedor:
+          (user.user_metadata as any)?.full_name ||
+          (user.user_metadata as any)?.name ||
+          (user.email ? user.email.split("@")[0] : null),
         items,
         subtotal,
         descuento,

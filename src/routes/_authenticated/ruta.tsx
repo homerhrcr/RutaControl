@@ -150,6 +150,13 @@ function RutaPage() {
                   >
                     <HandCoins className="h-4 w-4" /> Abonar
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="col-span-2 h-11 gap-1.5"
+                    onClick={() => setHistClient(c)}
+                  >
+                    <History className="h-4 w-4" /> Historial
+                  </Button>
                 </div>
               </Card>
             );

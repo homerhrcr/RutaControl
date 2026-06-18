@@ -165,6 +165,7 @@ export function QuickSale({
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="flex h-[100dvh] max-w-lg flex-col gap-0 p-0 sm:h-[92vh]">
         <DialogHeader className="flex-row items-center justify-between space-y-0 border-b px-4 py-3">

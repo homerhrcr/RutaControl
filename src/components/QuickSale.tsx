@@ -38,6 +38,8 @@ export function QuickSale({
   const [descuento, setDescuento] = useState(0);
   const [busy, setBusy] = useState(false);
   const [tiquete, setTiquete] = useState<TiqueteData | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [metodoSel, setMetodoSel] = useState<"contado" | "credito">("contado");
 
   const list = useMemo(() => {
     const arr = (productos ?? []).filter((p) =>

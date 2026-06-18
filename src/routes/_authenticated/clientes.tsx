@@ -164,6 +164,13 @@ function ClientesPage() {
                   )}
                 </button>
                 <div className="flex shrink-0 flex-col gap-1">
+                  <button
+                    onClick={() => setHistCliente({ id: c.id, nombre: c.nombre })}
+                    className="grid h-8 w-8 place-items-center rounded-lg bg-muted text-foreground"
+                    title="Historial de compras"
+                  >
+                    <History className="h-4 w-4" />
+                  </button>
                   {c.telefono && (
                     <a
                       href={`https://wa.me/506${c.telefono.replace(/\D/g, "")}`}

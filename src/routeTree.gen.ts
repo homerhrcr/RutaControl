@@ -16,6 +16,7 @@ import { Route as AuthenticatedVentasRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedRutaRouteImport } from './routes/_authenticated/ruta'
 import { Route as AuthenticatedProductosRouteImport } from './routes/_authenticated/productos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCreditoRouteImport } from './routes/_authenticated/credito'
 import { Route as AuthenticatedCobranzaRouteImport } from './routes/_authenticated/cobranza'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 
@@ -53,6 +54,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCreditoRoute = AuthenticatedCreditoRouteImport.update({
+  id: '/credito',
+  path: '/credito',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCobranzaRoute = AuthenticatedCobranzaRouteImport.update({
   id: '/cobranza',
   path: '/cobranza',
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/cobranza': typeof AuthenticatedCobranzaRoute
+  '/credito': typeof AuthenticatedCreditoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/productos': typeof AuthenticatedProductosRoute
   '/ruta': typeof AuthenticatedRutaRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/cobranza': typeof AuthenticatedCobranzaRoute
+  '/credito': typeof AuthenticatedCreditoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/productos': typeof AuthenticatedProductosRoute
   '/ruta': typeof AuthenticatedRutaRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/cobranza': typeof AuthenticatedCobranzaRoute
+  '/_authenticated/credito': typeof AuthenticatedCreditoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/productos': typeof AuthenticatedProductosRoute
   '/_authenticated/ruta': typeof AuthenticatedRutaRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/clientes'
     | '/cobranza'
+    | '/credito'
     | '/dashboard'
     | '/productos'
     | '/ruta'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/clientes'
     | '/cobranza'
+    | '/credito'
     | '/dashboard'
     | '/productos'
     | '/ruta'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/clientes'
     | '/_authenticated/cobranza'
+    | '/_authenticated/credito'
     | '/_authenticated/dashboard'
     | '/_authenticated/productos'
     | '/_authenticated/ruta'
@@ -187,6 +199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/credito': {
+      id: '/_authenticated/credito'
+      path: '/credito'
+      fullPath: '/credito'
+      preLoaderRoute: typeof AuthenticatedCreditoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cobranza': {
       id: '/_authenticated/cobranza'
       path: '/cobranza'
@@ -207,6 +226,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedCobranzaRoute: typeof AuthenticatedCobranzaRoute
+  AuthenticatedCreditoRoute: typeof AuthenticatedCreditoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedProductosRoute: typeof AuthenticatedProductosRoute
   AuthenticatedRutaRoute: typeof AuthenticatedRutaRoute
@@ -216,6 +236,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedCobranzaRoute: AuthenticatedCobranzaRoute,
+  AuthenticatedCreditoRoute: AuthenticatedCreditoRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedProductosRoute: AuthenticatedProductosRoute,
   AuthenticatedRutaRoute: AuthenticatedRutaRoute,

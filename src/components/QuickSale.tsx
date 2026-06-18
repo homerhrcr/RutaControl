@@ -134,8 +134,21 @@ export function QuickSale({
     }
 
     try {
-      await registrarVenta(ventaParams);
+      const venta = await registrarVenta(ventaParams);
       toast.success(`Venta ${metodo} registrada · ${formatCRC(total)}`);
+      setTiquete({
+        venta_id: venta.id,
+        fecha: venta.fecha ?? new Date().toISOString(),
+        cliente_nombre: cliente.nombre,
+        cliente_telefono: (clienteFull as any)?.telefono ?? null,
+        vendedor: user.email ?? null,
+        items,
+        subtotal,
+        descuento,
+        total,
+        metodo,
+        fecha_limite: ventaParams.fecha_limite,
+      });
       reset();
       onDone();
       onClose();

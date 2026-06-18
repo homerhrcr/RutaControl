@@ -226,17 +226,33 @@ function ClientesPage() {
             <Field label="Referencia">
               <Input value={form.referencia} onChange={(e) => setForm({ ...form, referencia: e.target.value })} />
             </Field>
-            <Field label="Ruta">
-              <Select value={form.ruta_id} onValueChange={(v) => setForm({ ...form, ruta_id: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Asignar ruta" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rutas?.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <Field label="Rutas (puede seleccionar varias)">
+              <div className="flex flex-wrap gap-2">
+                {rutas?.map((r) => {
+                  const active = form.ruta_ids.includes(r.id);
+                  return (
+                    <Button
+                      key={r.id}
+                      type="button"
+                      size="sm"
+                      variant={active ? "default" : "outline"}
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          ruta_ids: active
+                            ? f.ruta_ids.filter((id) => id !== r.id)
+                            : [...f.ruta_ids, r.id],
+                        }))
+                      }
+                    >
+                      {r.nombre}
+                    </Button>
+                  );
+                })}
+                {!rutas?.length && (
+                  <p className="text-xs text-muted-foreground">No hay rutas creadas.</p>
+                )}
+              </div>
             </Field>
             <Button variant="outline" className="w-full gap-2" onClick={capturar}>
               <Crosshair className="h-4 w-4" />

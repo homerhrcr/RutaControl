@@ -40,8 +40,11 @@ export function useClientes(rutaId?: string) {
   return useQuery({
     queryKey: ["clientes", rutaId ?? "all"],
     queryFn: async () => {
-      let q = supabase.from("clientes").select("*, rutas(nombre)").order("nombre");
-      if (rutaId) q = q.eq("ruta_id", rutaId);
+      const select = rutaId
+        ? "*, cliente_rutas!inner(ruta_id, rutas(nombre))"
+        : "*, cliente_rutas(ruta_id, rutas(nombre))";
+      let q = supabase.from("clientes").select(select).order("nombre");
+      if (rutaId) q = q.eq("cliente_rutas.ruta_id", rutaId);
       const { data, error } = await q;
       if (error) throw error;
       return data;

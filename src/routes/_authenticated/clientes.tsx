@@ -16,7 +16,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Search, MapPin, Phone, Crosshair, MessageCircle } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Crosshair, MessageCircle, History } from "lucide-react";
+import { HistorialCliente } from "@/components/HistorialCliente";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,

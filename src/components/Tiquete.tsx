@@ -93,10 +93,21 @@ export function Tiquete({
     const texto = encodeURIComponent(buildTexto(data!));
     const tel = (data!.cliente_telefono ?? "").replace(/[^\d]/g, "");
     const numero = tel ? (tel.length === 8 ? `506${tel}` : tel) : "";
+    // wa.me redirige a api.whatsapp.com (bloqueado en algunas redes).
+    // web.whatsapp.com abre WhatsApp Web directamente sin ese redireccionamiento.
     const url = numero
-      ? `https://wa.me/${numero}?text=${texto}`
-      : `https://wa.me/?text=${texto}`;
+      ? `https://web.whatsapp.com/send?phone=${numero}&text=${texto}`
+      : `https://web.whatsapp.com/send?text=${texto}`;
     window.open(url, "_blank");
+  }
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(buildTexto(data!));
+      alert("Tiquete copiado. Péguelo en WhatsApp.");
+    } catch {
+      alert("No se pudo copiar automáticamente.");
+    }
   }
 
   return (

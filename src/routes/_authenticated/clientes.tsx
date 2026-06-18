@@ -210,6 +210,26 @@ function ClientesPage() {
               <Crosshair className="h-4 w-4" />
               {form.latitud ? "Ubicación capturada ✓" : "Capturar ubicación actual"}
             </Button>
+            {form.latitud != null && form.longitud != null && (
+              <div className="space-y-1.5">
+                <div className="overflow-hidden rounded-xl border">
+                  <iframe
+                    title="Mapa de ubicación"
+                    className="h-44 w-full"
+                    loading="lazy"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${form.longitud - 0.003}%2C${form.latitud - 0.003}%2C${form.longitud + 0.003}%2C${form.latitud + 0.003}&layer=mapnik&marker=${form.latitud}%2C${form.longitud}`}
+                  />
+                </div>
+                <a
+                  href={`https://maps.google.com/?q=${form.latitud},${form.longitud}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <MapPin className="h-3 w-3" /> Abrir en Google Maps
+                </a>
+              </div>
+            )}
             <Button className="w-full" size="lg" disabled={busy} onClick={save}>
               {busy ? "Guardando…" : "Guardar"}
             </Button>

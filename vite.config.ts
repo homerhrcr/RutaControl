@@ -11,5 +11,9 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // Ship a client-rendered shell. This authenticated ERP stores its session in
+    // localStorage and does not need SSR; SPA mode avoids the selective-SSR
+    // hydration invariant triggered by ssr:false routes.
+    spa: { enabled: true },
   },
 });

@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Search, Zap, HandCoins, MapPin, ShoppingBag, Wallet, Users } from "lucide-react";
+import { Search, Zap, HandCoins, MapPin, ShoppingBag, Wallet, Users, History } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ruta")({
   component: RutaPage,

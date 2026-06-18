@@ -61,7 +61,7 @@ function ReportesPage() {
 
       const totalVentas = ventas.reduce((s, v) => s + Number(v.total), 0);
       const totalContado = ventas
-        .filter((v) => v.tipo_pago === "contado")
+        .filter((v) => v.metodo_pago === "contado")
         .reduce((s, v) => s + Number(v.total), 0);
       const totalCredito = totalVentas - totalContado;
       const totalCobrado = abonos.reduce((s, a) => s + Number(a.monto), 0);

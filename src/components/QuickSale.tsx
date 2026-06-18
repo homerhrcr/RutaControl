@@ -264,5 +264,7 @@ export function QuickSale({
         </div>
       </DialogContent>
     </Dialog>
+    <Tiquete data={tiquete} open={!!tiquete} onClose={() => setTiquete(null)} />
+    </>
   );
 }

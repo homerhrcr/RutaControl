@@ -15,7 +15,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedVentasRouteImport } from './routes/_authenticated/ventas'
 import { Route as AuthenticatedRutasRouteImport } from './routes/_authenticated/rutas'
 import { Route as AuthenticatedRutaRouteImport } from './routes/_authenticated/ruta'
+import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
 import { Route as AuthenticatedProductosRouteImport } from './routes/_authenticated/productos'
+import { Route as AuthenticatedMenuRouteImport } from './routes/_authenticated/menu'
 import { Route as AuthenticatedInventarioRouteImport } from './routes/_authenticated/inventario'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCreditoRouteImport } from './routes/_authenticated/credito'
@@ -51,9 +53,19 @@ const AuthenticatedRutaRoute = AuthenticatedRutaRouteImport.update({
   path: '/ruta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReportesRoute = AuthenticatedReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProductosRoute = AuthenticatedProductosRouteImport.update({
   id: '/productos',
   path: '/productos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMenuRoute = AuthenticatedMenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInventarioRoute = AuthenticatedInventarioRouteImport.update({
@@ -90,7 +102,9 @@ export interface FileRoutesByFullPath {
   '/credito': typeof AuthenticatedCreditoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inventario': typeof AuthenticatedInventarioRoute
+  '/menu': typeof AuthenticatedMenuRoute
   '/productos': typeof AuthenticatedProductosRoute
+  '/reportes': typeof AuthenticatedReportesRoute
   '/ruta': typeof AuthenticatedRutaRoute
   '/rutas': typeof AuthenticatedRutasRoute
   '/ventas': typeof AuthenticatedVentasRoute
@@ -103,7 +117,9 @@ export interface FileRoutesByTo {
   '/credito': typeof AuthenticatedCreditoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inventario': typeof AuthenticatedInventarioRoute
+  '/menu': typeof AuthenticatedMenuRoute
   '/productos': typeof AuthenticatedProductosRoute
+  '/reportes': typeof AuthenticatedReportesRoute
   '/ruta': typeof AuthenticatedRutaRoute
   '/rutas': typeof AuthenticatedRutasRoute
   '/ventas': typeof AuthenticatedVentasRoute
@@ -118,7 +134,9 @@ export interface FileRoutesById {
   '/_authenticated/credito': typeof AuthenticatedCreditoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inventario': typeof AuthenticatedInventarioRoute
+  '/_authenticated/menu': typeof AuthenticatedMenuRoute
   '/_authenticated/productos': typeof AuthenticatedProductosRoute
+  '/_authenticated/reportes': typeof AuthenticatedReportesRoute
   '/_authenticated/ruta': typeof AuthenticatedRutaRoute
   '/_authenticated/rutas': typeof AuthenticatedRutasRoute
   '/_authenticated/ventas': typeof AuthenticatedVentasRoute
@@ -133,7 +151,9 @@ export interface FileRouteTypes {
     | '/credito'
     | '/dashboard'
     | '/inventario'
+    | '/menu'
     | '/productos'
+    | '/reportes'
     | '/ruta'
     | '/rutas'
     | '/ventas'
@@ -146,7 +166,9 @@ export interface FileRouteTypes {
     | '/credito'
     | '/dashboard'
     | '/inventario'
+    | '/menu'
     | '/productos'
+    | '/reportes'
     | '/ruta'
     | '/rutas'
     | '/ventas'
@@ -160,7 +182,9 @@ export interface FileRouteTypes {
     | '/_authenticated/credito'
     | '/_authenticated/dashboard'
     | '/_authenticated/inventario'
+    | '/_authenticated/menu'
     | '/_authenticated/productos'
+    | '/_authenticated/reportes'
     | '/_authenticated/ruta'
     | '/_authenticated/rutas'
     | '/_authenticated/ventas'
@@ -216,11 +240,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRutaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reportes': {
+      id: '/_authenticated/reportes'
+      path: '/reportes'
+      fullPath: '/reportes'
+      preLoaderRoute: typeof AuthenticatedReportesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/productos': {
       id: '/_authenticated/productos'
       path: '/productos'
       fullPath: '/productos'
       preLoaderRoute: typeof AuthenticatedProductosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/menu': {
+      id: '/_authenticated/menu'
+      path: '/menu'
+      fullPath: '/menu'
+      preLoaderRoute: typeof AuthenticatedMenuRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inventario': {
@@ -267,7 +305,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCreditoRoute: typeof AuthenticatedCreditoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInventarioRoute: typeof AuthenticatedInventarioRoute
+  AuthenticatedMenuRoute: typeof AuthenticatedMenuRoute
   AuthenticatedProductosRoute: typeof AuthenticatedProductosRoute
+  AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
   AuthenticatedRutaRoute: typeof AuthenticatedRutaRoute
   AuthenticatedRutasRoute: typeof AuthenticatedRutasRoute
   AuthenticatedVentasRoute: typeof AuthenticatedVentasRoute
@@ -279,7 +319,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCreditoRoute: AuthenticatedCreditoRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInventarioRoute: AuthenticatedInventarioRoute,
+  AuthenticatedMenuRoute: AuthenticatedMenuRoute,
   AuthenticatedProductosRoute: AuthenticatedProductosRoute,
+  AuthenticatedReportesRoute: AuthenticatedReportesRoute,
   AuthenticatedRutaRoute: AuthenticatedRutaRoute,
   AuthenticatedRutasRoute: AuthenticatedRutasRoute,
   AuthenticatedVentasRoute: AuthenticatedVentasRoute,

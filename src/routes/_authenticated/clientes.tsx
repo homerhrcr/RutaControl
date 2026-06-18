@@ -149,7 +149,7 @@ function ClientesPage() {
                   )}
                   {c.latitud && c.longitud && (
                     <a
-                      href={`https://maps.google.com/?q=${c.latitud},${c.longitud}`}
+                      href={`https://www.google.com/maps/search/?api=1&query=${c.latitud},${c.longitud}`}
                       target="_blank"
                       rel="noreferrer"
                       className="grid h-8 w-8 place-items-center rounded-lg bg-primary/15 text-primary"
@@ -221,7 +221,7 @@ function ClientesPage() {
                   />
                 </div>
                 <a
-                  href={`https://maps.google.com/?q=${form.latitud},${form.longitud}`}
+                  href={`https://www.google.com/maps/search/?api=1&query=${form.latitud},${form.longitud}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-center gap-1 text-xs text-primary hover:underline"

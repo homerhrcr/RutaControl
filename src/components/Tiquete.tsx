@@ -101,7 +101,6 @@ export function Tiquete({
   async function copiar() {
     try {
       await navigator.clipboard.writeText(buildTexto(data!));
-      alert("Tiquete copiado. Péguelo en WhatsApp.");
     } catch {
       alert("No se pudo copiar automáticamente.");
     }

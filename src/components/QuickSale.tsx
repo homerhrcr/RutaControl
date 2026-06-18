@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useProductos, registrarVenta, type CartItem, useVentasCliente } from "@/lib/data";
+import { useProductos, registrarVenta, type CartItem, useVentasCliente, useCliente } from "@/lib/data";
 import { queueVenta } from "@/lib/offline";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,7 @@ import { formatCRC } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tiquete, type TiqueteData } from "@/components/Tiquete";
 import { toast } from "sonner";
 import { Plus, Minus, Search, Repeat, X, Banknote, CreditCard, Star } from "lucide-react";
 import { cn } from "@/lib/utils";

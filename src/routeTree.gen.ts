@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRutaRouteImport } from './routes/_authenticated/ruta'
+import { Route as AuthenticatedProductosRouteImport } from './routes/_authenticated/productos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCobranzaRouteImport } from './routes/_authenticated/cobranza'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
@@ -34,6 +35,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedRutaRoute = AuthenticatedRutaRouteImport.update({
   id: '/ruta',
   path: '/ruta',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProductosRoute = AuthenticatedProductosRouteImport.update({
+  id: '/productos',
+  path: '/productos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof AuthenticatedClientesRoute
   '/cobranza': typeof AuthenticatedCobranzaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/productos': typeof AuthenticatedProductosRoute
   '/ruta': typeof AuthenticatedRutaRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof AuthenticatedClientesRoute
   '/cobranza': typeof AuthenticatedCobranzaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/productos': typeof AuthenticatedProductosRoute
   '/ruta': typeof AuthenticatedRutaRoute
 }
 export interface FileRoutesById {
@@ -76,13 +84,28 @@ export interface FileRoutesById {
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/cobranza': typeof AuthenticatedCobranzaRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/productos': typeof AuthenticatedProductosRoute
   '/_authenticated/ruta': typeof AuthenticatedRutaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/clientes' | '/cobranza' | '/dashboard' | '/ruta'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/clientes'
+    | '/cobranza'
+    | '/dashboard'
+    | '/productos'
+    | '/ruta'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/clientes' | '/cobranza' | '/dashboard' | '/ruta'
+  to:
+    | '/'
+    | '/auth'
+    | '/clientes'
+    | '/cobranza'
+    | '/dashboard'
+    | '/productos'
+    | '/ruta'
   id:
     | '__root__'
     | '/'
@@ -91,6 +114,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clientes'
     | '/_authenticated/cobranza'
     | '/_authenticated/dashboard'
+    | '/_authenticated/productos'
     | '/_authenticated/ruta'
   fileRoutesById: FileRoutesById
 }
@@ -130,6 +154,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRutaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/productos': {
+      id: '/_authenticated/productos'
+      path: '/productos'
+      fullPath: '/productos'
+      preLoaderRoute: typeof AuthenticatedProductosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -158,6 +189,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedCobranzaRoute: typeof AuthenticatedCobranzaRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedProductosRoute: typeof AuthenticatedProductosRoute
   AuthenticatedRutaRoute: typeof AuthenticatedRutaRoute
 }
 
@@ -165,6 +197,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedCobranzaRoute: AuthenticatedCobranzaRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedProductosRoute: AuthenticatedProductosRoute,
   AuthenticatedRutaRoute: AuthenticatedRutaRoute,
 }
 

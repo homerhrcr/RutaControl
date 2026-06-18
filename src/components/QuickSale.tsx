@@ -90,6 +90,8 @@ export function QuickSale({
     setCart({});
     setDescuento(0);
     setSearch("");
+    setConfirmOpen(false);
+    setMetodoSel("contado");
   }
 
   async function finalizar(metodo: "contado" | "credito") {

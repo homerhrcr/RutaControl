@@ -34,6 +34,7 @@ function RutaPage() {
   const [search, setSearch] = useState("");
   const [saleClient, setSaleClient] = useState<any | null>(null);
   const [abonoClient, setAbonoClient] = useState<any | null>(null);
+  const [histClient, setHistClient] = useState<any | null>(null);
   const invalidate = useInvalidate();
 
   const { data: clientes } = useClientes(rutaId === "all" ? undefined : rutaId);

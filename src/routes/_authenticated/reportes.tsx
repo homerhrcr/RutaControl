@@ -88,7 +88,7 @@ function ReportesPage() {
       for (const d of detalleRes.data ?? []) {
         const p = (prodMap[d.nombre_producto] ??= { cantidad: 0, monto: 0 });
         p.cantidad += Number(d.cantidad);
-        p.monto += Number(d.subtotal);
+        p.monto += Number(d.total_linea);
       }
       const topProductos = Object.entries(prodMap)
         .map(([nombre, v]) => ({ nombre, ...v }))

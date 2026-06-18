@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useProductos, registrarVenta, type CartItem, useVentasCliente } from "@/lib/data";
+import { useProductos, registrarVenta, type CartItem, useVentasCliente, useCliente } from "@/lib/data";
 import { queueVenta } from "@/lib/offline";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,7 @@ import { formatCRC } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tiquete, type TiqueteData } from "@/components/Tiquete";
 import { toast } from "sonner";
 import { Plus, Minus, Search, Repeat, X, Banknote, CreditCard, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,10 +32,12 @@ export function QuickSale({
   const { user } = useAuth();
   const { data: productos } = useProductos(true);
   const { data: ventasPrev } = useVentasCliente(cliente?.id, 1);
+  const { data: clienteFull } = useCliente(cliente?.id);
   const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [search, setSearch] = useState("");
   const [descuento, setDescuento] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [tiquete, setTiquete] = useState<TiqueteData | null>(null);
 
   const list = useMemo(() => {
     const arr = (productos ?? []).filter((p) =>
@@ -131,8 +134,21 @@ export function QuickSale({
     }
 
     try {
-      await registrarVenta(ventaParams);
+      const venta = await registrarVenta(ventaParams);
       toast.success(`Venta ${metodo} registrada · ${formatCRC(total)}`);
+      setTiquete({
+        venta_id: venta.id,
+        fecha: venta.fecha ?? new Date().toISOString(),
+        cliente_nombre: cliente.nombre,
+        cliente_telefono: (clienteFull as any)?.telefono ?? null,
+        vendedor: user.email ?? null,
+        items,
+        subtotal,
+        descuento,
+        total,
+        metodo,
+        fecha_limite: ventaParams.fecha_limite,
+      });
       reset();
       onDone();
       onClose();
@@ -149,6 +165,7 @@ export function QuickSale({
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="flex h-[100dvh] max-w-lg flex-col gap-0 p-0 sm:h-[92vh]">
         <DialogHeader className="flex-row items-center justify-between space-y-0 border-b px-4 py-3">
@@ -247,5 +264,7 @@ export function QuickSale({
         </div>
       </DialogContent>
     </Dialog>
+    <Tiquete data={tiquete} open={!!tiquete} onClose={() => setTiquete(null)} />
+    </>
   );
 }

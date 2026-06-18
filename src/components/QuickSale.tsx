@@ -32,10 +32,12 @@ export function QuickSale({
   const { user } = useAuth();
   const { data: productos } = useProductos(true);
   const { data: ventasPrev } = useVentasCliente(cliente?.id, 1);
+  const { data: clienteFull } = useCliente(cliente?.id);
   const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [search, setSearch] = useState("");
   const [descuento, setDescuento] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [tiquete, setTiquete] = useState<TiqueteData | null>(null);
 
   const list = useMemo(() => {
     const arr = (productos ?? []).filter((p) =>

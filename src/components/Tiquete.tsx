@@ -191,9 +191,12 @@ export function Tiquete({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 border-t p-3">
+        <div className="grid grid-cols-3 gap-2 border-t p-3">
           <Button variant="secondary" className="gap-2" onClick={imprimir}>
             <Printer className="h-4 w-4" /> Imprimir
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={copiar}>
+            <Copy className="h-4 w-4" /> Copiar
           </Button>
           <Button className="gap-2" style={{ backgroundColor: "#25D366", color: "#fff" }} onClick={whatsapp}>
             <MessageCircle className="h-4 w-4" /> WhatsApp

@@ -45,6 +45,7 @@ function ClientesPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(empty);
   const [busy, setBusy] = useState(false);
+  const [histCliente, setHistCliente] = useState<{ id: string; nombre: string } | null>(null);
 
   const filtered = useMemo(
     () => (clientes ?? []).filter((c) => c.nombre.toLowerCase().includes(search.toLowerCase())),

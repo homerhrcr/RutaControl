@@ -95,12 +95,38 @@ function ClientesPage() {
   async function save() {
     if (!form.nombre.trim()) return toast.error("El nombre es obligatorio");
     setBusy(true);
-    const payload = { ...form, ruta_id: form.ruta_id || null };
-    const { error } = editId
-      ? await supabase.from("clientes").update(payload).eq("id", editId)
-      : await supabase.from("clientes").insert(payload);
+    const { ruta_ids, ...rest } = form;
+    const payload = { ...rest, ruta_id: ruta_ids[0] ?? null };
+
+    let clienteId = editId;
+    if (editId) {
+      const { error } = await supabase.from("clientes").update(payload).eq("id", editId);
+      if (error) {
+        setBusy(false);
+        return toast.error(error.message);
+      }
+    } else {
+      const { data, error } = await supabase.from("clientes").insert(payload).select("id").single();
+      if (error || !data) {
+        setBusy(false);
+        return toast.error(error?.message ?? "Error al guardar");
+      }
+      clienteId = data.id;
+    }
+
+    // Sincronizar rutas del cliente
+    await supabase.from("cliente_rutas").delete().eq("cliente_id", clienteId!);
+    if (ruta_ids.length) {
+      const { error: relErr } = await supabase
+        .from("cliente_rutas")
+        .insert(ruta_ids.map((ruta_id) => ({ cliente_id: clienteId!, ruta_id })));
+      if (relErr) {
+        setBusy(false);
+        return toast.error(relErr.message);
+      }
+    }
+
     setBusy(false);
-    if (error) return toast.error(error.message);
     toast.success(editId ? "Cliente actualizado" : "Cliente registrado");
     invalidate(["clientes"]);
     setOpen(false);

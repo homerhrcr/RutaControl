@@ -124,7 +124,6 @@ export function Tiquete({
           >
             <div className="c">
               <div className="b big">{EMPRESA.nombre}</div>
-              <div>{EMPRESA.detalle}</div>
               <div>{EMPRESA.telefono}</div>
             </div>
             <div className="sep" />

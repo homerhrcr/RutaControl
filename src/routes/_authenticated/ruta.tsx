@@ -7,13 +7,14 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickSale } from "@/components/QuickSale";
 import { AbonoDialog } from "@/components/AbonoDialog";
+import { HistorialCliente } from "@/components/HistorialCliente";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Search, Zap, HandCoins, MapPin, ShoppingBag, Wallet, Users } from "lucide-react";
+import { Search, Zap, HandCoins, MapPin, ShoppingBag, Wallet, Users, History } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ruta")({
   component: RutaPage,
@@ -33,6 +34,7 @@ function RutaPage() {
   const [search, setSearch] = useState("");
   const [saleClient, setSaleClient] = useState<any | null>(null);
   const [abonoClient, setAbonoClient] = useState<any | null>(null);
+  const [histClient, setHistClient] = useState<any | null>(null);
   const invalidate = useInvalidate();
 
   const { data: clientes } = useClientes(rutaId === "all" ? undefined : rutaId);
@@ -148,6 +150,13 @@ function RutaPage() {
                   >
                     <HandCoins className="h-4 w-4" /> Abonar
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="col-span-2 h-11 gap-1.5"
+                    onClick={() => setHistClient(c)}
+                  >
+                    <History className="h-4 w-4" /> Historial
+                  </Button>
                 </div>
               </Card>
             );
@@ -160,6 +169,7 @@ function RutaPage() {
 
       <QuickSale cliente={saleClient} open={!!saleClient} onClose={() => setSaleClient(null)} onDone={onSaleDone} />
       <AbonoDialog cliente={abonoClient} open={!!abonoClient} onClose={() => setAbonoClient(null)} onDone={onSaleDone} />
+      <HistorialCliente cliente={histClient} open={!!histClient} onClose={() => setHistClient(null)} />
     </div>
   );
 }

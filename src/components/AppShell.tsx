@@ -115,10 +115,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Mobile top bar */}
         <header className="flex items-center justify-between gap-2 border-b bg-card px-4 py-3 md:hidden">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <Milk className="h-4 w-4" />
+            <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg bg-white">
+              <img src={logo.url} alt="Lácteos La Rivera" className="h-full w-full object-contain" />
             </div>
-            <span className="truncate text-sm font-bold">La Rivera</span>
+            <span className="truncate text-sm font-bold">Lácteos La Rivera</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Button variant="ghost" size="icon" onClick={toggle}>

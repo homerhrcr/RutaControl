@@ -5,6 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { useOfflineQueue } from "@/lib/offline";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo-la-rivera.png.asset.json";
 import {
   LayoutDashboard,
   Truck,
@@ -65,11 +66,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
         <div className="flex items-center gap-2 px-5 py-5">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-            <Milk className="h-5 w-5" />
+          <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white">
+            <img src={logo.url} alt="Lácteos La Rivera" className="h-full w-full object-contain" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold leading-tight">La Rivera</p>
+            <p className="truncate text-sm font-bold leading-tight">Lácteos La Rivera</p>
             <p className="truncate text-xs text-sidebar-foreground/60">Gestión Comercial</p>
           </div>
         </div>
@@ -114,10 +115,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Mobile top bar */}
         <header className="flex items-center justify-between gap-2 border-b bg-card px-4 py-3 md:hidden">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <Milk className="h-4 w-4" />
+            <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg bg-white">
+              <img src={logo.url} alt="Lácteos La Rivera" className="h-full w-full object-contain" />
             </div>
-            <span className="truncate text-sm font-bold">La Rivera</span>
+            <span className="truncate text-sm font-bold">Lácteos La Rivera</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Button variant="ghost" size="icon" onClick={toggle}>

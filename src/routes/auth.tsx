@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Milk } from "lucide-react";
+import logo from "@/assets/logo-la-rivera.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -60,8 +60,8 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-primary/10 to-background px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
-            <Milk className="h-8 w-8" />
+          <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-white shadow-lg">
+            <img src={logo.url} alt="Lácteos La Rivera" className="h-full w-full object-contain" />
           </div>
           <h1 className="mt-4 text-2xl font-black tracking-tight">Lácteos La Rivera</h1>
           <p className="text-sm text-muted-foreground">Sistema de Ventas y Gestión</p>

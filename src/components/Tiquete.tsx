@@ -33,18 +33,16 @@ function buildTexto(t: TiqueteData) {
     (i) => `${i.cantidad} x ${i.nombre}  ${formatCRC(i.precio * i.cantidad)}`,
   );
   return [
-    `*${EMPRESA.nombre} — ${EMPRESA.detalle}*`,
+    `*${EMPRESA.nombre}*`,
     `Tiquete #${consecutivo(t.venta_id)}`,
     formatDateTime(t.fecha),
     `Cliente: ${t.cliente_nombre}`,
     "--------------------------------",
     ...lineas,
     "--------------------------------",
-    `Subtotal: ${formatCRC(t.subtotal)}`,
     t.descuento > 0 ? `Descuento: -${formatCRC(t.descuento)}` : null,
     `*TOTAL: ${formatCRC(t.total)}*`,
     `Pago: ${t.metodo === "contado" ? "Contado" : "Crédito"}`,
-    t.metodo === "credito" && t.fecha_limite ? `Vence: ${t.fecha_limite}` : null,
     "",
     "¡Gracias por su compra!",
   ]

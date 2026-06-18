@@ -101,27 +101,47 @@ export function QuickSale({
     } catch {
       /* sin gps */
     }
-    try {
-      await registrarVenta({
-        cliente_id: cliente.id,
-        ruta_id: cliente.ruta_id,
-        vendedor_id: user.id,
-        items,
-        descuento,
-        metodo,
-        fecha_limite:
-          metodo === "credito"
-            ? new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10)
-            : null,
-        lat,
-        lng,
+    const ventaParams = {
+      cliente_id: cliente.id,
+      cliente_nombre: cliente.nombre,
+      ruta_id: cliente.ruta_id,
+      vendedor_id: user.id,
+      items,
+      descuento,
+      metodo,
+      fecha_limite:
+        metodo === "credito"
+          ? new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10)
+          : null,
+      lat,
+      lng,
+    };
+
+    if (!navigator.onLine) {
+      queueVenta(ventaParams);
+      toast.success(`Venta ${metodo} guardada offline · ${formatCRC(total)}`, {
+        description: "Se sincronizará al recuperar conexión",
       });
+      reset();
+      onDone();
+      onClose();
+      setBusy(false);
+      return;
+    }
+
+    try {
+      await registrarVenta(ventaParams);
       toast.success(`Venta ${metodo} registrada · ${formatCRC(total)}`);
       reset();
       onDone();
       onClose();
     } catch (e: any) {
-      toast.error(e.message ?? "Error al registrar venta");
+      // network failure fallback → queue
+      queueVenta(ventaParams);
+      toast.warning(`Sin conexión · Venta guardada offline · ${formatCRC(total)}`);
+      reset();
+      onDone();
+      onClose();
     } finally {
       setBusy(false);
     }

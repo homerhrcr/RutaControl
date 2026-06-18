@@ -15,13 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Search, MapPin, Phone, Crosshair, MessageCircle } from "lucide-react";
 
@@ -37,7 +30,7 @@ const empty = {
   canton: "",
   provincia: "",
   referencia: "",
-  ruta_id: "",
+  ruta_ids: [] as string[],
   latitud: null as number | null,
   longitud: null as number | null,
 };
@@ -71,7 +64,7 @@ function ClientesPage() {
       canton: c.canton ?? "",
       provincia: c.provincia ?? "",
       referencia: c.referencia ?? "",
-      ruta_id: c.ruta_id ?? "",
+      ruta_ids: (c.cliente_rutas ?? []).map((cr: any) => cr.ruta_id),
       latitud: c.latitud,
       longitud: c.longitud,
     });
@@ -95,12 +88,38 @@ function ClientesPage() {
   async function save() {
     if (!form.nombre.trim()) return toast.error("El nombre es obligatorio");
     setBusy(true);
-    const payload = { ...form, ruta_id: form.ruta_id || null };
-    const { error } = editId
-      ? await supabase.from("clientes").update(payload).eq("id", editId)
-      : await supabase.from("clientes").insert(payload);
+    const { ruta_ids, ...rest } = form;
+    const payload = { ...rest, ruta_id: ruta_ids[0] ?? null };
+
+    let clienteId = editId;
+    if (editId) {
+      const { error } = await supabase.from("clientes").update(payload).eq("id", editId);
+      if (error) {
+        setBusy(false);
+        return toast.error(error.message);
+      }
+    } else {
+      const { data, error } = await supabase.from("clientes").insert(payload).select("id").single();
+      if (error || !data) {
+        setBusy(false);
+        return toast.error(error?.message ?? "Error al guardar");
+      }
+      clienteId = data.id;
+    }
+
+    // Sincronizar rutas del cliente
+    await supabase.from("cliente_rutas").delete().eq("cliente_id", clienteId!);
+    if (ruta_ids.length) {
+      const { error: relErr } = await supabase
+        .from("cliente_rutas")
+        .insert(ruta_ids.map((ruta_id) => ({ cliente_id: clienteId!, ruta_id })));
+      if (relErr) {
+        setBusy(false);
+        return toast.error(relErr.message);
+      }
+    }
+
     setBusy(false);
-    if (error) return toast.error(error.message);
     toast.success(editId ? "Cliente actualizado" : "Cliente registrado");
     invalidate(["clientes"]);
     setOpen(false);
@@ -132,8 +151,14 @@ function ClientesPage() {
                   <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3 shrink-0" /> {c.distrito || c.direccion || "—"}
                   </p>
-                  {(c as any).rutas?.nombre && (
-                    <Badge variant="secondary" className="mt-1.5 text-[10px]">{(c as any).rutas.nombre}</Badge>
+                  {((c as any).cliente_rutas ?? []).length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {(c as any).cliente_rutas.map((cr: any) => (
+                        <Badge key={cr.ruta_id} variant="secondary" className="text-[10px]">
+                          {cr.rutas?.nombre}
+                        </Badge>
+                      ))}
+                    </div>
                   )}
                 </button>
                 <div className="flex shrink-0 flex-col gap-1">
@@ -194,17 +219,33 @@ function ClientesPage() {
             <Field label="Referencia">
               <Input value={form.referencia} onChange={(e) => setForm({ ...form, referencia: e.target.value })} />
             </Field>
-            <Field label="Ruta">
-              <Select value={form.ruta_id} onValueChange={(v) => setForm({ ...form, ruta_id: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Asignar ruta" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rutas?.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <Field label="Rutas (puede seleccionar varias)">
+              <div className="flex flex-wrap gap-2">
+                {rutas?.map((r) => {
+                  const active = form.ruta_ids.includes(r.id);
+                  return (
+                    <Button
+                      key={r.id}
+                      type="button"
+                      size="sm"
+                      variant={active ? "default" : "outline"}
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          ruta_ids: active
+                            ? f.ruta_ids.filter((id) => id !== r.id)
+                            : [...f.ruta_ids, r.id],
+                        }))
+                      }
+                    >
+                      {r.nombre}
+                    </Button>
+                  );
+                })}
+                {!rutas?.length && (
+                  <p className="text-xs text-muted-foreground">No hay rutas creadas.</p>
+                )}
+              </div>
             </Field>
             <Button variant="outline" className="w-full gap-2" onClick={capturar}>
               <Crosshair className="h-4 w-4" />

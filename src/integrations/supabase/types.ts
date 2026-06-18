@@ -104,6 +104,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cliente_rutas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          ruta_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          ruta_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          ruta_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_rutas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliente_rutas_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "rutas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           activo: boolean

@@ -81,6 +81,45 @@ export function HistorialCliente({
         </div>
 
         <div className="flex-1 overflow-y-auto p-3">
+          {(pendientes ?? []).length > 0 && (
+            <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/5 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-sm font-bold text-destructive">
+                  <AlertCircle className="h-4 w-4" /> Pendiente de pago
+                </span>
+                <span className="font-black text-destructive">{formatCRC(totalPendiente)}</span>
+              </div>
+              <div className="space-y-2">
+                {(pendientes ?? []).map((c: any) => (
+                  <div key={c.id} className="rounded-lg bg-card p-2.5">
+                    <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        {c.ventas?.fecha
+                          ? new Date(c.ventas.fecha).toLocaleDateString("es-CR", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "—"}
+                      </span>
+                      <span className="font-semibold text-destructive">Saldo {formatCRC(Number(c.saldo))}</span>
+                    </div>
+                    <div className="space-y-1">
+                      {(c.ventas?.detalle_ventas ?? []).map((d: any) => (
+                        <div key={d.id} className="flex items-start justify-between gap-2 text-sm">
+                          <span className="flex-1">
+                            <span className="font-medium">{Number(d.cantidad)}×</span> {d.nombre_producto}
+                          </span>
+                          <span>{formatCRC(Number(d.total_linea))}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isLoading && <p className="py-10 text-center text-sm text-muted-foreground">Cargando…</p>}
           {!isLoading && eventos.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">Sin movimientos en este periodo.</p>

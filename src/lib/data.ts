@@ -113,6 +113,24 @@ export function useVentasCliente(clienteId?: string, limit = 5) {
   });
 }
 
+export function useAbonosCliente(clienteId?: string, limit = 100) {
+  return useQuery({
+    queryKey: ["abonos-cliente", clienteId, limit],
+    enabled: !!clienteId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("abonos")
+        .select("*")
+        .eq("cliente_id", clienteId!)
+        .order("fecha", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+
 export function useInvalidate() {
   const qc = useQueryClient();
   return (keys: string[]) => keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));

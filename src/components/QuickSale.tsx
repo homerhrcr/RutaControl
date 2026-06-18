@@ -38,6 +38,8 @@ export function QuickSale({
   const [descuento, setDescuento] = useState(0);
   const [busy, setBusy] = useState(false);
   const [tiquete, setTiquete] = useState<TiqueteData | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [metodoSel, setMetodoSel] = useState<"contado" | "credito">("contado");
 
   const list = useMemo(() => {
     const arr = (productos ?? []).filter((p) =>
@@ -88,6 +90,8 @@ export function QuickSale({
     setCart({});
     setDescuento(0);
     setSearch("");
+    setConfirmOpen(false);
+    setMetodoSel("contado");
   }
 
   async function finalizar(metodo: "contado" | "credito") {
@@ -250,23 +254,86 @@ export function QuickSale({
             <span className="text-sm text-muted-foreground">{items.length} producto(s)</span>
             <span className="text-2xl font-black">{formatCRC(total)}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button size="lg" className="h-14 gap-2 text-base" disabled={busy} onClick={() => finalizar("contado")}>
-              <Banknote className="h-5 w-5" /> Contado
-            </Button>
-            <Button
-              size="lg"
-              variant="secondary"
-              className="h-14 gap-2 text-base"
-              disabled={busy}
-              onClick={() => finalizar("credito")}
-            >
-              <CreditCard className="h-5 w-5" /> Crédito
-            </Button>
-          </div>
+          <Button
+            size="lg"
+            className="h-14 w-full gap-2 text-base"
+            disabled={busy || items.length === 0}
+            onClick={() => setConfirmOpen(true)}
+          >
+            Confirmar venta · {formatCRC(total)}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={confirmOpen} onOpenChange={(o) => !busy && setConfirmOpen(o)}>
+      <DialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 p-0">
+        <DialogHeader className="border-b px-4 py-3">
+          <DialogTitle className="text-base">Confirmar venta</DialogTitle>
+          <p className="truncate text-xs text-muted-foreground">{cliente?.nombre}</p>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-2">
+            {items.map((i) => (
+              <div key={i.producto_id} className="flex items-start justify-between gap-2 text-sm">
+                <span className="flex-1">
+                  <span className="font-medium">{i.cantidad}×</span> {i.nombre}
+                </span>
+                <span className="font-semibold">{formatCRC(i.precio * i.cantidad)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 space-y-1 border-t pt-3 text-sm">
+            {descuento > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Descuento</span>
+                <span>− {formatCRC(descuento)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-lg font-black">
+              <span>Total</span>
+              <span>{formatCRC(total)}</span>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <p className="mb-2 text-sm text-muted-foreground">Método de pago</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={metodoSel === "contado" ? "default" : "outline"}
+                className="h-12 gap-2"
+                onClick={() => setMetodoSel("contado")}
+              >
+                <Banknote className="h-5 w-5" /> Contado
+              </Button>
+              <Button
+                variant={metodoSel === "credito" ? "default" : "outline"}
+                className="h-12 gap-2"
+                onClick={() => setMetodoSel("credito")}
+              >
+                <CreditCard className="h-5 w-5" /> Crédito
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-2 border-t p-3">
+          <Button variant="ghost" className="h-12" disabled={busy} onClick={() => setConfirmOpen(false)}>
+            Volver
+          </Button>
+          <Button
+            size="lg"
+            className="h-12 flex-1 gap-2 text-base"
+            disabled={busy}
+            onClick={() => finalizar(metodoSel)}
+          >
+            Enviar venta
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
     <Tiquete data={tiquete} open={!!tiquete} onClose={() => setTiquete(null)} />
     </>
   );

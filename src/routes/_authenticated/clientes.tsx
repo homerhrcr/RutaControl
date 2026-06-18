@@ -71,7 +71,7 @@ function ClientesPage() {
       canton: c.canton ?? "",
       provincia: c.provincia ?? "",
       referencia: c.referencia ?? "",
-      ruta_id: c.ruta_id ?? "",
+      ruta_ids: (c.cliente_rutas ?? []).map((cr: any) => cr.ruta_id),
       latitud: c.latitud,
       longitud: c.longitud,
     });

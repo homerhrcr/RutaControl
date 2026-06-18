@@ -158,10 +158,6 @@ export function Tiquete({
               </div>
             ))}
             <div className="sep" />
-            <div className="row">
-              <span>Subtotal</span>
-              <span>{formatCRC(data.subtotal)}</span>
-            </div>
             {data.descuento > 0 && (
               <div className="row">
                 <span>Descuento</span>
@@ -176,12 +172,6 @@ export function Tiquete({
               <span>Pago</span>
               <span>{data.metodo === "contado" ? "Contado" : "Crédito"}</span>
             </div>
-            {data.metodo === "credito" && data.fecha_limite && (
-              <div className="row">
-                <span>Vence</span>
-                <span>{data.fecha_limite}</span>
-              </div>
-            )}
             <div className="sep" />
             <div className="c">¡Gracias por su compra!</div>
           </div>

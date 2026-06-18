@@ -184,7 +184,7 @@ export function Tiquete({
           <Button variant="secondary" className="gap-2" onClick={imprimir}>
             <Printer className="h-4 w-4" /> Imprimir
           </Button>
-          <Button className="gap-2 bg-[#25D366] text-white hover:bg-[#1faa52]" onClick={whatsapp}>
+          <Button className="gap-2" style={{ backgroundColor: "#25D366", color: "#fff" }} onClick={whatsapp}>
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </Button>
         </div>

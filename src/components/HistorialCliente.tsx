@@ -21,8 +21,11 @@ export function HistorialCliente({
 }) {
   const { data: ventas, isLoading: lv } = useVentasCliente(cliente?.id, 100);
   const { data: abonos, isLoading: la } = useAbonosCliente(cliente?.id, 100);
+  const { data: pendientes } = useCreditosClienteDetalle(cliente?.id);
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
+
+  const totalPendiente = (pendientes ?? []).reduce((s, c) => s + Number(c.saldo ?? 0), 0);
 
   const eventos = useMemo<Evento[]>(() => {
     const all: Evento[] = [

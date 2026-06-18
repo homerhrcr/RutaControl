@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
+import { useOfflineQueue } from "@/lib/offline";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {

@@ -158,8 +158,14 @@ function ClientesPage() {
                   <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3 shrink-0" /> {c.distrito || c.direccion || "—"}
                   </p>
-                  {(c as any).rutas?.nombre && (
-                    <Badge variant="secondary" className="mt-1.5 text-[10px]">{(c as any).rutas.nombre}</Badge>
+                  {((c as any).cliente_rutas ?? []).length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {(c as any).cliente_rutas.map((cr: any) => (
+                        <Badge key={cr.ruta_id} variant="secondary" className="text-[10px]">
+                          {cr.rutas?.nombre}
+                        </Badge>
+                      ))}
+                    </div>
                   )}
                 </button>
                 <div className="flex shrink-0 flex-col gap-1">

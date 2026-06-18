@@ -81,6 +81,24 @@ export function useCreditosCliente(clienteId?: string) {
   });
 }
 
+export function useCreditosClienteDetalle(clienteId?: string) {
+  return useQuery({
+    queryKey: ["creditos-cliente-detalle", clienteId],
+    enabled: !!clienteId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("creditos")
+        .select("*, ventas(id, fecha, detalle_ventas(*))")
+        .eq("cliente_id", clienteId!)
+        .gt("saldo", 0)
+        .order("fecha");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+
 export function useCreditosPendientes() {
   return useQuery({
     queryKey: ["creditos-pendientes"],

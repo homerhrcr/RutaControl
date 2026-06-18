@@ -286,6 +286,12 @@ function ClientesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <HistorialCliente
+        cliente={histCliente}
+        open={!!histCliente}
+        onClose={() => setHistCliente(null)}
+      />
     </div>
   );
 }

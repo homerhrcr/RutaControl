@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { useVentasCliente, useAbonosCliente } from "@/lib/data";
+import { useVentasCliente, useAbonosCliente, useCreditosClienteDetalle } from "@/lib/data";
 import { formatCRC } from "@/lib/format";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Banknote, CreditCard, HandCoins } from "lucide-react";
+import { Banknote, CreditCard, HandCoins, AlertCircle } from "lucide-react";
 
 type Evento =
   | { tipo: "venta"; id: string; fecha: string; venta: any }

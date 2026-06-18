@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
+import { useOfflineQueue } from "@/lib/offline";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -19,6 +20,8 @@ import {
   LogOut,
   Milk,
   Map,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 
 interface NavItem {
@@ -47,6 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { online, count } = useOfflineQueue();
 
   async function handleSignOut() {
     await signOut();
@@ -124,6 +128,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
           </div>
         </header>
+
+        {(!online || count > 0) && (
+          <div
+            className={cn(
+              "flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-medium",
+              online ? "bg-warning/20 text-warning" : "bg-destructive/15 text-destructive",
+            )}
+          >
+            {online ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
+            {online
+              ? `Sincronizando ${count} venta(s) pendiente(s)…`
+              : `Sin conexión${count > 0 ? ` · ${count} venta(s) en cola` : " · trabajando offline"}`}
+          </div>
+        )}
 
         <main className="flex-1 pb-20 md:pb-0">{children}</main>
 

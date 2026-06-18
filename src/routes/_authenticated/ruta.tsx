@@ -169,6 +169,7 @@ function RutaPage() {
 
       <QuickSale cliente={saleClient} open={!!saleClient} onClose={() => setSaleClient(null)} onDone={onSaleDone} />
       <AbonoDialog cliente={abonoClient} open={!!abonoClient} onClose={() => setAbonoClient(null)} onDone={onSaleDone} />
+      <HistorialCliente cliente={histClient} open={!!histClient} onClose={() => setHistClient(null)} />
     </div>
   );
 }

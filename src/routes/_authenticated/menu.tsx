@@ -25,7 +25,6 @@ const ITEMS = [
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/ventas", label: "Ventas", icon: ShoppingCart },
   { to: "/cobranza", label: "Cobros y Crédito", icon: CreditCard },
-  { to: "/rutas", label: "Rutas", icon: Map },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
 ] as const;
 

@@ -73,6 +73,13 @@ function CobranzaPage() {
                   <Button className="h-11 flex-1 gap-1.5" onClick={() => setAbonoClient(r.cliente)}>
                     <HandCoins className="h-4 w-4" /> Registrar abono
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="h-11 flex-1 gap-1.5"
+                    onClick={() => setHistorialClient(r.cliente)}
+                  >
+                    <Receipt className="h-4 w-4" /> Ver detalle de deuda
+                  </Button>
                   {r.cliente.telefono && (
                     <a
                       href={`https://wa.me/506${r.cliente.telefono.replace(/\D/g, "")}?text=${encodeURIComponent(

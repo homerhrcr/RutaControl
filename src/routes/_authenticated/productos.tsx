@@ -33,9 +33,23 @@ function ProductosPage() {
   const [form, setForm] = useState(empty);
   const [busy, setBusy] = useState(false);
 
+  const [soloBajos, setSoloBajos] = useState(false);
+
   const filtered = useMemo(
-    () => (productos ?? []).filter((p) => p.nombre.toLowerCase().includes(search.toLowerCase()) || p.codigo.toLowerCase().includes(search.toLowerCase())),
-    [productos, search],
+    () =>
+      (productos ?? []).filter((p) => {
+        const matchSearch =
+          p.nombre.toLowerCase().includes(search.toLowerCase()) ||
+          p.codigo.toLowerCase().includes(search.toLowerCase());
+        const matchBajo = !soloBajos || Number(p.existencia) <= Number(p.existencia_minima);
+        return matchSearch && matchBajo;
+      }),
+    [productos, search, soloBajos],
+  );
+
+  const bajosCount = useMemo(
+    () => (productos ?? []).filter((p) => Number(p.existencia) <= Number(p.existencia_minima)).length,
+    [productos],
   );
 
   function openNew() { setForm(empty); setEditId(null); setOpen(true); }

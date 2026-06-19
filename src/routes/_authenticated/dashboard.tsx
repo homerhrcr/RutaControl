@@ -115,11 +115,13 @@ function Stat({
   label,
   value,
   tone = "primary",
+  to,
 }: {
   icon: typeof Wallet;
   label: string;
   value: string;
   tone?: "primary" | "accent" | "warning" | "destructive";
+  to: string;
 }) {
   const map = {
     primary: "bg-primary/15 text-primary",
@@ -128,12 +130,14 @@ function Stat({
     destructive: "bg-destructive/15 text-destructive",
   };
   return (
-    <Card className="p-3">
-      <div className={cn("mb-2 grid h-9 w-9 place-items-center rounded-lg", map[tone])}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="truncate text-lg font-black">{value}</p>
-    </Card>
+    <Link to={to} className="block">
+      <Card className="p-3 transition-shadow hover:shadow-md">
+        <div className={cn("mb-2 grid h-9 w-9 place-items-center rounded-lg", map[tone])}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="truncate text-lg font-black">{value}</p>
+      </Card>
+    </Link>
   );
 }

@@ -19,7 +19,7 @@ import {
   Sun,
   LogOut,
   Milk,
-  Map,
+  
   Wifi,
   WifiOff,
 } from "lucide-react";
@@ -39,7 +39,6 @@ const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/ventas", label: "Ventas", icon: ShoppingCart },
-  { to: "/rutas", label: "Rutas", icon: Map },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
 ];
 

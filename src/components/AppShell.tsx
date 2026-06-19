@@ -36,11 +36,10 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: "/ruta", label: "Ruta", icon: Truck, mobile: true },
   { to: "/clientes", label: "Clientes", icon: Users, mobile: true },
-  { to: "/cobranza", label: "Cobros", icon: HandCoins, mobile: true },
+  { to: "/cobranza", label: "Cobros y Crédito", icon: HandCoins, mobile: true },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/ventas", label: "Ventas", icon: ShoppingCart },
-  { to: "/credito", label: "Crédito", icon: CreditCard },
   { to: "/inventario", label: "Inventario", icon: Boxes },
   { to: "/rutas", label: "Rutas", icon: Map },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },

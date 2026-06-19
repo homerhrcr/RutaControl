@@ -3,11 +3,12 @@ import { useState } from "react";
 import { useCreditosPendientes, useInvalidate } from "@/lib/data";
 import { PageHeader } from "@/components/PageHeader";
 import { AbonoDialog } from "@/components/AbonoDialog";
+import { HistorialCliente } from "@/components/HistorialCliente";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCRC, formatDate, daysBetween, agingBucket } from "@/lib/format";
-import { HandCoins, Phone, AlertTriangle } from "lucide-react";
+import { HandCoins, Phone, AlertTriangle, Receipt } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/cobranza")({
   component: CobranzaPage,
@@ -17,6 +18,7 @@ function CobranzaPage() {
   const { data: creditos } = useCreditosPendientes();
   const invalidate = useInvalidate();
   const [abonoClient, setAbonoClient] = useState<any | null>(null);
+  const [historialClient, setHistorialClient] = useState<any | null>(null);
 
   // agrupar por cliente
   const map = new Map<string, { cliente: any; saldo: number; vence: string | null }>();

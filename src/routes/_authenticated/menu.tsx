@@ -9,7 +9,6 @@ import {
   Package,
   ShoppingCart,
   CreditCard,
-  Boxes,
   Map,
   BarChart3,
   Moon,

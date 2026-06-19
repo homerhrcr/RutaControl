@@ -1,5 +1,6 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { ProductosPage } from "./productos";
 
 export const Route = createFileRoute("/_authenticated/inventario")({
-  component: () => <Navigate to="/productos" replace />,
+  component: ProductosPage,
 });

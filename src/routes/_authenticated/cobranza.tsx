@@ -105,6 +105,11 @@ function CobranzaPage() {
         onClose={() => setAbonoClient(null)}
         onDone={() => invalidate(["creditos-pendientes", "saldos-map", "resumen-dia"])}
       />
+      <HistorialCliente
+        cliente={historialClient}
+        open={!!historialClient}
+        onClose={() => setHistorialClient(null)}
+      />
     </div>
   );
 }

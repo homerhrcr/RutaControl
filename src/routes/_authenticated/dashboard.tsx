@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
@@ -65,41 +65,45 @@ function DashboardPage() {
       <PageHeader title="Dashboard Gerencial" subtitle="Resumen del mes" />
       <div className="space-y-4 p-4 md:p-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Stat icon={Wallet} label="Ventas hoy" value={formatCRC(data?.hoy ?? 0)} />
-          <Stat icon={TrendingUp} label="Ventas mes" value={formatCRC(data?.mes ?? 0)} tone="accent" />
-          <Stat icon={CreditCard} label="Crédito activo" value={formatCRC(data?.creditoActivo ?? 0)} tone="warning" />
-          <Stat icon={AlertTriangle} label="Crédito vencido" value={formatCRC(data?.creditoVencido ?? 0)} tone="destructive" />
+          <Stat icon={Wallet} label="Ventas hoy" value={formatCRC(data?.hoy ?? 0)} to="/ventas" />
+          <Stat icon={TrendingUp} label="Ventas mes" value={formatCRC(data?.mes ?? 0)} tone="accent" to="/ventas" />
+          <Stat icon={CreditCard} label="Crédito activo" value={formatCRC(data?.creditoActivo ?? 0)} tone="warning" to="/cobranza" />
+          <Stat icon={AlertTriangle} label="Crédito vencido" value={formatCRC(data?.creditoVencido ?? 0)} tone="destructive" to="/cobranza" />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="p-4">
-            <h2 className="mb-3 font-bold">Productos más vendidos</h2>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={data?.topProductos ?? []} layout="vertical" margin={{ left: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                <YAxis dataKey="nombre" type="category" width={90} tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }} />
-                <Bar dataKey="cant" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
+          <Link to="/productos" className="block">
+            <Card className="p-4 transition-shadow hover:shadow-md">
+              <h2 className="mb-3 font-bold">Productos más vendidos</h2>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={data?.topProductos ?? []} layout="vertical" margin={{ left: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                  <YAxis dataKey="nombre" type="category" width={90} tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                  <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }} />
+                  <Bar dataKey="cant" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+          </Link>
 
-          <Card className="p-4">
-            <h2 className="mb-3 font-bold">Ventas por ruta</h2>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={data?.porRuta ?? []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="nombre" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                <Tooltip
-                  formatter={(v: number) => formatCRC(v)}
-                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }}
-                />
-                <Bar dataKey="total" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
+          <Link to="/rutas" className="block">
+            <Card className="p-4 transition-shadow hover:shadow-md">
+              <h2 className="mb-3 font-bold">Ventas por ruta</h2>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={data?.porRuta ?? []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="nombre" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                  <Tooltip
+                    formatter={(v: number) => formatCRC(v)}
+                    contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }}
+                  />
+                  <Bar dataKey="total" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+          </Link>
         </div>
       </div>
     </div>
@@ -111,11 +115,13 @@ function Stat({
   label,
   value,
   tone = "primary",
+  to,
 }: {
   icon: typeof Wallet;
   label: string;
   value: string;
   tone?: "primary" | "accent" | "warning" | "destructive";
+  to: string;
 }) {
   const map = {
     primary: "bg-primary/15 text-primary",
@@ -124,12 +130,14 @@ function Stat({
     destructive: "bg-destructive/15 text-destructive",
   };
   return (
-    <Card className="p-3">
-      <div className={cn("mb-2 grid h-9 w-9 place-items-center rounded-lg", map[tone])}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="truncate text-lg font-black">{value}</p>
-    </Card>
+    <Link to={to} className="block">
+      <Card className="p-3 transition-shadow hover:shadow-md">
+        <div className={cn("mb-2 grid h-9 w-9 place-items-center rounded-lg", map[tone])}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="truncate text-lg font-black">{value}</p>
+      </Card>
+    </Link>
   );
 }

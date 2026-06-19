@@ -33,9 +33,23 @@ function ProductosPage() {
   const [form, setForm] = useState(empty);
   const [busy, setBusy] = useState(false);
 
+  const [soloBajos, setSoloBajos] = useState(false);
+
   const filtered = useMemo(
-    () => (productos ?? []).filter((p) => p.nombre.toLowerCase().includes(search.toLowerCase()) || p.codigo.toLowerCase().includes(search.toLowerCase())),
-    [productos, search],
+    () =>
+      (productos ?? []).filter((p) => {
+        const matchSearch =
+          p.nombre.toLowerCase().includes(search.toLowerCase()) ||
+          p.codigo.toLowerCase().includes(search.toLowerCase());
+        const matchBajo = !soloBajos || Number(p.existencia) <= Number(p.existencia_minima);
+        return matchSearch && matchBajo;
+      }),
+    [productos, search, soloBajos],
+  );
+
+  const bajosCount = useMemo(
+    () => (productos ?? []).filter((p) => Number(p.existencia) <= Number(p.existencia_minima)).length,
+    [productos],
   );
 
   function openNew() { setForm(empty); setEditId(null); setOpen(true); }
@@ -65,6 +79,15 @@ function ProductosPage() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar producto…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <div className="flex gap-2">
+          <Button variant={soloBajos ? "outline" : "default"} size="sm" onClick={() => setSoloBajos(false)}>
+            Todos
+          </Button>
+          <Button variant={soloBajos ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setSoloBajos(true)}>
+            <AlertTriangle className="h-4 w-4" />
+            Stock bajo ({bajosCount})
+          </Button>
         </div>
         <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (

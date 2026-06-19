@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedVentasRouteImport } from './routes/_authenticated/ventas'
+import { Route as AuthenticatedVendedorRouteImport } from './routes/_authenticated/vendedor'
 import { Route as AuthenticatedRutasRouteImport } from './routes/_authenticated/rutas'
 import { Route as AuthenticatedRutaRouteImport } from './routes/_authenticated/ruta'
 import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
@@ -22,6 +23,7 @@ import { Route as AuthenticatedInventarioRouteImport } from './routes/_authentic
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCreditoRouteImport } from './routes/_authenticated/credito'
 import { Route as AuthenticatedCobranzaRouteImport } from './routes/_authenticated/cobranza'
+import { Route as AuthenticatedCobradorRouteImport } from './routes/_authenticated/cobrador'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 
 const AuthRoute = AuthRouteImport.update({
@@ -41,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedVentasRoute = AuthenticatedVentasRouteImport.update({
   id: '/ventas',
   path: '/ventas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVendedorRoute = AuthenticatedVendedorRouteImport.update({
+  id: '/vendedor',
+  path: '/vendedor',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRutasRoute = AuthenticatedRutasRouteImport.update({
@@ -88,6 +95,11 @@ const AuthenticatedCobranzaRoute = AuthenticatedCobranzaRouteImport.update({
   path: '/cobranza',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCobradorRoute = AuthenticatedCobradorRouteImport.update({
+  id: '/cobrador',
+  path: '/cobrador',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -98,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/cobrador': typeof AuthenticatedCobradorRoute
   '/cobranza': typeof AuthenticatedCobranzaRoute
   '/credito': typeof AuthenticatedCreditoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -107,12 +120,14 @@ export interface FileRoutesByFullPath {
   '/reportes': typeof AuthenticatedReportesRoute
   '/ruta': typeof AuthenticatedRutaRoute
   '/rutas': typeof AuthenticatedRutasRoute
+  '/vendedor': typeof AuthenticatedVendedorRoute
   '/ventas': typeof AuthenticatedVentasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/cobrador': typeof AuthenticatedCobradorRoute
   '/cobranza': typeof AuthenticatedCobranzaRoute
   '/credito': typeof AuthenticatedCreditoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -122,6 +137,7 @@ export interface FileRoutesByTo {
   '/reportes': typeof AuthenticatedReportesRoute
   '/ruta': typeof AuthenticatedRutaRoute
   '/rutas': typeof AuthenticatedRutasRoute
+  '/vendedor': typeof AuthenticatedVendedorRoute
   '/ventas': typeof AuthenticatedVentasRoute
 }
 export interface FileRoutesById {
@@ -130,6 +146,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
+  '/_authenticated/cobrador': typeof AuthenticatedCobradorRoute
   '/_authenticated/cobranza': typeof AuthenticatedCobranzaRoute
   '/_authenticated/credito': typeof AuthenticatedCreditoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -139,6 +156,7 @@ export interface FileRoutesById {
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
   '/_authenticated/ruta': typeof AuthenticatedRutaRoute
   '/_authenticated/rutas': typeof AuthenticatedRutasRoute
+  '/_authenticated/vendedor': typeof AuthenticatedVendedorRoute
   '/_authenticated/ventas': typeof AuthenticatedVentasRoute
 }
 export interface FileRouteTypes {
@@ -147,6 +165,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/clientes'
+    | '/cobrador'
     | '/cobranza'
     | '/credito'
     | '/dashboard'
@@ -156,12 +175,14 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/ruta'
     | '/rutas'
+    | '/vendedor'
     | '/ventas'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/clientes'
+    | '/cobrador'
     | '/cobranza'
     | '/credito'
     | '/dashboard'
@@ -171,6 +192,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/ruta'
     | '/rutas'
+    | '/vendedor'
     | '/ventas'
   id:
     | '__root__'
@@ -178,6 +200,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/clientes'
+    | '/_authenticated/cobrador'
     | '/_authenticated/cobranza'
     | '/_authenticated/credito'
     | '/_authenticated/dashboard'
@@ -187,6 +210,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reportes'
     | '/_authenticated/ruta'
     | '/_authenticated/rutas'
+    | '/_authenticated/vendedor'
     | '/_authenticated/ventas'
   fileRoutesById: FileRoutesById
 }
@@ -224,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/ventas'
       fullPath: '/ventas'
       preLoaderRoute: typeof AuthenticatedVentasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendedor': {
+      id: '/_authenticated/vendedor'
+      path: '/vendedor'
+      fullPath: '/vendedor'
+      preLoaderRoute: typeof AuthenticatedVendedorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/rutas': {
@@ -289,6 +320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCobranzaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cobrador': {
+      id: '/_authenticated/cobrador'
+      path: '/cobrador'
+      fullPath: '/cobrador'
+      preLoaderRoute: typeof AuthenticatedCobradorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/clientes': {
       id: '/_authenticated/clientes'
       path: '/clientes'
@@ -301,6 +339,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
+  AuthenticatedCobradorRoute: typeof AuthenticatedCobradorRoute
   AuthenticatedCobranzaRoute: typeof AuthenticatedCobranzaRoute
   AuthenticatedCreditoRoute: typeof AuthenticatedCreditoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -310,11 +349,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
   AuthenticatedRutaRoute: typeof AuthenticatedRutaRoute
   AuthenticatedRutasRoute: typeof AuthenticatedRutasRoute
+  AuthenticatedVendedorRoute: typeof AuthenticatedVendedorRoute
   AuthenticatedVentasRoute: typeof AuthenticatedVentasRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
+  AuthenticatedCobradorRoute: AuthenticatedCobradorRoute,
   AuthenticatedCobranzaRoute: AuthenticatedCobranzaRoute,
   AuthenticatedCreditoRoute: AuthenticatedCreditoRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -324,6 +365,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
   AuthenticatedRutaRoute: AuthenticatedRutaRoute,
   AuthenticatedRutasRoute: AuthenticatedRutasRoute,
+  AuthenticatedVendedorRoute: AuthenticatedVendedorRoute,
   AuthenticatedVentasRoute: AuthenticatedVentasRoute,
 }
 

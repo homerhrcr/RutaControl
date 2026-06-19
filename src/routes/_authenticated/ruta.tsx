@@ -27,7 +27,7 @@ function todayRouteName(): string {
   return "";
 }
 
-function RutaPage() {
+export function RutaPage() {
   const { user, nombre } = useAuth();
   const { data: rutas } = useRutas();
   const [rutaId, setRutaId] = useState<string | "all">("all");

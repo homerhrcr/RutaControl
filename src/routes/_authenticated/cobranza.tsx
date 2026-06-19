@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/cobranza")({
   component: CobranzaPage,
 });
 
-function CobranzaPage() {
+export function CobranzaPage() {
   const { data: creditos } = useCreditosPendientes();
   const invalidate = useInvalidate();
   const [abonoClient, setAbonoClient] = useState<any | null>(null);

@@ -80,6 +80,15 @@ function ProductosPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar producto…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+        <div className="flex gap-2">
+          <Button variant={soloBajos ? "outline" : "default"} size="sm" onClick={() => setSoloBajos(false)}>
+            Todos
+          </Button>
+          <Button variant={soloBajos ? "default" : "outline"} size="sm" className="gap-1.5" onClick={() => setSoloBajos(true)}>
+            <AlertTriangle className="h-4 w-4" />
+            Stock bajo ({bajosCount})
+          </Button>
+        </div>
         <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
             <Card key={p.id} className="cursor-pointer p-3" onClick={() => openEdit(p)}>

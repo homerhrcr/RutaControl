@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/productos")({
 
 const empty = { codigo: "", nombre: "", categoria_id: "", precio: 0, costo: 0, existencia: 0, existencia_minima: 5, activo: true };
 
-function ProductosPage() {
+export function ProductosPage() {
   const { data: productos } = useProductos();
   const { data: categorias } = useCategorias();
   const { isAdmin } = useAuth();

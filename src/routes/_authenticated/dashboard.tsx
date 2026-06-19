@@ -14,7 +14,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { TrendingUp, CreditCard, AlertTriangle, Wallet } from "lucide-react";
+import { TrendingUp, CreditCard, AlertTriangle, Wallet, Map } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,

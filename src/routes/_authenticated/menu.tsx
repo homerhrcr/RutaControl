@@ -26,7 +26,7 @@ const ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/ventas", label: "Ventas", icon: ShoppingCart },
-  { to: "/credito", label: "Crédito", icon: CreditCard },
+  { to: "/cobranza", label: "Cobros y Crédito", icon: CreditCard },
   { to: "/inventario", label: "Inventario", icon: Boxes },
   { to: "/rutas", label: "Rutas", icon: Map },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },

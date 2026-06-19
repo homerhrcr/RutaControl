@@ -107,23 +107,42 @@ function DashboardPage() {
             </Card>
           </Link>
 
-          <Link to="/rutas" className="block">
-            <Card className="p-4 transition-shadow hover:shadow-md">
-              <h2 className="mb-3 font-bold">Ventas por ruta</h2>
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={data?.porRuta ?? []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="nombre" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                  <Tooltip
-                    formatter={(v: number) => formatCRC(v)}
-                    contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }}
-                  />
-                  <Bar dataKey="total" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-          </Link>
+          <Card className="p-4">
+            <h2 className="mb-3 font-bold">Ventas por ruta</h2>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={data?.porRuta ?? []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="nombre" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                <Tooltip
+                  formatter={(v: number) => formatCRC(v)}
+                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }}
+                />
+                <Bar dataKey="total" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+        </div>
+
+        <div>
+          <h2 className="mb-3 font-bold">Rutas de Distribución</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {(data?.rutasDetalle ?? []).map((r) => (
+              <Card key={r.id} className="p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary">
+                    <Map className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold">{r.nombre}</h3>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div><p className="text-lg font-black">{formatCRC(r.total)}</p><p className="text-xs text-muted-foreground">Ingresos</p></div>
+                  <div><p className="text-lg font-black">{r.ventas}</p><p className="text-xs text-muted-foreground">Ventas</p></div>
+                  <div><p className="text-lg font-black">{r.clientes}</p><p className="text-xs text-muted-foreground">Clientes</p></div>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </div>

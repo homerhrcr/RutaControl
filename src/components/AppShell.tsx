@@ -14,7 +14,6 @@ import {
   ShoppingCart,
   CreditCard,
   HandCoins,
-  Boxes,
   BarChart3,
   Moon,
   Sun,

@@ -28,11 +28,13 @@ function DashboardPage() {
       const startDay = new Date(now); startDay.setHours(0, 0, 0, 0);
       const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const [ventas, creditos, detalle, rutas] = await Promise.all([
+      const [ventas, creditos, detalle, rutas, ventasAll, clientes] = await Promise.all([
         supabase.from("ventas").select("total, fecha, ruta_id").gte("fecha", startMonth.toISOString()),
         supabase.from("creditos").select("saldo, estado, fecha_limite").gt("saldo", 0),
         supabase.from("detalle_ventas").select("nombre_producto, cantidad"),
         supabase.from("rutas").select("id, nombre"),
+        supabase.from("ventas").select("ruta_id, total"),
+        supabase.from("clientes").select("ruta_id"),
       ]);
 
       const v = ventas.data ?? [];
@@ -56,7 +58,25 @@ function DashboardPage() {
       for (const x of v) if (x.ruta_id) rutaMap[x.ruta_id] = (rutaMap[x.ruta_id] ?? 0) + Number(x.total);
       const porRuta = (rutas.data ?? []).map((r) => ({ nombre: r.nombre.replace("Ruta ", ""), total: rutaMap[r.id] ?? 0 }));
 
-      return { hoy, mes, creditoActivo, creditoVencido, topProductos, porRuta };
+      const ventaStats: Record<string, { total: number; n: number }> = {};
+      for (const x of ventasAll.data ?? []) {
+        if (!x.ruta_id) continue;
+        ventaStats[x.ruta_id] = {
+          total: (ventaStats[x.ruta_id]?.total ?? 0) + Number(x.total),
+          n: (ventaStats[x.ruta_id]?.n ?? 0) + 1,
+        };
+      }
+      const clienteStats: Record<string, number> = {};
+      for (const x of clientes.data ?? []) if (x.ruta_id) clienteStats[x.ruta_id] = (clienteStats[x.ruta_id] ?? 0) + 1;
+      const rutasDetalle = (rutas.data ?? []).map((r) => ({
+        id: r.id,
+        nombre: r.nombre,
+        total: ventaStats[r.id]?.total ?? 0,
+        ventas: ventaStats[r.id]?.n ?? 0,
+        clientes: clienteStats[r.id] ?? 0,
+      }));
+
+      return { hoy, mes, creditoActivo, creditoVencido, topProductos, porRuta, rutasDetalle };
     },
   });
 

@@ -6,7 +6,7 @@ import { AbonoDialog } from "@/components/AbonoDialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatCRC, formatDate, daysBetween } from "@/lib/format";
+import { formatCRC, formatDate, daysBetween, agingBucket } from "@/lib/format";
 import { HandCoins, Phone, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/cobranza")({
@@ -33,47 +33,62 @@ function CobranzaPage() {
   const rows = [...map.values()].sort((a, b) => b.saldo - a.saldo);
   const total = rows.reduce((s, r) => s + r.saldo, 0);
 
+  // antigüedad de saldos (cartera de crédito)
+  const buckets: Record<string, number> = { "0-30 días": 0, "31-60 días": 0, "61-90 días": 0, "+90 días": 0 };
+  for (const c of creditos ?? []) buckets[agingBucket(daysBetween((c as any).fecha))] += Number(c.saldo);
+
   return (
     <div>
-      <PageHeader title="Cobranza" subtitle={`Pendiente total: ${formatCRC(total)}`} />
-      <div className="space-y-2.5 p-4 md:p-6">
-        {rows.map((r) => {
-          const venc = r.vence ? daysBetween(r.vence, new Date()) > 0 : false;
-          return (
-            <Card key={r.cliente.id} className="p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">{r.cliente.nombre}</p>
-                  <p className="text-xs text-muted-foreground">Vence: {formatDate(r.vence)}</p>
-                  {venc && (
-                    <Badge variant="outline" className="mt-1 border-destructive/40 text-destructive">
-                      <AlertTriangle className="mr-1 h-3 w-3" /> Vencido
-                    </Badge>
+      <PageHeader title="Cobros y Crédito" subtitle={`Pendiente total: ${formatCRC(total)}`} />
+      <div className="space-y-4 p-4 md:p-6">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Object.entries(buckets).map(([k, v]) => (
+            <Card key={k} className="p-3">
+              <p className="text-xs text-muted-foreground">{k}</p>
+              <p className="truncate text-lg font-black">{formatCRC(v)}</p>
+            </Card>
+          ))}
+        </div>
+
+        <div className="space-y-2.5">
+          {rows.map((r) => {
+            const venc = r.vence ? daysBetween(r.vence, new Date()) > 0 : false;
+            return (
+              <Card key={r.cliente.id} className="p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{r.cliente.nombre}</p>
+                    <p className="text-xs text-muted-foreground">Vence: {formatDate(r.vence)}</p>
+                    {venc && (
+                      <Badge variant="outline" className="mt-1 border-destructive/40 text-destructive">
+                        <AlertTriangle className="mr-1 h-3 w-3" /> Vencido
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="shrink-0 text-lg font-black text-destructive">{formatCRC(r.saldo)}</p>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button className="h-11 flex-1 gap-1.5" onClick={() => setAbonoClient(r.cliente)}>
+                    <HandCoins className="h-4 w-4" /> Registrar abono
+                  </Button>
+                  {r.cliente.telefono && (
+                    <a
+                      href={`https://wa.me/506${r.cliente.telefono.replace(/\D/g, "")}?text=${encodeURIComponent(
+                        `Hola ${r.cliente.nombre}, le recordamos su saldo pendiente de ${formatCRC(r.saldo)} con Lácteos La Rivera.`,
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-accent/15 text-accent"
+                    >
+                      <Phone className="h-4 w-4" />
+                    </a>
                   )}
                 </div>
-                <p className="shrink-0 text-lg font-black text-destructive">{formatCRC(r.saldo)}</p>
-              </div>
-              <div className="mt-3 flex gap-2">
-                <Button className="h-11 flex-1 gap-1.5" onClick={() => setAbonoClient(r.cliente)}>
-                  <HandCoins className="h-4 w-4" /> Registrar abono
-                </Button>
-                {r.cliente.telefono && (
-                  <a
-                    href={`https://wa.me/506${r.cliente.telefono.replace(/\D/g, "")}?text=${encodeURIComponent(
-                      `Hola ${r.cliente.nombre}, le recordamos su saldo pendiente de ${formatCRC(r.saldo)} con Lácteos La Rivera.`,
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-accent/15 text-accent"
-                  >
-                    <Phone className="h-4 w-4" />
-                  </a>
-                )}
-              </div>
-            </Card>
-          );
-        })}
-        {rows.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">Sin saldos pendientes 🎉</p>}
+              </Card>
+            );
+          })}
+          {rows.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">Sin saldos pendientes 🎉</p>}
+        </div>
       </div>
       <AbonoDialog
         cliente={abonoClient}

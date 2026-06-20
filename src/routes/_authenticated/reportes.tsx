@@ -108,24 +108,6 @@ function ReportesPage() {
     },
   });
 
-  function exportCSV() {
-    const rows = [
-      ["Producto", "Cantidad", "Monto"],
-      ...(data?.topProductos ?? []).map((p) => [
-        p.nombre,
-        String(p.cantidad),
-        String(p.monto),
-      ]),
-    ];
-    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `reporte-productos-${range}d.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
 
   return (
     <div>

@@ -267,3 +267,75 @@ export async function registrarAbono(params: {
     detalle: { credito_id: params.credito_id, monto: params.monto },
   });
 }
+
+// Eliminar una venta: restaura inventario y borra en cascada (detalle, créditos, abonos)
+export async function eliminarVenta(ventaId: string) {
+  const { data: detalle } = await supabase
+    .from("detalle_ventas")
+    .select("producto_id, cantidad")
+    .eq("venta_id", ventaId);
+
+  for (const d of detalle ?? []) {
+    if (!d.producto_id) continue;
+    const { data: prod } = await supabase
+      .from("productos")
+      .select("existencia")
+      .eq("id", d.producto_id)
+      .single();
+    if (prod) {
+      await supabase
+        .from("productos")
+        .update({ existencia: Number(prod.existencia) + Number(d.cantidad) })
+        .eq("id", d.producto_id);
+    }
+    await supabase.from("movimientos_inventario").insert({
+      producto_id: d.producto_id,
+      tipo: "entrada",
+      cantidad: Number(d.cantidad),
+      motivo: "Anulación de venta",
+    });
+  }
+
+  const { error } = await supabase.from("ventas").delete().eq("id", ventaId);
+  if (error) throw error;
+}
+
+// Eliminar un abono: restaura el saldo del crédito asociado
+export async function eliminarAbono(abonoId: string) {
+  const { data: abono } = await supabase
+    .from("abonos")
+    .select("credito_id, monto")
+    .eq("id", abonoId)
+    .single();
+
+  const { error } = await supabase.from("abonos").delete().eq("id", abonoId);
+  if (error) throw error;
+
+  if (abono?.credito_id) {
+    const { data: cred } = await supabase
+      .from("creditos")
+      .select("saldo, monto")
+      .eq("id", abono.credito_id)
+      .single();
+    if (cred) {
+      const nuevoSaldo = Math.min(
+        Number(cred.monto),
+        Number(cred.saldo) + Number(abono.monto),
+      );
+      await supabase
+        .from("creditos")
+        .update({
+          saldo: nuevoSaldo,
+          estado: nuevoSaldo === 0 ? "cancelado" : "al_dia",
+        })
+        .eq("id", abono.credito_id);
+    }
+  }
+}
+
+// Eliminar un cliente y todos sus datos relacionados
+export async function eliminarCliente(clienteId: string) {
+  const { error } = await supabase.from("clientes").delete().eq("id", clienteId);
+  if (error) throw error;
+}
+

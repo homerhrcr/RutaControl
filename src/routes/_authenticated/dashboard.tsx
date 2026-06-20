@@ -30,13 +30,14 @@ export function DashboardPage() {
       const startDay = new Date(now); startDay.setHours(0, 0, 0, 0);
       const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const [ventas, creditos, detalle, rutas, ventasAll, clientes] = await Promise.all([
+      const [ventas, creditos, detalle, rutas, ventasAll, clientes, ventasRecientes] = await Promise.all([
         supabase.from("ventas").select("total, fecha, ruta_id").gte("fecha", startMonth.toISOString()),
         supabase.from("creditos").select("saldo, estado, fecha_limite").gt("saldo", 0),
         supabase.from("detalle_ventas").select("nombre_producto, cantidad"),
         supabase.from("rutas").select("id, nombre"),
         supabase.from("ventas").select("ruta_id, total"),
         supabase.from("clientes").select("ruta_id"),
+        supabase.from("ventas").select("*, clientes(nombre), rutas(nombre)").order("fecha", { ascending: false }).limit(100),
       ]);
 
       const v = ventas.data ?? [];

@@ -14,6 +14,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth";
 import { ThemeProvider } from "../lib/theme";
 import { Toaster } from "../components/ui/sonner";
+import { enableQueryPersistence } from "../lib/query-persist";
+import { registerServiceWorker } from "../lib/sw-register";
 
 function NotFoundComponent() {
   return (
@@ -88,12 +90,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@LacteosLaRivera" },
+      { name: "theme-color", content: "#0f766e" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/pwa-icon-192.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -118,6 +123,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    enableQueryPersistence(queryClient);
+    registerServiceWorker();
+  }, [queryClient]);
+
+
 
   return (
     <QueryClientProvider client={queryClient}>

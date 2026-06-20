@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useClientes, useRutas, useInvalidate } from "@/lib/data";
+import { useClientes, useRutas, useInvalidate, eliminarCliente } from "@/lib/data";
+import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Search, MapPin, Phone, Crosshair, MessageCircle, History } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Crosshair, MessageCircle, History, Trash2 } from "lucide-react";
 import { HistorialCliente } from "@/components/HistorialCliente";
+
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,
@@ -37,6 +49,7 @@ const empty = {
 };
 
 function ClientesPage() {
+  const { isAdmin } = useAuth();
   const { data: clientes } = useClientes();
   const { data: rutas } = useRutas();
   const invalidate = useInvalidate();
@@ -46,6 +59,21 @@ function ClientesPage() {
   const [form, setForm] = useState(empty);
   const [busy, setBusy] = useState(false);
   const [histCliente, setHistCliente] = useState<{ id: string; nombre: string } | null>(null);
+  const [delCliente, setDelCliente] = useState<{ id: string; nombre: string } | null>(null);
+
+  async function confirmarEliminar() {
+    if (!delCliente) return;
+    try {
+      await eliminarCliente(delCliente.id);
+      toast.success("Cliente eliminado");
+      invalidate(["clientes"]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al eliminar");
+    } finally {
+      setDelCliente(null);
+    }
+  }
+
 
   const filtered = useMemo(
     () => (clientes ?? []).filter((c) => c.nombre.toLowerCase().includes(search.toLowerCase())),
@@ -191,7 +219,17 @@ function ClientesPage() {
                       <MapPin className="h-4 w-4" />
                     </a>
                   )}
+                  {isAdmin && (
+                    <button
+                      onClick={() => setDelCliente({ id: c.id, nombre: c.nombre })}
+                      className="grid h-8 w-8 place-items-center rounded-lg bg-destructive/15 text-destructive"
+                      title="Eliminar cliente"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
+
               </div>
             </Card>
           ))}
@@ -292,6 +330,28 @@ function ClientesPage() {
         open={!!histCliente}
         onClose={() => setHistCliente(null)}
       />
+
+      <AlertDialog open={!!delCliente} onOpenChange={(o) => !o && setDelCliente(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminará a <strong>{delCliente?.nombre}</strong>. Esta acción no se
+              puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmarEliminar}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }

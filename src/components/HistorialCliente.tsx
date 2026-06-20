@@ -1,11 +1,29 @@
 import { useMemo, useState } from "react";
-import { useVentasCliente, useAbonosCliente, useCreditosClienteDetalle } from "@/lib/data";
+import {
+  useVentasCliente,
+  useAbonosCliente,
+  useCreditosClienteDetalle,
+  useInvalidate,
+  eliminarVenta,
+  eliminarAbono,
+} from "@/lib/data";
+import { useAuth } from "@/lib/auth";
 import { formatCRC } from "@/lib/format";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle } from "lucide-react";
+import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Evento =
@@ -21,11 +39,37 @@ export function HistorialCliente({
   open: boolean;
   onClose: () => void;
 }) {
+  const { isAdmin } = useAuth();
+  const invalidate = useInvalidate();
   const { data: ventas, isLoading: lv } = useVentasCliente(cliente?.id, 100);
   const { data: abonos, isLoading: la } = useAbonosCliente(cliente?.id, 100);
   const { data: pendientes } = useCreditosClienteDetalle(cliente?.id);
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
+  const [borrar, setBorrar] = useState<
+    { tipo: "venta" | "abono"; id: string } | null
+  >(null);
+
+  async function confirmarBorrar() {
+    if (!borrar) return;
+    try {
+      if (borrar.tipo === "venta") await eliminarVenta(borrar.id);
+      else await eliminarAbono(borrar.id);
+      toast.success(borrar.tipo === "venta" ? "Venta eliminada" : "Abono eliminado");
+      invalidate([
+        "ventas-cliente",
+        "abonos-cliente",
+        "creditos-cliente",
+        "creditos-cliente-detalle",
+        "creditos-pendientes",
+        "clientes",
+      ]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al eliminar");
+    } finally {
+      setBorrar(null);
+    }
+  }
 
   const totalPendiente = (pendientes ?? []).reduce((s, c) => s + Number(c.saldo ?? 0), 0);
 
@@ -196,11 +240,23 @@ export function HistorialCliente({
                       <span className="flex items-center gap-1.5 text-sm font-semibold">
                         <HandCoins className="h-4 w-4 text-accent" /> Abono · {fechaTxt}
                       </span>
-                      <span className="font-black text-accent">{formatCRC(e.monto)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-accent">{formatCRC(e.monto)}</span>
+                        {isAdmin && (
+                          <button
+                            onClick={() => setBorrar({ tipo: "abono", id: e.id })}
+                            className="grid h-7 w-7 place-items-center rounded-lg bg-destructive/15 text-destructive"
+                            title="Eliminar abono"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
               }
+
               const v = e.venta;
               return (
                 <div key={`v-${e.id}`} className="rounded-xl border bg-card p-3">
@@ -231,8 +287,20 @@ export function HistorialCliente({
                     ) : (
                       <span />
                     )}
-                    <span className="font-black">{formatCRC(Number(v.total))}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black">{formatCRC(Number(v.total))}</span>
+                      {isAdmin && (
+                        <button
+                          onClick={() => setBorrar({ tipo: "venta", id: e.id })}
+                          className="grid h-7 w-7 place-items-center rounded-lg bg-destructive/15 text-destructive"
+                          title="Eliminar venta"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
+
                 </div>
               );
             })}
@@ -248,6 +316,31 @@ export function HistorialCliente({
           </span>
         </div>
       </DialogContent>
+
+      <AlertDialog open={!!borrar} onOpenChange={(o) => !o && setBorrar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {borrar?.tipo === "venta" ? "¿Eliminar venta?" : "¿Eliminar abono?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {borrar?.tipo === "venta"
+                ? "Se eliminará la venta y se restaurará el inventario. Esta acción no se puede deshacer."
+                : "Se eliminará el abono y se restaurará el saldo del crédito. Esta acción no se puede deshacer."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmarBorrar}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
+

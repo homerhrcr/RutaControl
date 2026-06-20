@@ -219,7 +219,17 @@ function ClientesPage() {
                       <MapPin className="h-4 w-4" />
                     </a>
                   )}
+                  {isAdmin && (
+                    <button
+                      onClick={() => setDelCliente({ id: c.id, nombre: c.nombre })}
+                      className="grid h-8 w-8 place-items-center rounded-lg bg-destructive/15 text-destructive"
+                      title="Eliminar cliente"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
+
               </div>
             </Card>
           ))}

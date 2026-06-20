@@ -25,10 +25,11 @@ const ITEMS = [
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/cobranza", label: "Crédito y Cobros", icon: CreditCard },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
+  { to: "/usuarios", label: "Usuarios", icon: UserCog, adminOnly: true },
 ] as const;
 
 function MenuPage() {
-  const { nombre, roles, signOut } = useAuth();
+  const { nombre, roles, isAdmin, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
 

@@ -29,6 +29,45 @@ export function HistorialCliente({
 
   const totalPendiente = (pendientes ?? []).reduce((s, c) => s + Number(c.saldo ?? 0), 0);
 
+  function buildMensaje() {
+    const lineas: string[] = [];
+    lineas.push(`Hola ${cliente?.nombre ?? ""}, este es tu estado de cuenta:`);
+    lineas.push("");
+    lineas.push("*Pendiente de pago*");
+    for (const c of pendientes ?? []) {
+      const fecha = c.ventas?.fecha
+        ? new Date(c.ventas.fecha).toLocaleDateString("es-CR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "—";
+      lineas.push(`${fecha} — Saldo ${formatCRC(Number(c.saldo))}`);
+      for (const d of c.ventas?.detalle_ventas ?? []) {
+        lineas.push(`  • ${Number(d.cantidad)}× ${d.nombre_producto}: ${formatCRC(Number(d.total_linea))}`);
+      }
+    }
+    lineas.push("");
+    lineas.push(`*Total pendiente: ${formatCRC(totalPendiente)}*`);
+    return lineas.join("\n");
+  }
+
+  async function copiarMensaje() {
+    try {
+      await navigator.clipboard.writeText(buildMensaje());
+      toast.success("Estado de cuenta copiado");
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  }
+
+  function enviarWhatsApp() {
+    const url = `https://wa.me/?text=${encodeURIComponent(buildMensaje())}`;
+    window.open(url, "_blank");
+  }
+
+
+
   const eventos = useMemo<Evento[]>(() => {
     const all: Evento[] = [
       ...(ventas ?? []).map((v) => ({

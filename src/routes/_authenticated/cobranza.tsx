@@ -41,7 +41,7 @@ export function CobranzaPage() {
 
   return (
     <div>
-      <PageHeader title="Cobros y Crédito" subtitle={`Pendiente total: ${formatCRC(total)}`} />
+      <PageHeader title="Crédito y Cobros" subtitle={`Pendiente total: ${formatCRC(total)}`} />
       <div className="space-y-4 p-4 md:p-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {Object.entries(buckets).map(([k, v]) => (

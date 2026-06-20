@@ -147,6 +147,36 @@ export function DashboardPage() {
             ))}
           </div>
         </div>
+
+        <div>
+          <h2 className="mb-3 font-bold">Ventas recientes</h2>
+          <Card className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Ruta</TableHead>
+                  <TableHead>Pago</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(data?.ventasRecientes ?? []).map((v: any) => (
+                  <TableRow key={v.id}>
+                    <TableCell className="whitespace-nowrap text-xs">{formatDateTime(v.fecha)}</TableCell>
+                    <TableCell className="font-medium">{v.clientes?.nombre ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{v.rutas?.nombre ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant={v.metodo_pago === "credito" ? "outline" : "secondary"}>{v.metodo_pago}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-bold">{formatCRC(v.total)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </div>
       </div>
     </div>
   );

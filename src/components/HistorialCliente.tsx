@@ -61,9 +61,18 @@ export function HistorialCliente({
     }
   }
 
-  function enviarWhatsApp() {
-    const url = `https://wa.me/?text=${encodeURIComponent(buildMensaje())}`;
-    window.open(url, "_blank");
+  async function enviarWhatsApp() {
+    const texto = buildMensaje();
+    try {
+      await navigator.clipboard.writeText(texto);
+    } catch {
+      // ignore clipboard errors
+    }
+    const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) {
+      toast.success("Mensaje copiado. Pégalo en WhatsApp.");
+    }
   }
 
 

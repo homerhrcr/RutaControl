@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/menu")({
 const ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/productos", label: "Productos", icon: Package },
-  { to: "/cobranza", label: "Cobros y Crédito", icon: CreditCard },
+  { to: "/cobranza", label: "Crédito y Cobros", icon: CreditCard },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
 ] as const;
 

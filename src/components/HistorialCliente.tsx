@@ -158,6 +158,14 @@ export function HistorialCliente({
                   </div>
                 ))}
               </div>
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" className="flex-1 gap-1.5" onClick={enviarWhatsApp}>
+                  <MessageCircle className="h-4 w-4" /> Enviar por WhatsApp
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={copiarMensaje}>
+                  <Copy className="h-4 w-4" /> Copiar
+                </Button>
+              </div>
             </div>
           )}
 

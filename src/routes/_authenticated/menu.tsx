@@ -9,6 +9,7 @@ import {
   Package,
   CreditCard,
   BarChart3,
+  UserCog,
   Moon,
   Sun,
   LogOut,

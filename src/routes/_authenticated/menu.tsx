@@ -10,6 +10,7 @@ import {
   CreditCard,
   BarChart3,
   UserCog,
+  ScrollText,
   Moon,
   Sun,
   LogOut,

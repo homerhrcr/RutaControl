@@ -9,6 +9,7 @@ import {
   Package,
   CreditCard,
   BarChart3,
+  UserCog,
   Moon,
   Sun,
   LogOut,
@@ -24,10 +25,11 @@ const ITEMS = [
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/cobranza", label: "Crédito y Cobros", icon: CreditCard },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
+  { to: "/usuarios", label: "Usuarios", icon: UserCog, adminOnly: true },
 ] as const;
 
 function MenuPage() {
-  const { nombre, roles, signOut } = useAuth();
+  const { nombre, roles, isAdmin, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
 
@@ -50,7 +52,7 @@ function MenuPage() {
         </Card>
 
         <Card className="divide-y overflow-hidden p-0">
-          {ITEMS.map((item) => (
+          {ITEMS.filter((item) => !("adminOnly" in item) || isAdmin).map((item) => (
             <Link
               key={item.to}
               to={item.to}

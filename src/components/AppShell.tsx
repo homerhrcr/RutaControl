@@ -18,7 +18,7 @@ import {
   Sun,
   LogOut,
   Milk,
-  
+  UserCog,
   Wifi,
   WifiOff,
 } from "lucide-react";
@@ -38,10 +38,11 @@ const NAV: NavItem[] = [
   { to: "/cobranza", label: "Crédito y Cobros", icon: HandCoins, mobile: true },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
+  { to: "/usuarios", label: "Usuarios", icon: UserCog, adminOnly: true },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { nombre, roles, signOut } = useAuth();
+  const { nombre, roles, isAdmin, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -53,7 +54,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   const roleLabel = roles[0] ? roles[0].charAt(0).toUpperCase() + roles[0].slice(1) : "Usuario";
-  const mobileItems = NAV.filter((n) => n.mobile);
+  const navItems = NAV.filter((n) => !n.adminOnly || isAdmin);
+  const mobileItems = navItems.filter((n) => n.mobile);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -69,7 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-2">
-          {NAV.map((item) => {
+          {navItems.map((item) => {
             const active = pathname === item.to;
             return (
               <Link

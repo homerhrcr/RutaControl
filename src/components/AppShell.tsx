@@ -54,7 +54,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   const roleLabel = roles[0] ? roles[0].charAt(0).toUpperCase() + roles[0].slice(1) : "Usuario";
-  const mobileItems = NAV.filter((n) => n.mobile);
+  const navItems = NAV.filter((n) => !n.adminOnly || isAdmin);
+  const mobileItems = navItems.filter((n) => n.mobile);
 
   return (
     <div className="flex min-h-screen bg-background">

@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
-import { formatCRC } from "@/lib/format";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { formatCRC, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   BarChart,

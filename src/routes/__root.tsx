@@ -14,8 +14,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth";
 import { ThemeProvider } from "../lib/theme";
 import { Toaster } from "../components/ui/sonner";
-import { enableQueryPersistence } from "../lib/query-persist";
-import { registerServiceWorker } from "../lib/sw-register";
 
 function NotFoundComponent() {
   return (
@@ -85,20 +83,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Lácteos La Rivera — Sistema de Ventas y Gestión" },
       { name: "description", content: "Sistema de ventas y gestión comercial de Lácteos La Rivera." },
       { name: "author", content: "Lácteos La Rivera" },
-      { property: "og:title", content: "Lácteos La Rivera" },
+      { property: "og:title", content: "Lácteos La Rivera — Sistema de Ventas y Gestión" },
       { property: "og:description", content: "Sistema de ventas y gestión comercial de Lácteos La Rivera." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@LacteosLaRivera" },
-      { name: "theme-color", content: "#0f766e" },
+      { name: "twitter:title", content: "Lácteos La Rivera — Sistema de Ventas y Gestión" },
+      { name: "twitter:description", content: "Sistema de ventas y gestión comercial de Lácteos La Rivera." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/QbqeHSlEaRPLvXWaYCkUp7EWfBh1/social-images/social-1781917349803-Nuevo_Logo_2026_Lacteos_la_Rivera.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/QbqeHSlEaRPLvXWaYCkUp7EWfBh1/social-images/social-1781917349803-Nuevo_Logo_2026_Lacteos_la_Rivera.webp" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/pwa-icon-192.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -123,13 +122,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
-  useEffect(() => {
-    enableQueryPersistence(queryClient);
-    registerServiceWorker();
-  }, [queryClient]);
-
-
 
   return (
     <QueryClientProvider client={queryClient}>

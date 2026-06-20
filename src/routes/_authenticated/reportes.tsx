@@ -144,9 +144,6 @@ function ReportesPage() {
               </Button>
             ))}
           </div>
-          <Button variant="outline" size="sm" onClick={exportCSV}>
-            <Download className="mr-2 h-4 w-4" /> Exportar CSV
-          </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

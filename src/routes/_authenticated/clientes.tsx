@@ -49,6 +49,7 @@ const empty = {
 };
 
 function ClientesPage() {
+  const { isAdmin } = useAuth();
   const { data: clientes } = useClientes();
   const { data: rutas } = useRutas();
   const invalidate = useInvalidate();
@@ -58,6 +59,21 @@ function ClientesPage() {
   const [form, setForm] = useState(empty);
   const [busy, setBusy] = useState(false);
   const [histCliente, setHistCliente] = useState<{ id: string; nombre: string } | null>(null);
+  const [delCliente, setDelCliente] = useState<{ id: string; nombre: string } | null>(null);
+
+  async function confirmarEliminar() {
+    if (!delCliente) return;
+    try {
+      await eliminarCliente(delCliente.id);
+      toast.success("Cliente eliminado");
+      invalidate(["clientes"]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al eliminar");
+    } finally {
+      setDelCliente(null);
+    }
+  }
+
 
   const filtered = useMemo(
     () => (clientes ?? []).filter((c) => c.nombre.toLowerCase().includes(search.toLowerCase())),

@@ -287,8 +287,20 @@ export function HistorialCliente({
                     ) : (
                       <span />
                     )}
-                    <span className="font-black">{formatCRC(Number(v.total))}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black">{formatCRC(Number(v.total))}</span>
+                      {isAdmin && (
+                        <button
+                          onClick={() => setBorrar({ tipo: "venta", id: e.id })}
+                          className="grid h-7 w-7 place-items-center rounded-lg bg-destructive/15 text-destructive"
+                          title="Eliminar venta"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
+
                 </div>
               );
             })}

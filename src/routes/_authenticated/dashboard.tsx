@@ -79,7 +79,7 @@ export function DashboardPage() {
         clientes: clienteStats[r.id] ?? 0,
       }));
 
-      return { hoy, mes, creditoActivo, creditoVencido, topProductos, porRuta, rutasDetalle };
+      return { hoy, mes, creditoActivo, creditoVencido, topProductos, porRuta, rutasDetalle, ventasRecientes: ventasRecientes.data ?? [] };
     },
   });
 

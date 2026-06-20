@@ -18,7 +18,7 @@ import {
   Sun,
   LogOut,
   Milk,
-  
+  UserCog,
   Wifi,
   WifiOff,
 } from "lucide-react";

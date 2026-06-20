@@ -156,52 +156,6 @@ function ReportesPage() {
           <Stat icon={Users} label="Clientes atendidos" value={String(data?.clientesAtendidos ?? 0)} tone="primary" />
         </div>
 
-        <Card className="p-4">
-          <h2 className="mb-3 font-bold">Tendencia de ventas</h2>
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={data?.serie ?? []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="fecha" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-              <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-              <Tooltip
-                formatter={(v: number) => formatCRC(v)}
-                contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }}
-              />
-              <Line type="monotone" dataKey="total" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
-
-        <Card className="p-4">
-          <h2 className="mb-3 font-bold">Productos más vendidos</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 font-medium">Producto</th>
-                  <th className="py-2 text-right font-medium">Cantidad</th>
-                  <th className="py-2 text-right font-medium">Monto</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data?.topProductos ?? []).map((p) => (
-                  <tr key={p.nombre} className="border-b last:border-0">
-                    <td className="py-2">{p.nombre}</td>
-                    <td className="py-2 text-right tabular-nums">{p.cantidad}</td>
-                    <td className="py-2 text-right font-semibold tabular-nums">{formatCRC(p.monto)}</td>
-                  </tr>
-                ))}
-                {(data?.topProductos.length ?? 0) === 0 && (
-                  <tr>
-                    <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                      Sin datos en el período
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
       </div>
     </div>
   );

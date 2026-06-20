@@ -55,7 +55,7 @@ export default defineConfig({
               },
             },
             {
-              urlPattern: ({ url }) => url.origin === self.location.origin,
+              urlPattern: ({ url }) => url.origin === globalThis.location.origin,
               handler: "CacheFirst",
               options: {
                 cacheName: "lr-assets",

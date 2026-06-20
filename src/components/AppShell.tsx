@@ -38,6 +38,7 @@ const NAV: NavItem[] = [
   { to: "/cobranza", label: "Crédito y Cobros", icon: HandCoins, mobile: true },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
+  { to: "/usuarios", label: "Usuarios", icon: UserCog, adminOnly: true },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

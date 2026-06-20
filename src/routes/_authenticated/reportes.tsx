@@ -7,16 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
-import { Download, TrendingUp, Receipt, Banknote, Users } from "lucide-react";
+import { TrendingUp, Receipt, Banknote, Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reportes")({
   component: ReportesPage,

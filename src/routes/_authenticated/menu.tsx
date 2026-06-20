@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   Package,
-  ShoppingCart,
   CreditCard,
   BarChart3,
   Moon,
@@ -23,7 +22,6 @@ export const Route = createFileRoute("/_authenticated/menu")({
 const ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/productos", label: "Productos", icon: Package },
-  { to: "/ventas", label: "Ventas", icon: ShoppingCart },
   { to: "/cobranza", label: "Cobros y Crédito", icon: CreditCard },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
 ] as const;

@@ -11,7 +11,6 @@ import {
   Truck,
   Users,
   Package,
-  ShoppingCart,
   CreditCard,
   HandCoins,
   BarChart3,
@@ -38,7 +37,6 @@ const NAV: NavItem[] = [
   { to: "/cobranza", label: "Cobros y Crédito", icon: HandCoins, mobile: true },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/productos", label: "Productos", icon: Package },
-  { to: "/ventas", label: "Ventas", icon: ShoppingCart },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
 ];
 

@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
-import { formatCRC } from "@/lib/format";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { formatCRC, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   BarChart,
@@ -28,13 +30,14 @@ export function DashboardPage() {
       const startDay = new Date(now); startDay.setHours(0, 0, 0, 0);
       const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const [ventas, creditos, detalle, rutas, ventasAll, clientes] = await Promise.all([
+      const [ventas, creditos, detalle, rutas, ventasAll, clientes, ventasRecientes] = await Promise.all([
         supabase.from("ventas").select("total, fecha, ruta_id").gte("fecha", startMonth.toISOString()),
         supabase.from("creditos").select("saldo, estado, fecha_limite").gt("saldo", 0),
         supabase.from("detalle_ventas").select("nombre_producto, cantidad"),
         supabase.from("rutas").select("id, nombre"),
         supabase.from("ventas").select("ruta_id, total"),
         supabase.from("clientes").select("ruta_id"),
+        supabase.from("ventas").select("*, clientes(nombre), rutas(nombre)").order("fecha", { ascending: false }).limit(100),
       ]);
 
       const v = ventas.data ?? [];
@@ -76,7 +79,7 @@ export function DashboardPage() {
         clientes: clienteStats[r.id] ?? 0,
       }));
 
-      return { hoy, mes, creditoActivo, creditoVencido, topProductos, porRuta, rutasDetalle };
+      return { hoy, mes, creditoActivo, creditoVencido, topProductos, porRuta, rutasDetalle, ventasRecientes: ventasRecientes.data ?? [] };
     },
   });
 
@@ -85,8 +88,8 @@ export function DashboardPage() {
       <PageHeader title="Dashboard Gerencial" subtitle="Resumen del mes" />
       <div className="space-y-4 p-4 md:p-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Stat icon={Wallet} label="Ventas hoy" value={formatCRC(data?.hoy ?? 0)} to="/ventas" />
-          <Stat icon={TrendingUp} label="Ventas mes" value={formatCRC(data?.mes ?? 0)} tone="accent" to="/ventas" />
+          <Stat icon={Wallet} label="Ventas hoy" value={formatCRC(data?.hoy ?? 0)} to="/dashboard" />
+          <Stat icon={TrendingUp} label="Ventas mes" value={formatCRC(data?.mes ?? 0)} tone="accent" to="/dashboard" />
           <Stat icon={CreditCard} label="Crédito activo" value={formatCRC(data?.creditoActivo ?? 0)} tone="warning" to="/cobranza" />
           <Stat icon={AlertTriangle} label="Crédito vencido" value={formatCRC(data?.creditoVencido ?? 0)} tone="destructive" to="/cobranza" />
         </div>
@@ -143,6 +146,36 @@ export function DashboardPage() {
               </Card>
             ))}
           </div>
+        </div>
+
+        <div>
+          <h2 className="mb-3 font-bold">Ventas recientes</h2>
+          <Card className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Ruta</TableHead>
+                  <TableHead>Pago</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(data?.ventasRecientes ?? []).map((v: any) => (
+                  <TableRow key={v.id}>
+                    <TableCell className="whitespace-nowrap text-xs">{formatDateTime(v.fecha)}</TableCell>
+                    <TableCell className="font-medium">{v.clientes?.nombre ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{v.rutas?.nombre ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant={v.metodo_pago === "credito" ? "outline" : "secondary"}>{v.metodo_pago}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-bold">{formatCRC(v.total)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
         </div>
       </div>
     </div>

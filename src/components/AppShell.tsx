@@ -19,6 +19,7 @@ import {
   LogOut,
   Milk,
   UserCog,
+  ScrollText,
   Wifi,
   WifiOff,
 } from "lucide-react";

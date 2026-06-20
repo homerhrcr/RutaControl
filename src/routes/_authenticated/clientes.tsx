@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useClientes, useRutas, useInvalidate } from "@/lib/data";
+import { useClientes, useRutas, useInvalidate, eliminarCliente } from "@/lib/data";
+import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Search, MapPin, Phone, Crosshair, MessageCircle, History } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Crosshair, MessageCircle, History, Trash2 } from "lucide-react";
 import { HistorialCliente } from "@/components/HistorialCliente";
+
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,

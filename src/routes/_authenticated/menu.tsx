@@ -52,7 +52,7 @@ function MenuPage() {
         </Card>
 
         <Card className="divide-y overflow-hidden p-0">
-          {ITEMS.map((item) => (
+          {ITEMS.filter((item) => !("adminOnly" in item) || isAdmin).map((item) => (
             <Link
               key={item.to}
               to={item.to}

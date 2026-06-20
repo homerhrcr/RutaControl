@@ -1,11 +1,29 @@
 import { useMemo, useState } from "react";
-import { useVentasCliente, useAbonosCliente, useCreditosClienteDetalle } from "@/lib/data";
+import {
+  useVentasCliente,
+  useAbonosCliente,
+  useCreditosClienteDetalle,
+  useInvalidate,
+  eliminarVenta,
+  eliminarAbono,
+} from "@/lib/data";
+import { useAuth } from "@/lib/auth";
 import { formatCRC } from "@/lib/format";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle } from "lucide-react";
+import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Evento =

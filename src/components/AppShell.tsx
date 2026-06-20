@@ -11,7 +11,6 @@ import {
   Truck,
   Users,
   Package,
-  ShoppingCart,
   CreditCard,
   HandCoins,
   BarChart3,

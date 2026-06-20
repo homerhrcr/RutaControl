@@ -316,6 +316,31 @@ export function HistorialCliente({
           </span>
         </div>
       </DialogContent>
+
+      <AlertDialog open={!!borrar} onOpenChange={(o) => !o && setBorrar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {borrar?.tipo === "venta" ? "¿Eliminar venta?" : "¿Eliminar abono?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {borrar?.tipo === "venta"
+                ? "Se eliminará la venta y se restaurará el inventario. Esta acción no se puede deshacer."
+                : "Se eliminará el abono y se restaurará el saldo del crédito. Esta acción no se puede deshacer."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmarBorrar}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
+

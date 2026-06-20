@@ -4,7 +4,9 @@ import { formatCRC } from "@/lib/format";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Banknote, CreditCard, HandCoins, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle } from "lucide-react";
+import { toast } from "sonner";
 
 type Evento =
   | { tipo: "venta"; id: string; fecha: string; venta: any }
@@ -26,6 +28,45 @@ export function HistorialCliente({
   const [hasta, setHasta] = useState("");
 
   const totalPendiente = (pendientes ?? []).reduce((s, c) => s + Number(c.saldo ?? 0), 0);
+
+  function buildMensaje() {
+    const lineas: string[] = [];
+    lineas.push(`Hola ${cliente?.nombre ?? ""}, este es tu estado de cuenta:`);
+    lineas.push("");
+    lineas.push("*Pendiente de pago*");
+    for (const c of pendientes ?? []) {
+      const fecha = c.ventas?.fecha
+        ? new Date(c.ventas.fecha).toLocaleDateString("es-CR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "—";
+      lineas.push(`${fecha} — Saldo ${formatCRC(Number(c.saldo))}`);
+      for (const d of c.ventas?.detalle_ventas ?? []) {
+        lineas.push(`  • ${Number(d.cantidad)}× ${d.nombre_producto}: ${formatCRC(Number(d.total_linea))}`);
+      }
+    }
+    lineas.push("");
+    lineas.push(`*Total pendiente: ${formatCRC(totalPendiente)}*`);
+    return lineas.join("\n");
+  }
+
+  async function copiarMensaje() {
+    try {
+      await navigator.clipboard.writeText(buildMensaje());
+      toast.success("Estado de cuenta copiado");
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  }
+
+  function enviarWhatsApp() {
+    const url = `https://wa.me/?text=${encodeURIComponent(buildMensaje())}`;
+    window.open(url, "_blank");
+  }
+
+
 
   const eventos = useMemo<Evento[]>(() => {
     const all: Evento[] = [
@@ -116,6 +157,14 @@ export function HistorialCliente({
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" className="flex-1 gap-1.5" onClick={enviarWhatsApp}>
+                  <MessageCircle className="h-4 w-4" /> Enviar por WhatsApp
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={copiarMensaje}>
+                  <Copy className="h-4 w-4" /> Copiar
+                </Button>
               </div>
             </div>
           )}

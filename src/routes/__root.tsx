@@ -14,6 +14,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth";
 import { ThemeProvider } from "../lib/theme";
 import { Toaster } from "../components/ui/sonner";
+import { enableQueryPersistence } from "../lib/query-persist";
+import { registerServiceWorker } from "../lib/sw-register";
 
 function NotFoundComponent() {
   return (

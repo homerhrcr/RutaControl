@@ -39,11 +39,37 @@ export function HistorialCliente({
   open: boolean;
   onClose: () => void;
 }) {
+  const { isAdmin } = useAuth();
+  const invalidate = useInvalidate();
   const { data: ventas, isLoading: lv } = useVentasCliente(cliente?.id, 100);
   const { data: abonos, isLoading: la } = useAbonosCliente(cliente?.id, 100);
   const { data: pendientes } = useCreditosClienteDetalle(cliente?.id);
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
+  const [borrar, setBorrar] = useState<
+    { tipo: "venta" | "abono"; id: string } | null
+  >(null);
+
+  async function confirmarBorrar() {
+    if (!borrar) return;
+    try {
+      if (borrar.tipo === "venta") await eliminarVenta(borrar.id);
+      else await eliminarAbono(borrar.id);
+      toast.success(borrar.tipo === "venta" ? "Venta eliminada" : "Abono eliminado");
+      invalidate([
+        "ventas-cliente",
+        "abonos-cliente",
+        "creditos-cliente",
+        "creditos-cliente-detalle",
+        "creditos-pendientes",
+        "clientes",
+      ]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al eliminar");
+    } finally {
+      setBorrar(null);
+    }
+  }
 
   const totalPendiente = (pendientes ?? []).reduce((s, c) => s + Number(c.saldo ?? 0), 0);
 

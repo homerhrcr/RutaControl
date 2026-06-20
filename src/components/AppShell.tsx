@@ -19,6 +19,7 @@ import {
   LogOut,
   Milk,
   UserCog,
+  ScrollText,
   Wifi,
   WifiOff,
 } from "lucide-react";
@@ -39,6 +40,8 @@ const NAV: NavItem[] = [
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
   { to: "/usuarios", label: "Usuarios", icon: UserCog, adminOnly: true },
+  { to: "/auditoria", label: "Auditoría", icon: ScrollText, adminOnly: true },
+
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

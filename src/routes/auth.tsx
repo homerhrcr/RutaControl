@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import logo from "@/assets/logo-la-rivera.png.asset.json";
 
@@ -25,7 +24,6 @@ function AuthPage() {
   const { user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [nombre, setNombre] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -42,20 +40,6 @@ function AuthPage() {
     navigate({ to: "/ruta" });
   }
 
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { nombre }, emailRedirectTo: window.location.origin },
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Cuenta creada");
-    navigate({ to: "/ruta" });
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-primary/10 to-background px-4">
       <div className="w-full max-w-sm">
@@ -67,49 +51,22 @@ function AuthPage() {
           <p className="text-sm text-muted-foreground">Sistema de Ventas y Gestión</p>
         </div>
         <Card className="p-5">
-          <Tabs defaultValue="login">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Ingresar</TabsTrigger>
-              <TabsTrigger value="signup">Registrarse</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">Correo</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="pass">Contraseña</Label>
-                  <Input id="pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                </div>
-                <Button type="submit" className="w-full" size="lg" disabled={busy}>
-                  {busy ? "Ingresando…" : "Ingresar"}
-                </Button>
-              </form>
-            </TabsContent>
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="nombre">Nombre completo</Label>
-                  <Input id="nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="email2">Correo</Label>
-                  <Input id="email2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="pass2">Contraseña</Label>
-                  <Input id="pass2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-                </div>
-                <Button type="submit" className="w-full" size="lg" disabled={busy}>
-                  {busy ? "Creando…" : "Crear cuenta"}
-                </Button>
-                <p className="text-center text-xs text-muted-foreground">
-                  El primer usuario registrado será Administrador.
-                </p>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleLogin} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Correo</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="pass">Contraseña</Label>
+              <Input id="pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <Button type="submit" className="w-full" size="lg" disabled={busy}>
+              {busy ? "Ingresando…" : "Ingresar"}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              Las cuentas son creadas por un administrador desde el panel de Usuarios.
+            </p>
+          </form>
         </Card>
       </div>
     </div>

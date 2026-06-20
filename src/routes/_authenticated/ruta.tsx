@@ -82,7 +82,7 @@ export function RutaPage() {
 
   return (
     <div>
-      <PageHeader title="Ruta del día" subtitle={today ? `Hoy: ${today}` : `Vendedor: ${nombre}`} />
+      <PageHeader title="Iniciar Ruta" subtitle={today ? `Hoy: ${today}` : `Vendedor: ${nombre}`} />
 
       <div className="space-y-4 p-4 md:p-6">
         {/* resumen */}

@@ -7,16 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
-import { Download, TrendingUp, Receipt, Banknote, Users } from "lucide-react";
+import { TrendingUp, Receipt, Banknote, Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reportes")({
   component: ReportesPage,
@@ -41,7 +32,7 @@ function ReportesPage() {
       start.setHours(0, 0, 0, 0);
       start.setDate(start.getDate() - (days - 1));
 
-      const [ventasRes, abonosRes, detalleRes] = await Promise.all([
+      const [ventasRes, abonosRes] = await Promise.all([
         supabase
           .from("ventas")
           .select("total, fecha, metodo_pago, cliente_id")
@@ -51,9 +42,6 @@ function ReportesPage() {
           .from("abonos")
           .select("monto, fecha")
           .gte("fecha", start.toISOString()),
-        supabase
-          .from("detalle_ventas")
-          .select("nombre_producto, cantidad, total_linea, venta_id"),
       ]);
 
       const ventas = ventasRes.data ?? [];
@@ -67,65 +55,18 @@ function ReportesPage() {
       const totalCobrado = abonos.reduce((s, a) => s + Number(a.monto), 0);
       const clientesAtendidos = new Set(ventas.map((v) => v.cliente_id)).size;
 
-      // Daily series
-      const dayMap: Record<string, number> = {};
-      for (let i = 0; i < days; i++) {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        dayMap[d.toISOString().slice(0, 10)] = 0;
-      }
-      for (const v of ventas) {
-        const k = new Date(v.fecha).toISOString().slice(0, 10);
-        if (k in dayMap) dayMap[k] += Number(v.total);
-      }
-      const serie = Object.entries(dayMap).map(([fecha, total]) => ({
-        fecha: fecha.slice(5),
-        total,
-      }));
-
-      // Top products
-      const prodMap: Record<string, { cantidad: number; monto: number }> = {};
-      for (const d of detalleRes.data ?? []) {
-        const p = (prodMap[d.nombre_producto] ??= { cantidad: 0, monto: 0 });
-        p.cantidad += Number(d.cantidad);
-        p.monto += Number(d.total_linea);
-      }
-      const topProductos = Object.entries(prodMap)
-        .map(([nombre, v]) => ({ nombre, ...v }))
-        .sort((a, b) => b.monto - a.monto)
-        .slice(0, 10);
-
       return {
         totalVentas,
         totalContado,
         totalCredito,
         totalCobrado,
         clientesAtendidos,
-        serie,
-        topProductos,
         ventas,
       };
     },
   });
 
-  function exportCSV() {
-    const rows = [
-      ["Producto", "Cantidad", "Monto"],
-      ...(data?.topProductos ?? []).map((p) => [
-        p.nombre,
-        String(p.cantidad),
-        String(p.monto),
-      ]),
-    ];
-    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `reporte-productos-${range}d.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+
 
   return (
     <div>
@@ -144,9 +85,6 @@ function ReportesPage() {
               </Button>
             ))}
           </div>
-          <Button variant="outline" size="sm" onClick={exportCSV}>
-            <Download className="mr-2 h-4 w-4" /> Exportar CSV
-          </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -156,52 +94,6 @@ function ReportesPage() {
           <Stat icon={Users} label="Clientes atendidos" value={String(data?.clientesAtendidos ?? 0)} tone="primary" />
         </div>
 
-        <Card className="p-4">
-          <h2 className="mb-3 font-bold">Tendencia de ventas</h2>
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={data?.serie ?? []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="fecha" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-              <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-              <Tooltip
-                formatter={(v: number) => formatCRC(v)}
-                contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }}
-              />
-              <Line type="monotone" dataKey="total" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
-
-        <Card className="p-4">
-          <h2 className="mb-3 font-bold">Productos más vendidos</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 font-medium">Producto</th>
-                  <th className="py-2 text-right font-medium">Cantidad</th>
-                  <th className="py-2 text-right font-medium">Monto</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data?.topProductos ?? []).map((p) => (
-                  <tr key={p.nombre} className="border-b last:border-0">
-                    <td className="py-2">{p.nombre}</td>
-                    <td className="py-2 text-right tabular-nums">{p.cantidad}</td>
-                    <td className="py-2 text-right font-semibold tabular-nums">{formatCRC(p.monto)}</td>
-                  </tr>
-                ))}
-                {(data?.topProductos.length ?? 0) === 0 && (
-                  <tr>
-                    <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                      Sin datos en el período
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
       </div>
     </div>
   );

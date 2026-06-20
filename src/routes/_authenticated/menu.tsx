@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   Package,
-  ShoppingCart,
   CreditCard,
   BarChart3,
   Moon,

@@ -4,7 +4,9 @@ import { formatCRC } from "@/lib/format";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Banknote, CreditCard, HandCoins, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle } from "lucide-react";
+import { toast } from "sonner";
 
 type Evento =
   | { tipo: "venta"; id: string; fecha: string; venta: any }

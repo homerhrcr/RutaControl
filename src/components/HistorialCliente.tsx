@@ -240,11 +240,23 @@ export function HistorialCliente({
                       <span className="flex items-center gap-1.5 text-sm font-semibold">
                         <HandCoins className="h-4 w-4 text-accent" /> Abono · {fechaTxt}
                       </span>
-                      <span className="font-black text-accent">{formatCRC(e.monto)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-accent">{formatCRC(e.monto)}</span>
+                        {isAdmin && (
+                          <button
+                            onClick={() => setBorrar({ tipo: "abono", id: e.id })}
+                            className="grid h-7 w-7 place-items-center rounded-lg bg-destructive/15 text-destructive"
+                            title="Eliminar abono"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
               }
+
               const v = e.venta;
               return (
                 <div key={`v-${e.id}`} className="rounded-xl border bg-card p-3">

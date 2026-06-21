@@ -52,6 +52,17 @@ export function ProductosPage() {
     [productos],
   );
 
+  const grupos = useMemo(() => {
+    const map = new Map<string, { nombre: string; items: typeof filtered }>();
+    for (const p of filtered) {
+      const nombre = (p as any).categorias?.nombre ?? "Sin categoría";
+      const key = p.categoria_id ?? "__none__";
+      if (!map.has(key)) map.set(key, { nombre, items: [] });
+      map.get(key)!.items.push(p);
+    }
+    return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  }, [filtered]);
+
   function openNew() { setForm(empty); setEditId(null); setOpen(true); }
   function openEdit(p: any) {
     setForm({ codigo: p.codigo, nombre: p.nombre, categoria_id: p.categoria_id ?? "", precio: Number(p.precio), costo: Number(p.costo), existencia: Number(p.existencia), existencia_minima: Number(p.existencia_minima), activo: p.activo });

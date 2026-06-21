@@ -52,6 +52,17 @@ export function ProductosPage() {
     [productos],
   );
 
+  const grupos = useMemo(() => {
+    const map = new Map<string, { nombre: string; items: typeof filtered }>();
+    for (const p of filtered) {
+      const nombre = (p as any).categorias?.nombre ?? "Sin categoría";
+      const key = p.categoria_id ?? "__none__";
+      if (!map.has(key)) map.set(key, { nombre, items: [] });
+      map.get(key)!.items.push(p);
+    }
+    return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  }, [filtered]);
+
   function openNew() { setForm(empty); setEditId(null); setOpen(true); }
   function openEdit(p: any) {
     setForm({ codigo: p.codigo, nombre: p.nombre, categoria_id: p.categoria_id ?? "", precio: Number(p.precio), costo: Number(p.costo), existencia: Number(p.existencia), existencia_minima: Number(p.existencia_minima), activo: p.activo });
@@ -89,24 +100,34 @@ export function ProductosPage() {
             Stock bajo ({bajosCount})
           </Button>
         </div>
-        <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p) => (
-            <Card key={p.id} className="cursor-pointer p-3" onClick={() => openEdit(p)}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">{p.nombre}</p>
-                  <p className="text-xs text-muted-foreground">{p.codigo} · {(p as any).categorias?.nombre ?? "—"}</p>
-                </div>
-                {!p.activo && <Badge variant="secondary">Inactivo</Badge>}
+        <div className="space-y-6">
+          {grupos.map((g) => (
+            <div key={g.nombre}>
+              <div className="mb-2 flex items-center gap-2">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">{g.nombre}</h2>
+                <Badge variant="secondary">{g.items.length}</Badge>
               </div>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-lg font-black text-primary">{formatCRC(p.precio)}</span>
-                <span className={`flex items-center gap-1 text-sm ${Number(p.existencia) <= Number(p.existencia_minima) ? "text-destructive" : "text-muted-foreground"}`}>
-                  {Number(p.existencia) <= Number(p.existencia_minima) && <AlertTriangle className="h-3.5 w-3.5" />}
-                  {Number(p.existencia)} u.
-                </span>
+              <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+                {g.items.map((p) => (
+                  <Card key={p.id} className="cursor-pointer p-3" onClick={() => openEdit(p)}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{p.nombre}</p>
+                        <p className="text-xs text-muted-foreground">{p.codigo}</p>
+                      </div>
+                      {!p.activo && <Badge variant="secondary">Inactivo</Badge>}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-lg font-black text-primary">{formatCRC(p.precio)}</span>
+                      <span className={`flex items-center gap-1 text-sm ${Number(p.existencia) <= Number(p.existencia_minima) ? "text-destructive" : "text-muted-foreground"}`}>
+                        {Number(p.existencia) <= Number(p.existencia_minima) && <AlertTriangle className="h-3.5 w-3.5" />}
+                        {Number(p.existencia)} u.
+                      </span>
+                    </div>
+                  </Card>
+                ))}
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       </div>

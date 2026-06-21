@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRutas } from "@/lib/data";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { TrendingUp, Receipt, Banknote, Users } from "lucide-react";
+import { toast } from "sonner";
+import { TrendingUp, Receipt, Banknote, Users, FileSpreadsheet } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reportes")({
   component: ReportesPage,
@@ -21,8 +24,20 @@ const RANGES: { key: RangeKey; label: string }[] = [
   { key: "90", label: "90 días" },
 ];
 
+type VentaRow = {
+  total: number;
+  fecha: string;
+  metodo_pago: string;
+  cliente_id: string;
+  clienteNombre: string;
+  rutaNombre: string;
+};
+
 function ReportesPage() {
   const [range, setRange] = useState<RangeKey>("30");
+  const [rutaFiltro, setRutaFiltro] = useState<string>("all");
+  const [exporting, setExporting] = useState(false);
+  const { data: rutas } = useRutas();
 
   const { data } = useQuery({
     queryKey: ["reportes", range],
@@ -35,38 +50,138 @@ function ReportesPage() {
       const [ventasRes, abonosRes] = await Promise.all([
         supabase
           .from("ventas")
-          .select("total, fecha, metodo_pago, cliente_id")
+          .select("total, fecha, metodo_pago, cliente_id, clientes(nombre, cliente_rutas(rutas(nombre)))")
           .gte("fecha", start.toISOString())
           .order("fecha", { ascending: true }),
-        supabase
-          .from("abonos")
-          .select("monto, fecha")
-          .gte("fecha", start.toISOString()),
+        supabase.from("abonos").select("monto, fecha").gte("fecha", start.toISOString()),
       ]);
 
-      const ventas = ventasRes.data ?? [];
       const abonos = abonosRes.data ?? [];
+      const ventas: VentaRow[] = (ventasRes.data ?? []).map((v: any) => ({
+        total: Number(v.total),
+        fecha: v.fecha,
+        metodo_pago: v.metodo_pago,
+        cliente_id: v.cliente_id,
+        clienteNombre: v.clientes?.nombre ?? "—",
+        rutaNombre: v.clientes?.cliente_rutas?.[0]?.rutas?.nombre ?? "Sin ruta",
+      }));
 
-      const totalVentas = ventas.reduce((s, v) => s + Number(v.total), 0);
-      const totalContado = ventas
-        .filter((v) => v.metodo_pago === "contado")
-        .reduce((s, v) => s + Number(v.total), 0);
+      const totalVentas = ventas.reduce((s, v) => s + v.total, 0);
+      const totalContado = ventas.filter((v) => v.metodo_pago === "contado").reduce((s, v) => s + v.total, 0);
       const totalCredito = totalVentas - totalContado;
       const totalCobrado = abonos.reduce((s, a) => s + Number(a.monto), 0);
       const clientesAtendidos = new Set(ventas.map((v) => v.cliente_id)).size;
 
-      return {
-        totalVentas,
-        totalContado,
-        totalCredito,
-        totalCobrado,
-        clientesAtendidos,
-        ventas,
-      };
+      return { totalVentas, totalContado, totalCredito, totalCobrado, clientesAtendidos, ventas };
     },
   });
 
+  const ventasFiltradas = useMemo(() => {
+    const v = data?.ventas ?? [];
+    return rutaFiltro === "all" ? v : v.filter((x) => x.rutaNombre === rutaFiltro);
+  }, [data, rutaFiltro]);
 
+  const resumenFiltrado = useMemo(() => {
+    const total = ventasFiltradas.reduce((s, v) => s + v.total, 0);
+    const contado = ventasFiltradas.filter((v) => v.metodo_pago === "contado").reduce((s, v) => s + v.total, 0);
+    return { total, contado, credito: total - contado, count: ventasFiltradas.length };
+  }, [ventasFiltradas]);
+
+  async function descargarExcel() {
+    if (!data?.ventas?.length) return toast.error("No hay ventas en el rango seleccionado");
+    setExporting(true);
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const wb = new ExcelJS.Workbook();
+      wb.creator = "Lácteos La Rivera";
+      wb.created = new Date();
+
+      const rangeLabel = RANGES.find((r) => r.key === range)?.label ?? "";
+
+      // group by ruta
+      const porRuta = new Map<string, VentaRow[]>();
+      for (const v of data.ventas) {
+        if (!porRuta.has(v.rutaNombre)) porRuta.set(v.rutaNombre, []);
+        porRuta.get(v.rutaNombre)!.push(v);
+      }
+
+      const buildSheet = (name: string, rows: VentaRow[], titulo: string) => {
+        const ws = wb.addWorksheet(name.slice(0, 31), {
+          pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.5, right: 0.5, top: 0.6, bottom: 0.6, header: 0.3, footer: 0.3 } },
+          headerFooter: { oddFooter: "Página &P de &N", oddHeader: "&LLácteos La Rivera&RReporte de Ventas" },
+        });
+        ws.columns = [
+          { width: 12 },
+          { width: 28 },
+          { width: 22 },
+          { width: 14 },
+          { width: 16 },
+        ];
+
+        ws.mergeCells("A1:E1");
+        const t = ws.getCell("A1");
+        t.value = "Lácteos La Rivera";
+        t.font = { bold: true, size: 16, color: { argb: "FF1F4E2C" } };
+        t.alignment = { horizontal: "center" };
+
+        ws.mergeCells("A2:E2");
+        const s = ws.getCell("A2");
+        s.value = `${titulo} · Últimos ${rangeLabel}`;
+        s.font = { size: 11, color: { argb: "FF555555" } };
+        s.alignment = { horizontal: "center" };
+
+        ws.addRow([]);
+        const header = ws.addRow(["Fecha", "Cliente", "Ruta", "Método", "Total"]);
+        header.eachCell((c) => {
+          c.font = { bold: true, color: { argb: "FFFFFFFF" } };
+          c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F4E2C" } };
+          c.alignment = { horizontal: "center", vertical: "middle" };
+          c.border = { bottom: { style: "thin", color: { argb: "FFCCCCCC" } } };
+        });
+
+        let total = 0;
+        for (const v of rows) {
+          total += v.total;
+          const r = ws.addRow([
+            new Date(v.fecha).toLocaleDateString("es-CR"),
+            v.clienteNombre,
+            v.rutaNombre,
+            v.metodo_pago === "contado" ? "Contado" : "Crédito",
+            v.total,
+          ]);
+          r.getCell(5).numFmt = '"₡"#,##0';
+          r.getCell(5).alignment = { horizontal: "right" };
+          r.eachCell((c) => (c.border = { bottom: { style: "hair", color: { argb: "FFEEEEEE" } } }));
+        }
+
+        const totalRow = ws.addRow(["", "", "", "TOTAL", total]);
+        totalRow.getCell(4).font = { bold: true };
+        totalRow.getCell(4).alignment = { horizontal: "right" };
+        totalRow.getCell(5).font = { bold: true };
+        totalRow.getCell(5).numFmt = '"₡"#,##0';
+        totalRow.getCell(5).alignment = { horizontal: "right" };
+
+        ws.views = [{ state: "frozen", ySplit: 4 }];
+      };
+
+      buildSheet("Ventas Globales", data.ventas, "Ventas Globales");
+      for (const [ruta, rows] of porRuta) buildSheet(ruta, rows, `Ruta: ${ruta}`);
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `reporte-ventas-${rangeLabel.replace(/\s/g, "")}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Reporte descargado");
+    } catch (e: any) {
+      toast.error("Error al generar el Excel: " + (e?.message ?? ""));
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div>
@@ -85,6 +200,10 @@ function ReportesPage() {
               </Button>
             ))}
           </div>
+          <Button onClick={descargarExcel} disabled={exporting} className="gap-1.5">
+            <FileSpreadsheet className="h-4 w-4" />
+            {exporting ? "Generando…" : "Descargar Excel"}
+          </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -94,7 +213,64 @@ function ReportesPage() {
           <Stat icon={Users} label="Clientes atendidos" value={String(data?.clientesAtendidos ?? 0)} tone="primary" />
         </div>
 
+        <Card className="p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-bold">Ventas por ruta</h2>
+            <Select value={rutaFiltro} onValueChange={setRutaFiltro}>
+              <SelectTrigger className="w-52"><SelectValue placeholder="Ruta" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las rutas</SelectItem>
+                {rutas?.map((r) => <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Mini label="Ventas" value={String(resumenFiltrado.count)} />
+            <Mini label="Total" value={formatCRC(resumenFiltrado.total)} />
+            <Mini label="Contado" value={formatCRC(resumenFiltrado.contado)} />
+            <Mini label="Crédito" value={formatCRC(resumenFiltrado.credito)} />
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground">
+                  <th className="py-2 pr-3 font-medium">Fecha</th>
+                  <th className="py-2 pr-3 font-medium">Cliente</th>
+                  <th className="py-2 pr-3 font-medium">Ruta</th>
+                  <th className="py-2 pr-3 font-medium">Método</th>
+                  <th className="py-2 pr-3 text-right font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ventasFiltradas.slice(0, 100).map((v, i) => (
+                  <tr key={i} className="border-b border-border/50">
+                    <td className="py-1.5 pr-3">{new Date(v.fecha).toLocaleDateString("es-CR")}</td>
+                    <td className="py-1.5 pr-3">{v.clienteNombre}</td>
+                    <td className="py-1.5 pr-3">{v.rutaNombre}</td>
+                    <td className="py-1.5 pr-3">{v.metodo_pago === "contado" ? "Contado" : "Crédito"}</td>
+                    <td className="py-1.5 pr-3 text-right font-medium">{formatCRC(v.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {ventasFiltradas.length > 100 && (
+              <p className="mt-2 text-xs text-muted-foreground">Mostrando 100 de {ventasFiltradas.length}. Descarga el Excel para ver todo.</p>
+            )}
+            {ventasFiltradas.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Sin ventas para esta selección.</p>}
+          </div>
+        </Card>
       </div>
+    </div>
+  );
+}
+
+function Mini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border p-2.5">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="truncate font-bold">{value}</p>
     </div>
   );
 }

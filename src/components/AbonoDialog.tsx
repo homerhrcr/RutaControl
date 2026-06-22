@@ -94,13 +94,21 @@ export function AbonoDialog({
           </div>
 
           {(creditos ?? []).length > 0 && (
-            <div className="space-y-1 text-xs text-muted-foreground">
-              {creditos!.map((c) => (
-                <div key={c.id} className="flex justify-between">
-                  <span>Crédito {formatDate(c.fecha)}</span>
-                  <span>{formatCRC(c.saldo)}</span>
-                </div>
-              ))}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Aplicar abono a</Label>
+              <Select value={destino} onValueChange={setDestino}>
+                <SelectTrigger className="h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Más antiguo primero (todos)</SelectItem>
+                  {creditos!.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      Día {formatDate(c.fecha)} · {formatCRC(c.saldo)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 

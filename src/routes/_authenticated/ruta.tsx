@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useRutas, useClientes, useInvalidate } from "@/lib/data";
+import { useRutas, useClientes, useInvalidate, guardarOrdenRuta } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickSale } from "@/components/QuickSale";
@@ -14,7 +14,23 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Search, Zap, HandCoins, MapPin, ShoppingBag, Wallet, Users, History } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Search,
+  Zap,
+  HandCoins,
+  MapPin,
+  ShoppingBag,
+  Wallet,
+  Users,
+  History,
+  ArrowUp,
+  ArrowDown,
+  ListOrdered,
+  Check,
+  Navigation,
+  CheckCircle2,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ruta")({
   component: RutaPage,
@@ -35,6 +51,9 @@ export function RutaPage() {
   const [saleClient, setSaleClient] = useState<any | null>(null);
   const [abonoClient, setAbonoClient] = useState<any | null>(null);
   const [histClient, setHistClient] = useState<any | null>(null);
+  const [ordenMode, setOrdenMode] = useState(false);
+  const [orderList, setOrderList] = useState<any[] | null>(null);
+  const [saving, setSaving] = useState(false);
   const invalidate = useInvalidate();
 
   const { data: clientes } = useClientes(rutaId === "all" ? undefined : rutaId);
@@ -48,6 +67,33 @@ export function RutaPage() {
       const map: Record<string, number> = {};
       for (const c of data) if (c.cliente_id) map[c.cliente_id] = (map[c.cliente_id] ?? 0) + Number(c.saldo);
       return map;
+    },
+  });
+
+  // clientes visitados hoy (ventas o abonos) — para sugerir el siguiente
+  const { data: visitadosHoy } = useQuery({
+    queryKey: ["visitados-hoy", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const [{ data: ventas }, { data: abonos }] = await Promise.all([
+        supabase.from("ventas").select("cliente_id, fecha").gte("fecha", start.toISOString()),
+        supabase.from("abonos").select("cliente_id, fecha").gte("fecha", start.toISOString()),
+      ]);
+      const set = new Set<string>();
+      let lastTime = 0;
+      let lastId = "";
+      for (const v of [...(ventas ?? []), ...(abonos ?? [])]) {
+        if (!v.cliente_id) continue;
+        set.add(v.cliente_id);
+        const t = new Date(v.fecha as string).getTime();
+        if (t > lastTime) {
+          lastTime = t;
+          lastId = v.cliente_id;
+        }
+      }
+      return { set, lastId };
     },
   });
 
@@ -71,13 +117,74 @@ export function RutaPage() {
   });
 
   const today = todayRouteName();
+
+  // orden de entrega del cliente dentro de la ruta seleccionada
+  function ordenDe(c: any): number {
+    const cr = (c.cliente_rutas ?? []).find((x: any) => x.ruta_id === rutaId) ?? (c.cliente_rutas ?? [])[0];
+    return cr?.orden ?? 9999;
+  }
+
+  // lista ordenada por orden de entrega (cuando hay ruta) o por nombre
+  const ordenados = useMemo(() => {
+    const arr = [...(clientes ?? [])];
+    if (rutaId !== "all") arr.sort((a, b) => ordenDe(a) - ordenDe(b));
+    return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientes, rutaId]);
+
   const filtered = useMemo(
-    () => (clientes ?? []).filter((c) => c.nombre.toLowerCase().includes(search.toLowerCase())),
-    [clientes, search],
+    () => ordenados.filter((c) => c.nombre.toLowerCase().includes(search.toLowerCase())),
+    [ordenados, search],
   );
 
+  // siguiente cliente sugerido: el primero (por orden) que no se ha visitado hoy
+  const siguienteId = useMemo(() => {
+    if (rutaId === "all") return "";
+    const visit = visitadosHoy?.set ?? new Set<string>();
+    const pendiente = ordenados.find((c) => !visit.has(c.id));
+    return pendiente?.id ?? "";
+  }, [ordenados, visitadosHoy, rutaId]);
+
   function onSaleDone() {
-    invalidate(["saldos-map", "resumen-dia", "ventas-cliente", "creditos-pendientes"]);
+    invalidate(["saldos-map", "resumen-dia", "visitados-hoy", "ventas-cliente", "creditos-pendientes"]);
+  }
+
+  function startOrden() {
+    setOrderList([...ordenados]);
+    setOrdenMode(true);
+  }
+
+  function moveItem(idx: number, dir: -1 | 1) {
+    setOrderList((prev) => {
+      if (!prev) return prev;
+      const next = [...prev];
+      const j = idx + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return next;
+    });
+  }
+
+  async function saveOrden() {
+    if (!orderList) return;
+    setSaving(true);
+    try {
+      const items = orderList
+        .map((c, i) => {
+          const cr = (c.cliente_rutas ?? []).find((x: any) => x.ruta_id === rutaId) ?? (c.cliente_rutas ?? [])[0];
+          return cr?.id ? { id: cr.id, orden: i + 1 } : null;
+        })
+        .filter(Boolean) as { id: string; orden: number }[];
+      await guardarOrdenRuta(items);
+      toast.success("Orden de entrega guardado");
+      setOrdenMode(false);
+      setOrderList(null);
+      invalidate(["clientes"]);
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo guardar el orden");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -95,7 +202,15 @@ export function RutaPage() {
 
         {/* route tabs */}
         <div className="flex flex-wrap gap-2">
-          <Button variant={rutaId === "all" ? "default" : "outline"} size="sm" onClick={() => setRutaId("all")}>
+          <Button
+            variant={rutaId === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setRutaId("all");
+              setOrdenMode(false);
+              setOrderList(null);
+            }}
+          >
             Todos
           </Button>
           {rutas?.map((r) => (
@@ -103,68 +218,169 @@ export function RutaPage() {
               key={r.id}
               variant={rutaId === r.id ? "default" : "outline"}
               size="sm"
-              onClick={() => setRutaId(r.id)}
+              onClick={() => {
+                setRutaId(r.id);
+                setOrdenMode(false);
+                setOrderList(null);
+              }}
             >
               {r.nombre}
             </Button>
           ))}
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar cliente…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
+        {/* control de orden de entrega (solo en una ruta) */}
+        {rutaId !== "all" && (
+          <div className="flex flex-wrap items-center gap-2">
+            {!ordenMode ? (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={startOrden}>
+                <ListOrdered className="h-4 w-4" /> Ordenar entrega
+              </Button>
+            ) : (
+              <>
+                <Button size="sm" className="gap-1.5" disabled={saving} onClick={saveOrden}>
+                  <Check className="h-4 w-4" /> Guardar orden
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={saving}
+                  onClick={() => {
+                    setOrdenMode(false);
+                    setOrderList(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <span className="text-xs text-muted-foreground">Usa las flechas para reordenar</span>
+              </>
+            )}
+          </div>
+        )}
 
-        <div className="space-y-2.5">
-          {filtered.map((c) => {
-            const saldo = saldos?.[c.id] ?? 0;
-            return (
-              <Card key={c.id} className="p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">{c.nombre}</p>
-                    <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3 shrink-0" /> {c.distrito || c.direccion || "Sin dirección"}
-                    </p>
-                    {saldo > 0 && (
-                      <Badge variant="outline" className="mt-1.5 border-destructive/40 text-destructive">
-                        Saldo: {formatCRC(saldo)}
-                      </Badge>
-                    )}
-                  </div>
-                  {(c as any).rutas?.nombre && (
-                    <Badge variant="secondary" className="shrink-0 text-[10px]">
-                      {(c as any).rutas.nombre.replace("Ruta ", "")}
-                    </Badge>
-                  )}
+        {/* siguiente cliente sugerido */}
+        {!ordenMode && rutaId !== "all" && siguienteId && (
+          <Card className="border-primary/40 bg-primary/5 p-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Navigation className="h-4 w-4 text-primary" />
+              <span className="font-medium">Siguiente entrega:</span>
+              <span className="font-bold">
+                {ordenados.find((c) => c.id === siguienteId)?.nombre}
+              </span>
+            </div>
+          </Card>
+        )}
+
+        {!ordenMode && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Buscar cliente…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+        )}
+
+        {/* modo ordenar */}
+        {ordenMode && orderList && (
+          <div className="space-y-2">
+            {orderList.map((c, idx) => (
+              <Card key={c.id} className="flex items-center gap-3 p-3">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+                  {idx + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{c.nombre}</p>
+                  <p className="truncate text-xs text-muted-foreground">{c.distrito || c.direccion || "Sin dirección"}</p>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Button className="h-11 gap-1.5" onClick={() => setSaleClient(c)}>
-                    <Zap className="h-4 w-4" /> Vender
-                  </Button>
-                  <Button
-                    variant={saldo > 0 ? "secondary" : "outline"}
-                    className={cn("h-11 gap-1.5", saldo === 0 && "opacity-60")}
-                    disabled={saldo === 0}
-                    onClick={() => setAbonoClient(c)}
-                  >
-                    <HandCoins className="h-4 w-4" /> Abonar
+                <div className="flex shrink-0 gap-1">
+                  <Button variant="outline" size="icon" className="h-9 w-9" disabled={idx === 0} onClick={() => moveItem(idx, -1)}>
+                    <ArrowUp className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
-                    className="col-span-2 h-11 gap-1.5"
-                    onClick={() => setHistClient(c)}
+                    size="icon"
+                    className="h-9 w-9"
+                    disabled={idx === orderList.length - 1}
+                    onClick={() => moveItem(idx, 1)}
                   >
-                    <History className="h-4 w-4" /> Historial
+                    <ArrowDown className="h-4 w-4" />
                   </Button>
                 </div>
               </Card>
-            );
-          })}
-          {filtered.length === 0 && (
-            <p className="py-10 text-center text-sm text-muted-foreground">No hay clientes en esta ruta.</p>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {!ordenMode && (
+          <div className="space-y-2.5">
+            {filtered.map((c, idx) => {
+              const saldo = saldos?.[c.id] ?? 0;
+              const visitado = visitadosHoy?.set?.has(c.id) ?? false;
+              const esSiguiente = c.id === siguienteId;
+              return (
+                <Card
+                  key={c.id}
+                  className={cn(
+                    "p-3",
+                    esSiguiente && "border-primary ring-1 ring-primary",
+                    visitado && "opacity-70",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-2">
+                      {rutaId !== "all" && (
+                        <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+                          {idx + 1}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 truncate font-semibold">
+                          {c.nombre}
+                          {visitado && <CheckCircle2 className="h-4 w-4 shrink-0 text-accent" />}
+                        </p>
+                        <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3 shrink-0" /> {c.distrito || c.direccion || "Sin dirección"}
+                        </p>
+                        {esSiguiente && (
+                          <Badge className="mt-1.5 gap-1">
+                            <Navigation className="h-3 w-3" /> Siguiente
+                          </Badge>
+                        )}
+                        {saldo > 0 && (
+                          <Badge variant="outline" className="mt-1.5 border-destructive/40 text-destructive">
+                            Saldo: {formatCRC(saldo)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {(c as any).rutas?.nombre && (
+                      <Badge variant="secondary" className="shrink-0 text-[10px]">
+                        {(c as any).rutas.nombre.replace("Ruta ", "")}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <Button className="h-11 gap-1.5" onClick={() => setSaleClient(c)}>
+                      <Zap className="h-4 w-4" /> Vender
+                    </Button>
+                    <Button
+                      variant={saldo > 0 ? "secondary" : "outline"}
+                      className={cn("h-11 gap-1.5", saldo === 0 && "opacity-60")}
+                      disabled={saldo === 0}
+                      onClick={() => setAbonoClient(c)}
+                    >
+                      <HandCoins className="h-4 w-4" /> Abonar
+                    </Button>
+                    <Button variant="outline" className="col-span-2 h-11 gap-1.5" onClick={() => setHistClient(c)}>
+                      <History className="h-4 w-4" /> Historial
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+            {filtered.length === 0 && (
+              <p className="py-10 text-center text-sm text-muted-foreground">No hay clientes en esta ruta.</p>
+            )}
+          </div>
+        )}
       </div>
 
       <QuickSale cliente={saleClient} open={!!saleClient} onClose={() => setSaleClient(null)} onDone={onSaleDone} />

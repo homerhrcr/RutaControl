@@ -41,8 +41,8 @@ export function useClientes(rutaId?: string) {
     queryKey: ["clientes", rutaId ?? "all"],
     queryFn: async () => {
       const select = rutaId
-        ? "*, cliente_rutas!inner(ruta_id, rutas(nombre))"
-        : "*, cliente_rutas(ruta_id, rutas(nombre))";
+        ? "*, cliente_rutas!inner(id, ruta_id, orden, rutas(nombre))"
+        : "*, cliente_rutas(id, ruta_id, orden, rutas(nombre))";
       let q = supabase.from("clientes").select(select).order("nombre");
       if (rutaId) q = q.eq("cliente_rutas.ruta_id", rutaId);
       const { data, error } = await q;
@@ -50,6 +50,17 @@ export function useClientes(rutaId?: string) {
       return data;
     },
   });
+}
+
+// Guarda el orden de entrega de los clientes en una ruta
+export async function guardarOrdenRuta(items: { id: string; orden: number }[]) {
+  for (const it of items) {
+    const { error } = await supabase
+      .from("cliente_rutas")
+      .update({ orden: it.orden })
+      .eq("id", it.id);
+    if (error) throw error;
+  }
 }
 
 export function useCliente(id?: string) {

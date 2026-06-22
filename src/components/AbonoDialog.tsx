@@ -4,7 +4,15 @@ import { useAuth } from "@/lib/auth";
 import { formatCRC, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { HandCoins } from "lucide-react";
 
@@ -22,12 +30,16 @@ export function AbonoDialog({
   const { user } = useAuth();
   const { data: creditos, refetch } = useCreditosCliente(cliente?.id);
   const [monto, setMonto] = useState<number>(0);
+  const [destino, setDestino] = useState<string>("todos");
   const [busy, setBusy] = useState(false);
 
   const saldoTotal = (creditos ?? []).reduce((s, c) => s + Number(c.saldo), 0);
 
   useEffect(() => {
-    if (open) setMonto(0);
+    if (open) {
+      setMonto(0);
+      setDestino("todos");
+    }
   }, [open]);
 
   async function abonar(montoAbono: number) {
@@ -36,8 +48,13 @@ export function AbonoDialog({
     setBusy(true);
     try {
       let restante = montoAbono;
-      // aplicar a créditos más antiguos primero
-      for (const c of creditos ?? []) {
+      // Si se eligió un día específico, aplicar solo a ese crédito.
+      // De lo contrario, aplicar a los créditos más antiguos primero.
+      const lista =
+        destino === "todos"
+          ? (creditos ?? [])
+          : (creditos ?? []).filter((c) => c.id === destino);
+      for (const c of lista) {
         if (restante <= 0) break;
         const aplicar = Math.min(restante, Number(c.saldo));
         await registrarAbono({
@@ -49,7 +66,8 @@ export function AbonoDialog({
         });
         restante -= aplicar;
       }
-      toast.success(`Abono registrado · ${formatCRC(montoAbono)}`);
+      const aplicado = montoAbono - restante;
+      toast.success(`Abono registrado · ${formatCRC(aplicado)}`);
       await refetch();
       onDone();
       onClose();
@@ -76,13 +94,21 @@ export function AbonoDialog({
           </div>
 
           {(creditos ?? []).length > 0 && (
-            <div className="space-y-1 text-xs text-muted-foreground">
-              {creditos!.map((c) => (
-                <div key={c.id} className="flex justify-between">
-                  <span>Crédito {formatDate(c.fecha)}</span>
-                  <span>{formatCRC(c.saldo)}</span>
-                </div>
-              ))}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Aplicar abono a</Label>
+              <Select value={destino} onValueChange={setDestino}>
+                <SelectTrigger className="h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Más antiguo primero (todos)</SelectItem>
+                  {creditos!.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      Día {formatDate(c.fecha)} · {formatCRC(c.saldo)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
@@ -99,7 +125,16 @@ export function AbonoDialog({
             <Button size="lg" className="h-12" disabled={busy} onClick={() => abonar(monto)}>
               Abonar
             </Button>
-            <Button size="lg" variant="secondary" className="h-12" disabled={busy} onClick={() => abonar(saldoTotal)}>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="h-12"
+              disabled={busy}
+              onClick={() => {
+                setDestino("todos");
+                abonar(saldoTotal);
+              }}
+            >
               Pagar todo
             </Button>
           </div>

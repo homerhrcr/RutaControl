@@ -125,7 +125,16 @@ export function AbonoDialog({
             <Button size="lg" className="h-12" disabled={busy} onClick={() => abonar(monto)}>
               Abonar
             </Button>
-            <Button size="lg" variant="secondary" className="h-12" disabled={busy} onClick={() => abonar(saldoTotal)}>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="h-12"
+              disabled={busy}
+              onClick={() => {
+                setDestino("todos");
+                abonar(saldoTotal);
+              }}
+            >
               Pagar todo
             </Button>
           </div>

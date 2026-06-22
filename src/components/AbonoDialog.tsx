@@ -30,12 +30,16 @@ export function AbonoDialog({
   const { user } = useAuth();
   const { data: creditos, refetch } = useCreditosCliente(cliente?.id);
   const [monto, setMonto] = useState<number>(0);
+  const [destino, setDestino] = useState<string>("todos");
   const [busy, setBusy] = useState(false);
 
   const saldoTotal = (creditos ?? []).reduce((s, c) => s + Number(c.saldo), 0);
 
   useEffect(() => {
-    if (open) setMonto(0);
+    if (open) {
+      setMonto(0);
+      setDestino("todos");
+    }
   }, [open]);
 
   async function abonar(montoAbono: number) {
@@ -44,8 +48,13 @@ export function AbonoDialog({
     setBusy(true);
     try {
       let restante = montoAbono;
-      // aplicar a créditos más antiguos primero
-      for (const c of creditos ?? []) {
+      // Si se eligió un día específico, aplicar solo a ese crédito.
+      // De lo contrario, aplicar a los créditos más antiguos primero.
+      const lista =
+        destino === "todos"
+          ? (creditos ?? [])
+          : (creditos ?? []).filter((c) => c.id === destino);
+      for (const c of lista) {
         if (restante <= 0) break;
         const aplicar = Math.min(restante, Number(c.saldo));
         await registrarAbono({
@@ -57,7 +66,8 @@ export function AbonoDialog({
         });
         restante -= aplicar;
       }
-      toast.success(`Abono registrado · ${formatCRC(montoAbono)}`);
+      const aplicado = montoAbono - restante;
+      toast.success(`Abono registrado · ${formatCRC(aplicado)}`);
       await refetch();
       onDone();
       onClose();

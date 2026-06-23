@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import logo from "@/assets/logo-la-rivera.png.asset.json";
 import {
   LayoutDashboard,
+  Map as MapIcon,
   Truck,
   Users,
   Package,
@@ -36,6 +37,7 @@ const NAV: NavItem[] = [
   { to: "/ruta", label: "Iniciar Ruta", icon: Truck, mobile: true },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/clientes", label: "Clientes", icon: Users, mobile: true },
+  { to: "/mapa-rutas", label: "Mapa Rutas", icon: MapIcon },
   { to: "/cobranza", label: "Crédito y Cobros", icon: HandCoins, mobile: true },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
+  Map,
   Package,
   CreditCard,
   BarChart3,

@@ -177,7 +177,11 @@ function MapaRutasPage() {
     let count = 0;
 
     conUbicacion.forEach((c) => {
-      const color = c.rutaId ? colorPorRuta.get(c.rutaId) ?? "#64748b" : "#64748b";
+      const colorRutaId =
+        rutaFiltro !== "todas" && c.rutas.some((r) => r.id === rutaFiltro)
+          ? rutaFiltro
+          : c.rutaId;
+      const color = colorRutaId ? colorPorRuta.get(colorRutaId) ?? "#64748b" : "#64748b";
       const pos = { lat: c.latitud!, lng: c.longitud! };
       const marker = new google.maps.Marker({
         position: pos,

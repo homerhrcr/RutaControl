@@ -113,25 +113,35 @@ function MapaRutasPage() {
 
   const clientes: ClienteMapa[] = useMemo(() => {
     return (clientesRaw ?? []).map((c: Record<string, unknown>) => {
-      const cr = (c.cliente_rutas as Array<Record<string, unknown>> | undefined)?.[0];
-      const rutaId = (cr?.ruta_id as string | undefined) ?? null;
-      const rutaNombre =
-        ((cr?.rutas as { nombre?: string } | undefined)?.nombre as string | undefined) ?? null;
+      const crs = (c.cliente_rutas as Array<Record<string, unknown>> | undefined) ?? [];
+      const rutas = crs
+        .map((cr) => ({
+          id: (cr?.ruta_id as string | undefined) ?? null,
+          nombre:
+            ((cr?.rutas as { nombre?: string } | undefined)?.nombre as
+              | string
+              | undefined) ?? null,
+        }))
+        .filter((r): r is { id: string; nombre: string } => r.id != null);
       return {
         id: c.id as string,
         nombre: c.nombre as string,
         direccion: (c.direccion as string | null) ?? null,
         latitud: c.latitud != null ? Number(c.latitud) : null,
         longitud: c.longitud != null ? Number(c.longitud) : null,
-        rutaId,
-        rutaNombre,
+        rutas,
+        rutaId: rutas[0]?.id ?? null,
+        rutaNombre: rutas.map((r) => r.nombre).join(", ") || null,
       };
     });
   }, [clientesRaw]);
 
   const visibles = useMemo(
     () =>
-      clientes.filter((c) => rutaFiltro === "todas" || c.rutaId === rutaFiltro),
+      clientes.filter(
+        (c) =>
+          rutaFiltro === "todas" || c.rutas.some((r) => r.id === rutaFiltro),
+      ),
     [clientes, rutaFiltro],
   );
 

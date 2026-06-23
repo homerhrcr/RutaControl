@@ -214,7 +214,7 @@ function MapaRutasPage() {
       if (count === 1) mapInstance.current.setZoom(15);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, conUbicacion, colorPorRuta]);
+  }, [ready, conUbicacion, colorPorRuta, rutaFiltro]);
 
   async function guardarUbicacion(c: ClienteMapa, lat: number, lng: number) {
     setGuardando(true);

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import logo from "@/assets/logo-la-rivera.png.asset.json";
 import {
   LayoutDashboard,
+  Map as MapIcon,
   Truck,
   Users,
   Package,

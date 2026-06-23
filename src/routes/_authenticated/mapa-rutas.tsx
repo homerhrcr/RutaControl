@@ -82,6 +82,7 @@ interface ClienteMapa {
   direccion: string | null;
   latitud: number | null;
   longitud: number | null;
+  rutas: { id: string; nombre: string }[];
   rutaId: string | null;
   rutaNombre: string | null;
 }
@@ -112,25 +113,35 @@ function MapaRutasPage() {
 
   const clientes: ClienteMapa[] = useMemo(() => {
     return (clientesRaw ?? []).map((c: Record<string, unknown>) => {
-      const cr = (c.cliente_rutas as Array<Record<string, unknown>> | undefined)?.[0];
-      const rutaId = (cr?.ruta_id as string | undefined) ?? null;
-      const rutaNombre =
-        ((cr?.rutas as { nombre?: string } | undefined)?.nombre as string | undefined) ?? null;
+      const crs = (c.cliente_rutas as Array<Record<string, unknown>> | undefined) ?? [];
+      const rutas = crs
+        .map((cr) => ({
+          id: (cr?.ruta_id as string | undefined) ?? null,
+          nombre:
+            ((cr?.rutas as { nombre?: string } | undefined)?.nombre as
+              | string
+              | undefined) ?? null,
+        }))
+        .filter((r): r is { id: string; nombre: string } => r.id != null);
       return {
         id: c.id as string,
         nombre: c.nombre as string,
         direccion: (c.direccion as string | null) ?? null,
         latitud: c.latitud != null ? Number(c.latitud) : null,
         longitud: c.longitud != null ? Number(c.longitud) : null,
-        rutaId,
-        rutaNombre,
+        rutas,
+        rutaId: rutas[0]?.id ?? null,
+        rutaNombre: rutas.map((r) => r.nombre).join(", ") || null,
       };
     });
   }, [clientesRaw]);
 
   const visibles = useMemo(
     () =>
-      clientes.filter((c) => rutaFiltro === "todas" || c.rutaId === rutaFiltro),
+      clientes.filter(
+        (c) =>
+          rutaFiltro === "todas" || c.rutas.some((r) => r.id === rutaFiltro),
+      ),
     [clientes, rutaFiltro],
   );
 
@@ -166,7 +177,11 @@ function MapaRutasPage() {
     let count = 0;
 
     conUbicacion.forEach((c) => {
-      const color = c.rutaId ? colorPorRuta.get(c.rutaId) ?? "#64748b" : "#64748b";
+      const colorRutaId =
+        rutaFiltro !== "todas" && c.rutas.some((r) => r.id === rutaFiltro)
+          ? rutaFiltro
+          : c.rutaId;
+      const color = colorRutaId ? colorPorRuta.get(colorRutaId) ?? "#64748b" : "#64748b";
       const pos = { lat: c.latitud!, lng: c.longitud! };
       const marker = new google.maps.Marker({
         position: pos,
@@ -199,7 +214,7 @@ function MapaRutasPage() {
       if (count === 1) mapInstance.current.setZoom(15);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, conUbicacion, colorPorRuta]);
+  }, [ready, conUbicacion, colorPorRuta, rutaFiltro]);
 
   async function guardarUbicacion(c: ClienteMapa, lat: number, lng: number) {
     setGuardando(true);

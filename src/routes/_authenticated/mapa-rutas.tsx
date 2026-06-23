@@ -82,6 +82,7 @@ interface ClienteMapa {
   direccion: string | null;
   latitud: number | null;
   longitud: number | null;
+  rutas: { id: string; nombre: string }[];
   rutaId: string | null;
   rutaNombre: string | null;
 }

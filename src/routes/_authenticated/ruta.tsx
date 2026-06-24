@@ -104,15 +104,17 @@ export function RutaPage() {
     queryFn: async () => {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
-      const [{ data: ventas }, { data: abonos }] = await Promise.all([
+      const [{ data: ventas }, { data: abonos }, { data: gastos }] = await Promise.all([
         supabase.from("ventas").select("total, cliente_id, metodo_pago").eq("vendedor_id", user!.id).gte("fecha", start.toISOString()),
         supabase.from("abonos").select("monto").eq("cobrador_id", user!.id).gte("fecha", start.toISOString()),
+        supabase.from("gastos").select("monto").gte("fecha", start.toISOString()),
       ]);
       const totalVentas = (ventas ?? []).reduce((s, v) => s + Number(v.total), 0);
       const credito = (ventas ?? []).filter((v) => v.metodo_pago === "credito").reduce((s, v) => s + Number(v.total), 0);
       const cobrado = (abonos ?? []).reduce((s, a) => s + Number(a.monto), 0);
+      const gastosTotal = (gastos ?? []).reduce((s, g) => s + Number(g.monto), 0);
       const visitados = new Set((ventas ?? []).map((v) => v.cliente_id)).size;
-      return { totalVentas, credito, cobrado, visitados };
+      return { totalVentas, credito, cobrado, gastosTotal, visitados };
     },
   });
 

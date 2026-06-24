@@ -189,6 +189,59 @@ function ReportesPage() {
       buildSheet("Ventas Globales", data.ventas, "Ventas Globales");
       for (const [ruta, rows] of porRuta) buildSheet(ruta, rows, `Ruta: ${ruta}`);
 
+      // Hoja de gastos
+      if (data.gastos.length) {
+        const CAT_LABEL: Record<string, string> = {
+          viaticos: "Viáticos",
+          combustible: "Combustible",
+          insumos: "Insumos",
+          otros: "Otros",
+        };
+        const wg = wb.addWorksheet("Gastos", {
+          pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.5, right: 0.5, top: 0.6, bottom: 0.6, header: 0.3, footer: 0.3 } },
+          headerFooter: { oddFooter: "Página &P de &N", oddHeader: "&LLácteos La Rivera&RReporte de Gastos" },
+        });
+        wg.columns = [{ width: 12 }, { width: 16 }, { width: 30 }, { width: 18 }, { width: 16 }];
+        wg.mergeCells("A1:E1");
+        const tg = wg.getCell("A1");
+        tg.value = "Lácteos La Rivera";
+        tg.font = { bold: true, size: 16, color: { argb: "FF1F4E2C" } };
+        tg.alignment = { horizontal: "center" };
+        wg.mergeCells("A2:E2");
+        const sg = wg.getCell("A2");
+        sg.value = `Gastos · Últimos ${rangeLabel}`;
+        sg.font = { size: 11, color: { argb: "FF555555" } };
+        sg.alignment = { horizontal: "center" };
+        wg.addRow([]);
+        const hg = wg.addRow(["Fecha", "Categoría", "Descripción", "Ruta", "Monto"]);
+        hg.eachCell((c) => {
+          c.font = { bold: true, color: { argb: "FFFFFFFF" } };
+          c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFB00020" } };
+          c.alignment = { horizontal: "center", vertical: "middle" };
+        });
+        let totalG = 0;
+        for (const g of data.gastos) {
+          totalG += g.monto;
+          const r = wg.addRow([
+            new Date(g.fecha).toLocaleDateString("es-CR"),
+            CAT_LABEL[g.categoria] ?? g.categoria,
+            g.descripcion,
+            g.rutaNombre,
+            g.monto,
+          ]);
+          r.getCell(5).numFmt = '"₡"#,##0';
+          r.getCell(5).alignment = { horizontal: "right" };
+        }
+        const trg = wg.addRow(["", "", "", "TOTAL", totalG]);
+        trg.getCell(4).font = { bold: true };
+        trg.getCell(4).alignment = { horizontal: "right" };
+        trg.getCell(5).font = { bold: true };
+        trg.getCell(5).numFmt = '"₡"#,##0';
+        trg.getCell(5).alignment = { horizontal: "right" };
+        wg.views = [{ state: "frozen", ySplit: 4 }];
+      }
+
+
       const buf = await wb.xlsx.writeBuffer();
       const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const url = URL.createObjectURL(blob);

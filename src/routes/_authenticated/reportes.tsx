@@ -228,10 +228,12 @@ function ReportesPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
           <Stat icon={TrendingUp} label="Ventas totales" value={formatCRC(data?.totalVentas ?? 0)} />
           <Stat icon={Banknote} label="Cobrado" value={formatCRC(data?.totalCobrado ?? 0)} tone="accent" />
           <Stat icon={Receipt} label="A crédito" value={formatCRC(data?.totalCredito ?? 0)} tone="warning" />
+          <Stat icon={Wallet} label="Gastos" value={formatCRC(data?.totalGastos ?? 0)} tone="destructive" />
+          <Stat icon={TrendingUp} label="Neto (ventas - gastos)" value={formatCRC((data?.totalVentas ?? 0) - (data?.totalGastos ?? 0))} tone="primary" />
           <Stat icon={Users} label="Clientes atendidos" value={String(data?.clientesAtendidos ?? 0)} tone="primary" />
         </div>
 

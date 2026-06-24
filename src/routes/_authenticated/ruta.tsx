@@ -403,10 +403,10 @@ function StatCard({
   icon: typeof ShoppingBag;
   label: string;
   value: string;
-  tone?: "primary" | "accent" | "warning";
+  tone?: "primary" | "accent" | "warning" | "destructive";
 }) {
   const toneClass =
-    tone === "accent" ? "bg-accent/15 text-accent" : tone === "warning" ? "bg-warning/20 text-warning" : "bg-primary/15 text-primary";
+    tone === "accent" ? "bg-accent/15 text-accent" : tone === "warning" ? "bg-warning/20 text-warning" : tone === "destructive" ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-primary";
   return (
     <Card className="p-3">
       <div className={cn("mb-2 grid h-9 w-9 place-items-center rounded-lg", toneClass)}>

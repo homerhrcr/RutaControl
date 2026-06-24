@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { TrendingUp, Receipt, Banknote, Users, FileSpreadsheet } from "lucide-react";
+import { TrendingUp, Receipt, Banknote, Users, FileSpreadsheet, Wallet } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reportes")({
   component: ReportesPage,

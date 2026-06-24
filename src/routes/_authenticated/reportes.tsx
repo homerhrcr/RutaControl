@@ -33,6 +33,14 @@ type VentaRow = {
   rutaNombre: string;
 };
 
+type GastoRow = {
+  monto: number;
+  fecha: string;
+  categoria: string;
+  descripcion: string;
+  rutaNombre: string;
+};
+
 function ReportesPage() {
   const [range, setRange] = useState<RangeKey>("30");
   const [rutaFiltro, setRutaFiltro] = useState<string>("all");

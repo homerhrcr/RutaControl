@@ -30,7 +30,7 @@ export function DashboardPage() {
       const startDay = new Date(now); startDay.setHours(0, 0, 0, 0);
       const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const [ventas, creditos, detalle, rutas, ventasAll, clientes, ventasRecientes] = await Promise.all([
+      const [ventas, creditos, detalle, rutas, ventasAll, clientes, ventasRecientes, gastosAll] = await Promise.all([
         supabase.from("ventas").select("total, fecha, ruta_id").gte("fecha", startMonth.toISOString()),
         supabase.from("creditos").select("saldo, estado, fecha_limite").gt("saldo", 0),
         supabase.from("detalle_ventas").select("nombre_producto, cantidad"),
@@ -38,11 +38,16 @@ export function DashboardPage() {
         supabase.from("ventas").select("ruta_id, total"),
         supabase.from("clientes").select("ruta_id"),
         supabase.from("ventas").select("*, clientes(nombre), rutas(nombre)").order("fecha", { ascending: false }).limit(100),
+        supabase.from("gastos").select("monto, fecha").gte("fecha", startMonth.toISOString()),
       ]);
 
       const v = ventas.data ?? [];
       const hoy = v.filter((x) => new Date(x.fecha) >= startDay).reduce((s, x) => s + Number(x.total), 0);
       const mes = v.reduce((s, x) => s + Number(x.total), 0);
+
+      const g = gastosAll.data ?? [];
+      const gastosHoy = g.filter((x) => new Date(x.fecha) >= startDay).reduce((s, x) => s + Number(x.monto), 0);
+      const gastosMes = g.reduce((s, x) => s + Number(x.monto), 0);
 
       const cred = creditos.data ?? [];
       const creditoActivo = cred.reduce((s, c) => s + Number(c.saldo), 0);

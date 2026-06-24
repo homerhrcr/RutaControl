@@ -195,10 +195,11 @@ export function RutaPage() {
 
       <div className="space-y-4 p-4 md:p-6">
         {/* resumen */}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatCard icon={ShoppingBag} label="Ventas hoy" value={formatCRC(resumen?.totalVentas ?? 0)} />
           <StatCard icon={Wallet} label="Cobrado hoy" value={formatCRC(resumen?.cobrado ?? 0)} tone="accent" />
           <StatCard icon={HandCoins} label="Crédito hoy" value={formatCRC(resumen?.credito ?? 0)} tone="warning" />
+          <StatCard icon={Receipt} label="Gastos hoy" value={formatCRC(resumen?.gastosTotal ?? 0)} tone="destructive" />
           <StatCard icon={Users} label="Clientes visitados" value={String(resumen?.visitados ?? 0)} />
         </div>
 

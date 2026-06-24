@@ -21,6 +21,7 @@ import {
   HandCoins,
   MapPin,
   ShoppingBag,
+  Receipt,
   Wallet,
   Users,
   History,

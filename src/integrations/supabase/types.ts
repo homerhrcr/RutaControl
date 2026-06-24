@@ -304,6 +304,50 @@ export type Database = {
           },
         ]
       }
+      gastos: {
+        Row: {
+          categoria: string
+          created_at: string
+          descripcion: string | null
+          fecha: string
+          id: string
+          monto: number
+          ruta_id: string | null
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          monto?: number
+          ruta_id?: string | null
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          monto?: number
+          ruta_id?: string | null
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "rutas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimientos_inventario: {
         Row: {
           cantidad: number

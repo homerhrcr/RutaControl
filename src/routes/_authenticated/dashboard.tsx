@@ -16,7 +16,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { TrendingUp, CreditCard, AlertTriangle, Wallet, Map } from "lucide-react";
+import { TrendingUp, CreditCard, AlertTriangle, Wallet, Map, Receipt } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -30,7 +30,7 @@ export function DashboardPage() {
       const startDay = new Date(now); startDay.setHours(0, 0, 0, 0);
       const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const [ventas, creditos, detalle, rutas, ventasAll, clientes, ventasRecientes] = await Promise.all([
+      const [ventas, creditos, detalle, rutas, ventasAll, clientes, ventasRecientes, gastosAll] = await Promise.all([
         supabase.from("ventas").select("total, fecha, ruta_id").gte("fecha", startMonth.toISOString()),
         supabase.from("creditos").select("saldo, estado, fecha_limite").gt("saldo", 0),
         supabase.from("detalle_ventas").select("nombre_producto, cantidad"),
@@ -38,11 +38,16 @@ export function DashboardPage() {
         supabase.from("ventas").select("ruta_id, total"),
         supabase.from("clientes").select("ruta_id"),
         supabase.from("ventas").select("*, clientes(nombre), rutas(nombre)").order("fecha", { ascending: false }).limit(100),
+        supabase.from("gastos").select("monto, fecha").gte("fecha", startMonth.toISOString()),
       ]);
 
       const v = ventas.data ?? [];
       const hoy = v.filter((x) => new Date(x.fecha) >= startDay).reduce((s, x) => s + Number(x.total), 0);
       const mes = v.reduce((s, x) => s + Number(x.total), 0);
+
+      const g = gastosAll.data ?? [];
+      const gastosHoy = g.filter((x) => new Date(x.fecha) >= startDay).reduce((s, x) => s + Number(x.monto), 0);
+      const gastosMes = g.reduce((s, x) => s + Number(x.monto), 0);
 
       const cred = creditos.data ?? [];
       const creditoActivo = cred.reduce((s, c) => s + Number(c.saldo), 0);
@@ -79,7 +84,7 @@ export function DashboardPage() {
         clientes: clienteStats[r.id] ?? 0,
       }));
 
-      return { hoy, mes, creditoActivo, creditoVencido, topProductos, porRuta, rutasDetalle, ventasRecientes: ventasRecientes.data ?? [] };
+      return { hoy, mes, gastosHoy, gastosMes, creditoActivo, creditoVencido, topProductos, porRuta, rutasDetalle, ventasRecientes: ventasRecientes.data ?? [] };
     },
   });
 
@@ -87,9 +92,11 @@ export function DashboardPage() {
     <div>
       <PageHeader title="Dashboard Gerencial" subtitle="Resumen del mes" />
       <div className="space-y-4 p-4 md:p-6">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
           <Stat icon={Wallet} label="Ventas hoy" value={formatCRC(data?.hoy ?? 0)} to="/dashboard" />
           <Stat icon={TrendingUp} label="Ventas mes" value={formatCRC(data?.mes ?? 0)} tone="accent" to="/dashboard" />
+          <Stat icon={Receipt} label="Gastos hoy" value={formatCRC(data?.gastosHoy ?? 0)} tone="destructive" to="/gastos" />
+          <Stat icon={Receipt} label="Gastos mes" value={formatCRC(data?.gastosMes ?? 0)} tone="destructive" to="/gastos" />
           <Stat icon={CreditCard} label="Crédito activo" value={formatCRC(data?.creditoActivo ?? 0)} tone="warning" to="/cobranza" />
           <Stat icon={AlertTriangle} label="Crédito vencido" value={formatCRC(data?.creditoVencido ?? 0)} tone="destructive" to="/cobranza" />
         </div>

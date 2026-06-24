@@ -21,6 +21,7 @@ import {
   HandCoins,
   MapPin,
   ShoppingBag,
+  Receipt,
   Wallet,
   Users,
   History,
@@ -104,15 +105,17 @@ export function RutaPage() {
     queryFn: async () => {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
-      const [{ data: ventas }, { data: abonos }] = await Promise.all([
+      const [{ data: ventas }, { data: abonos }, { data: gastos }] = await Promise.all([
         supabase.from("ventas").select("total, cliente_id, metodo_pago").eq("vendedor_id", user!.id).gte("fecha", start.toISOString()),
         supabase.from("abonos").select("monto").eq("cobrador_id", user!.id).gte("fecha", start.toISOString()),
+        supabase.from("gastos").select("monto").gte("fecha", start.toISOString()),
       ]);
       const totalVentas = (ventas ?? []).reduce((s, v) => s + Number(v.total), 0);
       const credito = (ventas ?? []).filter((v) => v.metodo_pago === "credito").reduce((s, v) => s + Number(v.total), 0);
       const cobrado = (abonos ?? []).reduce((s, a) => s + Number(a.monto), 0);
+      const gastosTotal = (gastos ?? []).reduce((s, g) => s + Number(g.monto), 0);
       const visitados = new Set((ventas ?? []).map((v) => v.cliente_id)).size;
-      return { totalVentas, credito, cobrado, visitados };
+      return { totalVentas, credito, cobrado, gastosTotal, visitados };
     },
   });
 
@@ -193,10 +196,11 @@ export function RutaPage() {
 
       <div className="space-y-4 p-4 md:p-6">
         {/* resumen */}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatCard icon={ShoppingBag} label="Ventas hoy" value={formatCRC(resumen?.totalVentas ?? 0)} />
           <StatCard icon={Wallet} label="Cobrado hoy" value={formatCRC(resumen?.cobrado ?? 0)} tone="accent" />
           <StatCard icon={HandCoins} label="Crédito hoy" value={formatCRC(resumen?.credito ?? 0)} tone="warning" />
+          <StatCard icon={Receipt} label="Gastos hoy" value={formatCRC(resumen?.gastosTotal ?? 0)} tone="destructive" />
           <StatCard icon={Users} label="Clientes visitados" value={String(resumen?.visitados ?? 0)} />
         </div>
 
@@ -399,10 +403,10 @@ function StatCard({
   icon: typeof ShoppingBag;
   label: string;
   value: string;
-  tone?: "primary" | "accent" | "warning";
+  tone?: "primary" | "accent" | "warning" | "destructive";
 }) {
   const toneClass =
-    tone === "accent" ? "bg-accent/15 text-accent" : tone === "warning" ? "bg-warning/20 text-warning" : "bg-primary/15 text-primary";
+    tone === "accent" ? "bg-accent/15 text-accent" : tone === "warning" ? "bg-warning/20 text-warning" : tone === "destructive" ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-primary";
   return (
     <Card className="p-3">
       <div className={cn("mb-2 grid h-9 w-9 place-items-center rounded-lg", toneClass)}>

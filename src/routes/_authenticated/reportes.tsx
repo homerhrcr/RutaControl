@@ -47,13 +47,18 @@ function ReportesPage() {
       start.setHours(0, 0, 0, 0);
       start.setDate(start.getDate() - (days - 1));
 
-      const [ventasRes, abonosRes] = await Promise.all([
+      const [ventasRes, abonosRes, gastosRes] = await Promise.all([
         supabase
           .from("ventas")
           .select("total, fecha, metodo_pago, cliente_id, clientes(nombre, cliente_rutas(rutas(nombre)))")
           .gte("fecha", start.toISOString())
           .order("fecha", { ascending: true }),
         supabase.from("abonos").select("monto, fecha").gte("fecha", start.toISOString()),
+        supabase
+          .from("gastos")
+          .select("monto, fecha, categoria, descripcion, ruta_id, rutas(nombre)")
+          .gte("fecha", start.toISOString())
+          .order("fecha", { ascending: true }),
       ]);
 
       const abonos = abonosRes.data ?? [];
@@ -66,13 +71,22 @@ function ReportesPage() {
         rutaNombre: v.clientes?.cliente_rutas?.[0]?.rutas?.nombre ?? "Sin ruta",
       }));
 
+      const gastos: GastoRow[] = (gastosRes.data ?? []).map((g: any) => ({
+        monto: Number(g.monto),
+        fecha: g.fecha,
+        categoria: g.categoria,
+        descripcion: g.descripcion ?? "",
+        rutaNombre: g.rutas?.nombre ?? "General",
+      }));
+
       const totalVentas = ventas.reduce((s, v) => s + v.total, 0);
       const totalContado = ventas.filter((v) => v.metodo_pago === "contado").reduce((s, v) => s + v.total, 0);
       const totalCredito = totalVentas - totalContado;
       const totalCobrado = abonos.reduce((s, a) => s + Number(a.monto), 0);
+      const totalGastos = gastos.reduce((s, g) => s + g.monto, 0);
       const clientesAtendidos = new Set(ventas.map((v) => v.cliente_id)).size;
 
-      return { totalVentas, totalContado, totalCredito, totalCobrado, clientesAtendidos, ventas };
+      return { totalVentas, totalContado, totalCredito, totalCobrado, totalGastos, clientesAtendidos, ventas, gastos };
     },
   });
 

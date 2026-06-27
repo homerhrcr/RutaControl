@@ -81,7 +81,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#0f766e" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "La Rivera" },
       { title: "Lácteos La Rivera — Sistema de Ventas y Gestión" },
       { name: "description", content: "Sistema de ventas y gestión comercial de Lácteos La Rivera." },
       { name: "author", content: "Lácteos La Rivera" },

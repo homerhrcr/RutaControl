@@ -102,6 +102,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="truncate text-sm font-semibold">{nombre || "Usuario"}</p>
             <p className="text-xs text-sidebar-foreground/60">{roleLabel}</p>
           </div>
+          <div className="mb-2 px-2">
+            <OfflineStatus />
+          </div>
+
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" className="flex-1 text-sidebar-foreground hover:bg-sidebar-accent" onClick={toggle}>
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

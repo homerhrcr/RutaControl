@@ -129,6 +129,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="truncate text-sm font-bold">Lácteos La Rivera</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <OfflineStatus />
             <Button variant="ghost" size="icon" onClick={toggle}>
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>

@@ -71,12 +71,41 @@ export function getQueueCount(): number {
   return readQueue().length;
 }
 
+/* ---------------- Sync progress ---------------- */
+
+export interface SyncProgress {
+  syncing: boolean;
+  total: number;
+  done: number;
+  failed: boolean;
+  lastSyncedAt: number | null;
+}
+
+let progress: SyncProgress = {
+  syncing: false,
+  total: 0,
+  done: 0,
+  failed: false,
+  lastSyncedAt: null,
+};
+
+const progressListeners = new Set<() => void>();
+function emitProgress() {
+  progressListeners.forEach((l) => l());
+}
+function setProgress(patch: Partial<SyncProgress>) {
+  progress = { ...progress, ...patch };
+  emitProgress();
+}
+
 let syncing = false;
 
 export async function syncQueue(): Promise<number> {
   if (syncing || !navigator.onLine) return 0;
   syncing = true;
   let done = 0;
+  const start = readQueue();
+  setProgress({ syncing: true, total: start.length, done: 0, failed: false });
   try {
     let q = readQueue();
     for (const item of [...q]) {
@@ -95,16 +124,34 @@ export async function syncQueue(): Promise<number> {
         q = q.filter((x) => x._localId !== item._localId);
         writeQueue(q);
         done++;
+        setProgress({ done });
       } catch {
         // stop on first failure; will retry next time
+        setProgress({ failed: true });
         break;
       }
     }
   } finally {
     syncing = false;
+    setProgress({
+      syncing: false,
+      lastSyncedAt: done > 0 ? Date.now() : progress.lastSyncedAt,
+    });
   }
   return done;
 }
+
+export function useSyncProgress(): SyncProgress {
+  return useSyncExternalStore(
+    (cb) => {
+      progressListeners.add(cb);
+      return () => progressListeners.delete(cb);
+    },
+    () => progress,
+    () => progress,
+  );
+}
+
 
 /* ---------------- Hook for components ---------------- */
 

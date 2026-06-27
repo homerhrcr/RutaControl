@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useOfflineQueue } from "@/lib/offline";
+import { OfflineStatus } from "@/components/OfflineStatus";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo-la-rivera.png.asset.json";
@@ -102,6 +103,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="truncate text-sm font-semibold">{nombre || "Usuario"}</p>
             <p className="text-xs text-sidebar-foreground/60">{roleLabel}</p>
           </div>
+          <div className="mb-2 px-2">
+            <OfflineStatus />
+          </div>
+
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" className="flex-1 text-sidebar-foreground hover:bg-sidebar-accent" onClick={toggle}>
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -124,6 +129,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="truncate text-sm font-bold">Lácteos La Rivera</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <OfflineStatus />
             <Button variant="ghost" size="icon" onClick={toggle}>
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>

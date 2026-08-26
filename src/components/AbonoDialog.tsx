@@ -42,7 +42,7 @@ export function AbonoDialog({
     }
   }, [open]);
 
-  async function abonar(montoAbono: number) {
+  async function abonar(montoAbono: number, forzarTodos = false) {
     if (!cliente || !user) return;
     if (montoAbono <= 0) return toast.error("Ingresa un monto");
     setBusy(true);
@@ -50,10 +50,12 @@ export function AbonoDialog({
       let restante = montoAbono;
       // Si se eligió un día específico, aplicar solo a ese crédito.
       // De lo contrario, aplicar a los créditos más antiguos primero.
+      // forzarTodos se usa en "Pagar todo" para ignorar la selección actual.
+      const destinoEfectivo = forzarTodos ? "todos" : destino;
       const lista =
-        destino === "todos"
+        destinoEfectivo === "todos"
           ? (creditos ?? [])
-          : (creditos ?? []).filter((c) => c.id === destino);
+          : (creditos ?? []).filter((c) => c.id === destinoEfectivo);
       for (const c of lista) {
         if (restante <= 0) break;
         const aplicar = Math.min(restante, Number(c.saldo));
@@ -132,7 +134,7 @@ export function AbonoDialog({
               disabled={busy}
               onClick={() => {
                 setDestino("todos");
-                abonar(saldoTotal);
+                abonar(saldoTotal, true);
               }}
             >
               Pagar todo

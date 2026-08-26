@@ -82,21 +82,28 @@ export function RutaPage() {
         supabase.from("ventas").select("cliente_id, fecha").gte("fecha", start.toISOString()),
         supabase.from("abonos").select("cliente_id, fecha").gte("fecha", start.toISOString()),
       ]);
-      const set = new Set<string>();
+      const ids: string[] = [];
       let lastTime = 0;
       let lastId = "";
       for (const v of [...(ventas ?? []), ...(abonos ?? [])]) {
         if (!v.cliente_id) continue;
-        set.add(v.cliente_id);
+        if (!ids.includes(v.cliente_id)) ids.push(v.cliente_id);
         const t = new Date(v.fecha as string).getTime();
         if (t > lastTime) {
           lastTime = t;
           lastId = v.cliente_id;
         }
       }
-      return { set, lastId };
+      // Devolvemos un arreglo (serializable) porque la caché se guarda en el
+      // dispositivo para uso sin conexión; un Set se perdería al restaurarla.
+      return { ids, lastId };
     },
   });
+
+  const visitadosSet = useMemo(
+    () => new Set<string>(Array.isArray(visitadosHoy?.ids) ? visitadosHoy!.ids : []),
+    [visitadosHoy],
+  );
 
   // resumen del día
   const { data: resumen } = useQuery({

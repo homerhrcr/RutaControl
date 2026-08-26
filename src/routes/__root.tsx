@@ -94,11 +94,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Sistema de ventas y gestión comercial de Ruta Directo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@LacteosLaRivera" },
+      { name: "twitter:site", content: "@RutaDirecto" },
       { name: "twitter:title", content: "Ruta Directo — Sistema de Ventas y Gestión" },
       { name: "twitter:description", content: "Sistema de ventas y gestión comercial de Ruta Directo." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/QbqeHSlEaRPLvXWaYCkUp7EWfBh1/social-images/social-1781917349803-Nuevo_Logo_2026_Lacteos_la_Rivera.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/QbqeHSlEaRPLvXWaYCkUp7EWfBh1/social-images/social-1781917349803-Nuevo_Logo_2026_Lacteos_la_Rivera.webp" },
+      { property: "og:image", content: "https://ventaslacteoslarivera.lovable.app/__l5e/assets-v1/c1e180e9-d63f-4956-881f-538a7907e82b/logo-ruta-directo.jpg" },
+      { name: "twitter:image", content: "https://ventaslacteoslarivera.lovable.app/__l5e/assets-v1/c1e180e9-d63f-4956-881f-538a7907e82b/logo-ruta-directo.jpg" },
     ],
     links: [
       {

@@ -83,7 +83,7 @@ export function CobranzaPage() {
                   {r.cliente.telefono && (
                     <a
                       href={`https://wa.me/506${r.cliente.telefono.replace(/\D/g, "")}?text=${encodeURIComponent(
-                        `Hola ${r.cliente.nombre}, le recordamos su saldo pendiente de ${formatCRC(r.saldo)} con Lácteos La Rivera.`,
+                        `Hola ${r.cliente.nombre}, le recordamos su saldo pendiente de ${formatCRC(r.saldo)} con Ruta Directo.`,
                       )}`}
                       target="_blank"
                       rel="noreferrer"

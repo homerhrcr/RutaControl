@@ -115,7 +115,7 @@ function ReportesPage() {
     try {
       const ExcelJS = (await import("exceljs")).default;
       const wb = new ExcelJS.Workbook();
-      wb.creator = "Lácteos La Rivera";
+      wb.creator = "Ruta Directo";
       wb.created = new Date();
 
       const rangeLabel = RANGES.find((r) => r.key === range)?.label ?? "";
@@ -130,7 +130,7 @@ function ReportesPage() {
       const buildSheet = (name: string, rows: VentaRow[], titulo: string) => {
         const ws = wb.addWorksheet(name.slice(0, 31), {
           pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.5, right: 0.5, top: 0.6, bottom: 0.6, header: 0.3, footer: 0.3 } },
-          headerFooter: { oddFooter: "Página &P de &N", oddHeader: "&LLácteos La Rivera&RReporte de Ventas" },
+          headerFooter: { oddFooter: "Página &P de &N", oddHeader: "&LRuta Directo&RReporte de Ventas" },
         });
         ws.columns = [
           { width: 12 },
@@ -142,7 +142,7 @@ function ReportesPage() {
 
         ws.mergeCells("A1:E1");
         const t = ws.getCell("A1");
-        t.value = "Lácteos La Rivera";
+        t.value = "Ruta Directo";
         t.font = { bold: true, size: 16, color: { argb: "FF1F4E2C" } };
         t.alignment = { horizontal: "center" };
 
@@ -199,12 +199,12 @@ function ReportesPage() {
         };
         const wg = wb.addWorksheet("Gastos", {
           pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.5, right: 0.5, top: 0.6, bottom: 0.6, header: 0.3, footer: 0.3 } },
-          headerFooter: { oddFooter: "Página &P de &N", oddHeader: "&LLácteos La Rivera&RReporte de Gastos" },
+          headerFooter: { oddFooter: "Página &P de &N", oddHeader: "&LRuta Directo&RReporte de Gastos" },
         });
         wg.columns = [{ width: 12 }, { width: 16 }, { width: 30 }, { width: 18 }, { width: 16 }];
         wg.mergeCells("A1:E1");
         const tg = wg.getCell("A1");
-        tg.value = "Lácteos La Rivera";
+        tg.value = "Ruta Directo";
         tg.font = { bold: true, size: 16, color: { argb: "FF1F4E2C" } };
         tg.alignment = { horizontal: "center" };
         wg.mergeCells("A2:E2");

@@ -19,7 +19,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/mapa-rutas")({
   head: () => ({
     meta: [
-      { title: "Mapa de Rutas — Lácteos La Rivera" },
+      { title: "Mapa de Rutas — Ruta Directo" },
       {
         name: "description",
         content: "Ubicaciones de los clientes en Google Maps, separadas por ruta.",

@@ -20,7 +20,7 @@ export interface TiqueteData {
 }
 
 const EMPRESA = {
-  nombre: "Lácteos La Rivera",
+  nombre: "Ruta Directo",
   telefono: "Tel: 2000-0000",
 };
 

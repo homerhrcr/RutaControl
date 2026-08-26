@@ -22,9 +22,9 @@ export default defineConfig({
         devOptions: { enabled: false },
         includeAssets: ["favicon.ico"],
         manifest: {
-          name: "Lácteos La Rivera",
-          short_name: "La Rivera",
-          description: "Sistema de ventas y gestión comercial de Lácteos La Rivera.",
+          name: "Ruta Directo",
+          short_name: "Ruta Directo",
+          description: "Ventas en ruta y control integral.",
           theme_color: "#0f766e",
           background_color: "#ffffff",
           display: "standalone",

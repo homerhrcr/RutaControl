@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import logo from "@/assets/logo-la-rivera.png.asset.json";
+import logo from "@/assets/logo-ruta-directo.jpg.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Ingreso — Lácteos La Rivera" },
-      { name: "description", content: "Acceso al sistema de ventas y gestión de Lácteos La Rivera." },
+      { title: "Ingreso — Ruta Directo" },
+      { name: "description", content: "Acceso al sistema de ventas y gestión de Ruta Directo." },
     ],
   }),
   component: AuthPage,
@@ -45,9 +45,9 @@ function AuthPage() {
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-white shadow-lg">
-            <img src={logo.url} alt="Lácteos La Rivera" className="h-full w-full object-contain" />
+            <img src={logo.url} alt="Ruta Directo" className="h-full w-full object-contain" />
           </div>
-          <h1 className="mt-4 text-2xl font-black tracking-tight">Lácteos La Rivera</h1>
+          <h1 className="mt-4 text-2xl font-black tracking-tight">Ruta Directo</h1>
           <p className="text-sm text-muted-foreground">Sistema de Ventas y Gestión</p>
         </div>
         <Card className="p-5">

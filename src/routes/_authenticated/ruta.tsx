@@ -150,10 +150,9 @@ export function RutaPage() {
   // siguiente cliente sugerido: el primero (por orden) que no se ha visitado hoy
   const siguienteId = useMemo(() => {
     if (rutaId === "all") return "";
-    const visit = visitadosHoy?.set ?? new Set<string>();
-    const pendiente = ordenados.find((c) => !visit.has(c.id));
+    const pendiente = ordenados.find((c) => !visitadosSet.has(c.id));
     return pendiente?.id ?? "";
-  }, [ordenados, visitadosHoy, rutaId]);
+  }, [ordenados, visitadosSet, rutaId]);
 
   function onSaleDone() {
     invalidate(["saldos-map", "resumen-dia", "visitados-hoy", "ventas-cliente", "creditos-pendientes"]);
@@ -324,7 +323,7 @@ export function RutaPage() {
           <div className="space-y-2.5">
             {filtered.map((c, idx) => {
               const saldo = saldos?.[c.id] ?? 0;
-              const visitado = visitadosHoy?.set?.has(c.id) ?? false;
+              const visitado = visitadosSet.has(c.id);
               const esSiguiente = c.id === siguienteId;
               return (
                 <Card

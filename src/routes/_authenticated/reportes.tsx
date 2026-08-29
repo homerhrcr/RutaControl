@@ -6,7 +6,6 @@ import { useRutas } from "@/lib/data";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";

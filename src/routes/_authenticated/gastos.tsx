@@ -27,13 +27,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { CatalogSelect, useCatalogo } from "@/components/CatalogSelect";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";

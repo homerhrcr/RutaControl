@@ -6,13 +6,6 @@ import { useClientes, useRutas, useInvalidate } from "@/lib/data";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { MapPin, Crosshair, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";

@@ -138,12 +138,14 @@ export function ProductosPage() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <F label="Código"><Input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} /></F>
-              <F label="Categoría">
-                <Select value={form.categoria_id} onValueChange={(v) => setForm({ ...form, categoria_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Categoría" /></SelectTrigger>
-                  <SelectContent>{categorias?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
-                </Select>
-              </F>
+              <CatalogSelect
+                catalogo="categorias"
+                label="Categoría"
+                placeholder="Categoría"
+                value={form.categoria_id}
+                onChange={(v) => setForm({ ...form, categoria_id: v })}
+              />
+
             </div>
             <F label="Nombre"><Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></F>
             <div className="grid grid-cols-2 gap-3">

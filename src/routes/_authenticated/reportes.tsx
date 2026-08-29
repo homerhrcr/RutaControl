@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CatalogSelect } from "@/components/CatalogSelect";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -293,13 +294,16 @@ function ReportesPage() {
         <Card className="p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-bold">Ventas por ruta</h2>
-            <Select value={rutaFiltro} onValueChange={setRutaFiltro}>
-              <SelectTrigger className="w-52"><SelectValue placeholder="Ruta" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las rutas</SelectItem>
-                {rutas?.map((r) => <SelectItem key={r.id} value={r.nombre}>{r.nombre}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div className="w-52">
+              <CatalogSelect
+                catalogo="rutas"
+                placeholder="Ruta"
+                useNombre
+                value={rutaFiltro}
+                onChange={setRutaFiltro}
+                extraOptions={[{ value: "all", label: "Todas las rutas" }]}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

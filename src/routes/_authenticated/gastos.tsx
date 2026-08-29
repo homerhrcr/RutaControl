@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CatalogSelect, useCatalogo } from "@/components/CatalogSelect";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -42,14 +43,6 @@ import { Wallet, Plus, Pencil, Trash2, Fuel } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/gastos")({
   component: GastosPage,
 });
-
-const CATEGORIAS = ["viaticos", "combustible", "insumos", "otros"] as const;
-const CAT_LABEL: Record<string, string> = {
-  viaticos: "Viáticos",
-  combustible: "Combustible",
-  insumos: "Insumos",
-  otros: "Otros",
-};
 
 type Gasto = {
   id: string;
@@ -69,6 +62,8 @@ function todayStr() {
 function GastosPage() {
   const { user } = useAuth();
   const { data: rutas } = useRutas();
+  const { data: catCategorias } = useCatalogo("categorias_gasto");
+  const categorias = (catCategorias ?? []).map((c) => c.nombre);
   const invalidate = useInvalidate();
   const [fecha, setFecha] = useState(todayStr());
   const [rutaFiltro, setRutaFiltro] = useState<string>("all");
@@ -135,21 +130,15 @@ function GastosPage() {
               className="w-44"
             />
           </div>
-          <div>
-            <Label className="text-xs">Ruta</Label>
-            <Select value={rutaFiltro} onValueChange={setRutaFiltro}>
-              <SelectTrigger className="w-52">
-                <SelectValue placeholder="Ruta" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las rutas</SelectItem>
-                {rutas?.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="w-52">
+            <CatalogSelect
+              catalogo="rutas"
+              label="Ruta"
+              placeholder="Ruta"
+              value={rutaFiltro}
+              onChange={setRutaFiltro}
+              extraOptions={[{ value: "all", label: "Todas las rutas" }]}
+            />
           </div>
           <Button className="ml-auto gap-1.5" onClick={() => setEditing("new")}>
             <Plus className="h-4 w-4" /> Nuevo gasto
@@ -164,12 +153,12 @@ function GastosPage() {
             <p className="text-xs text-muted-foreground">Total gastos</p>
             <p className="truncate text-lg font-black">{formatCRC(total)}</p>
           </Card>
-          {CATEGORIAS.map((c) => (
+          {categorias.map((c) => (
             <Card key={c} className="p-3">
               <div className="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-warning/20 text-warning">
                 <Fuel className="h-5 w-5" />
               </div>
-              <p className="text-xs text-muted-foreground">{CAT_LABEL[c]}</p>
+              <p className="truncate text-xs text-muted-foreground">{c}</p>
               <p className="truncate text-lg font-black">
                 {formatCRC(porCategoria[c] ?? 0)}
               </p>
@@ -192,7 +181,7 @@ function GastosPage() {
               {(gastos ?? []).map((g) => (
                 <tr key={g.id} className="border-b border-border/50">
                   <td className="px-4 py-2.5 font-medium">
-                    {CAT_LABEL[g.categoria] ?? g.categoria}
+                    {g.categoria}
                   </td>
                   <td className="px-4 py-2.5 text-muted-foreground">
                     {g.descripcion || "—"}
@@ -285,7 +274,7 @@ function GastoDialog({
 }) {
   const isNew = gasto === "new";
   const existing = gasto && gasto !== "new" ? gasto : null;
-  const [categoria, setCategoria] = useState("otros");
+  const [categoria, setCategoria] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
   const [rutaId, setRutaId] = useState<string>("none");
@@ -296,7 +285,7 @@ function GastoDialog({
   const key = existing?.id ?? (isNew ? "new" : "");
   useMemo(() => {
     if (!open) return;
-    setCategoria(existing?.categoria ?? "otros");
+    setCategoria(existing?.categoria ?? "");
     setDescripcion(existing?.descripcion ?? "");
     setMonto(existing ? String(existing.monto) : "");
     setRutaId(existing?.ruta_id ?? defaultRuta ?? "none");
@@ -305,6 +294,7 @@ function GastoDialog({
 
   async function save() {
     const m = Number(monto);
+    if (!categoria) return toast.error("Seleccione una categoría");
     if (!m || m <= 0) return toast.error("Ingrese un monto válido");
     setSaving(true);
     const payload = {
@@ -336,37 +326,22 @@ function GastoDialog({
           <DialogTitle>{existing ? "Editar gasto" : "Nuevo gasto"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <div>
-            <Label className="text-xs">Categoría</Label>
-            <Select value={categoria} onValueChange={setCategoria}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIAS.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {CAT_LABEL[c]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs">Ruta</Label>
-            <Select value={rutaId} onValueChange={setRutaId}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">General (sin ruta)</SelectItem>
-                {rutas.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <CatalogSelect
+            catalogo="categorias_gasto"
+            label="Categoría"
+            placeholder="Seleccione una categoría"
+            useNombre
+            value={categoria}
+            onChange={setCategoria}
+          />
+          <CatalogSelect
+            catalogo="rutas"
+            label="Ruta"
+            placeholder="Ruta"
+            value={rutaId}
+            onChange={setRutaId}
+            extraOptions={[{ value: "none", label: "General (sin ruta)" }]}
+          />
           <div>
             <Label className="text-xs">Monto</Label>
             <Input

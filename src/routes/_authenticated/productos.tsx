@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useProductos, useCategorias, useInvalidate } from "@/lib/data";
+import { useProductos, useInvalidate } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CatalogSelect } from "@/components/CatalogSelect";
 import { toast } from "sonner";
 import { Plus, Search, AlertTriangle } from "lucide-react";
 import { formatCRC } from "@/lib/format";
@@ -24,7 +24,6 @@ const empty = { codigo: "", nombre: "", categoria_id: "", precio: 0, costo: 0, e
 
 export function ProductosPage() {
   const { data: productos } = useProductos();
-  const { data: categorias } = useCategorias();
   const { isAdmin } = useAuth();
   const invalidate = useInvalidate();
   const [search, setSearch] = useState("");
@@ -138,12 +137,14 @@ export function ProductosPage() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <F label="Código"><Input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} /></F>
-              <F label="Categoría">
-                <Select value={form.categoria_id} onValueChange={(v) => setForm({ ...form, categoria_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Categoría" /></SelectTrigger>
-                  <SelectContent>{categorias?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
-                </Select>
-              </F>
+              <CatalogSelect
+                catalogo="categorias"
+                label="Categoría"
+                placeholder="Categoría"
+                value={form.categoria_id}
+                onChange={(v) => setForm({ ...form, categoria_id: v })}
+              />
+
             </div>
             <F label="Nombre"><Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></F>
             <div className="grid grid-cols-2 gap-3">

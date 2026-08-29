@@ -6,13 +6,7 @@ import { useClientes, useRutas, useInvalidate } from "@/lib/data";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CatalogSelect } from "@/components/CatalogSelect";
 import { MapPin, Crosshair, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -237,19 +231,16 @@ function MapaRutasPage() {
       <PageHeader title="Mapa de Rutas" subtitle="Ubicaciones de clientes por ruta" />
       <div className="space-y-4 p-4">
         <Card className="flex flex-wrap items-center gap-3 p-4">
-          <Select value={rutaFiltro} onValueChange={setRutaFiltro}>
-            <SelectTrigger className="w-56">
-              <SelectValue placeholder="Filtrar por ruta" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas las rutas</SelectItem>
-              {(rutas ?? []).map((r) => (
-                <SelectItem key={r.id} value={r.id}>
-                  {r.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="w-56">
+            <CatalogSelect
+              catalogo="rutas"
+              label="Ruta"
+              placeholder="Filtrar por ruta"
+              value={rutaFiltro}
+              onChange={setRutaFiltro}
+              extraOptions={[{ value: "todas", label: "Todas las rutas" }]}
+            />
+          </div>
           <div className="text-sm text-muted-foreground">
             {conUbicacion.length} ubicada(s) · {sinUbicacion.length} sin ubicación
           </div>

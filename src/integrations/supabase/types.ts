@@ -104,6 +104,27 @@ export type Database = {
         }
         Relationships: []
       }
+      categorias_gasto: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cliente_rutas: {
         Row: {
           cliente_id: string

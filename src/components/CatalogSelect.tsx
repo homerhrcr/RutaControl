@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,12 +77,14 @@ export function CatalogSelect({
   onRenamed?: (anterior: string, nuevo: string) => void;
 }) {
   const { data: items } = useCatalogo(catalogo);
+  const { isAdmin } = useAuth();
   const [admin, setAdmin] = useState(false);
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         {label ? <Label className="text-xs">{label}</Label> : <span />}
+        {isAdmin && (
         <button
           type="button"
           className="text-xs font-medium text-primary hover:underline"
@@ -89,6 +92,7 @@ export function CatalogSelect({
         >
           Administrar
         </button>
+        )}
       </div>
       <Select value={value} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger className={className}>

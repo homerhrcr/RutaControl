@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { CatalogoDialog, useCatalogo } from "@/components/CatalogSelect";
 import { UsuariosPage } from "./usuarios";
 import { AuditoriaPage } from "./auditoria";
-import { Map, ShieldCheck } from "lucide-react";
+import { Map } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/administracion")({
   head: () => ({
@@ -28,7 +28,7 @@ function AdministracionPage() {
   }
   return (
     <div>
-      <PageHeader title="Administración" subtitle="Usuarios, auditoría y rutas" icon={ShieldCheck} />
+      <PageHeader title="Administración" subtitle="Usuarios, auditoría y rutas" />
       <div className="p-4 md:p-6">
         <Tabs defaultValue="usuarios">
           <TabsList>

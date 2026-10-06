@@ -23,6 +23,7 @@ export type Database = {
           fecha: string
           id: string
           monto: number
+          organization_id: string
         }
         Insert: {
           cliente_id?: string | null
@@ -32,6 +33,7 @@ export type Database = {
           fecha?: string
           id?: string
           monto?: number
+          organization_id?: string
         }
         Update: {
           cliente_id?: string | null
@@ -41,6 +43,7 @@ export type Database = {
           fecha?: string
           id?: string
           monto?: number
+          organization_id?: string
         }
         Relationships: [
           {
@@ -57,6 +60,13 @@ export type Database = {
             referencedRelation: "creditos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "abonos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       auditoria: {
@@ -66,6 +76,7 @@ export type Database = {
           entidad: string | null
           fecha: string
           id: string
+          organization_id: string
           usuario_id: string | null
         }
         Insert: {
@@ -74,6 +85,7 @@ export type Database = {
           entidad?: string | null
           fecha?: string
           id?: string
+          organization_id?: string
           usuario_id?: string | null
         }
         Update: {
@@ -82,48 +94,79 @@ export type Database = {
           entidad?: string | null
           fecha?: string
           id?: string
+          organization_id?: string
           usuario_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categorias: {
         Row: {
           created_at: string
           id: string
           nombre: string
+          organization_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           nombre: string
+          organization_id?: string
         }
         Update: {
           created_at?: string
           id?: string
           nombre?: string
+          organization_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categorias_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categorias_gasto: {
         Row: {
           created_at: string
           id: string
           nombre: string
+          organization_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
           nombre: string
+          organization_id?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
           nombre?: string
+          organization_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categorias_gasto_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cliente_rutas: {
         Row: {
@@ -131,6 +174,7 @@ export type Database = {
           created_at: string
           id: string
           orden: number
+          organization_id: string
           ruta_id: string
         }
         Insert: {
@@ -138,6 +182,7 @@ export type Database = {
           created_at?: string
           id?: string
           orden?: number
+          organization_id?: string
           ruta_id: string
         }
         Update: {
@@ -145,6 +190,7 @@ export type Database = {
           created_at?: string
           id?: string
           orden?: number
+          organization_id?: string
           ruta_id?: string
         }
         Relationships: [
@@ -153,6 +199,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliente_rutas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -176,6 +229,7 @@ export type Database = {
           latitud: number | null
           longitud: number | null
           nombre: string
+          organization_id: string
           provincia: string | null
           referencia: string | null
           ruta_id: string | null
@@ -193,6 +247,7 @@ export type Database = {
           latitud?: number | null
           longitud?: number | null
           nombre: string
+          organization_id?: string
           provincia?: string | null
           referencia?: string | null
           ruta_id?: string | null
@@ -210,6 +265,7 @@ export type Database = {
           latitud?: number | null
           longitud?: number | null
           nombre?: string
+          organization_id?: string
           provincia?: string | null
           referencia?: string | null
           ruta_id?: string | null
@@ -217,6 +273,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "clientes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clientes_ruta_id_fkey"
             columns: ["ruta_id"]
@@ -235,6 +298,7 @@ export type Database = {
           fecha_limite: string | null
           id: string
           monto: number
+          organization_id: string
           saldo: number
           updated_at: string
           venta_id: string | null
@@ -247,6 +311,7 @@ export type Database = {
           fecha_limite?: string | null
           id?: string
           monto?: number
+          organization_id?: string
           saldo?: number
           updated_at?: string
           venta_id?: string | null
@@ -259,6 +324,7 @@ export type Database = {
           fecha_limite?: string | null
           id?: string
           monto?: number
+          organization_id?: string
           saldo?: number
           updated_at?: string
           venta_id?: string | null
@@ -269,6 +335,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creditos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -285,6 +358,7 @@ export type Database = {
           cantidad: number
           id: string
           nombre_producto: string
+          organization_id: string
           precio_unitario: number
           producto_id: string | null
           total_linea: number
@@ -294,6 +368,7 @@ export type Database = {
           cantidad?: number
           id?: string
           nombre_producto: string
+          organization_id?: string
           precio_unitario?: number
           producto_id?: string | null
           total_linea?: number
@@ -303,12 +378,20 @@ export type Database = {
           cantidad?: number
           id?: string
           nombre_producto?: string
+          organization_id?: string
           precio_unitario?: number
           producto_id?: string | null
           total_linea?: number
           venta_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "detalle_ventas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "detalle_ventas_producto_id_fkey"
             columns: ["producto_id"]
@@ -333,6 +416,7 @@ export type Database = {
           fecha: string
           id: string
           monto: number
+          organization_id: string
           ruta_id: string | null
           updated_at: string
           usuario_id: string | null
@@ -344,6 +428,7 @@ export type Database = {
           fecha?: string
           id?: string
           monto?: number
+          organization_id?: string
           ruta_id?: string | null
           updated_at?: string
           usuario_id?: string | null
@@ -355,11 +440,19 @@ export type Database = {
           fecha?: string
           id?: string
           monto?: number
+          organization_id?: string
           ruta_id?: string | null
           updated_at?: string
           usuario_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "gastos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "gastos_ruta_id_fkey"
             columns: ["ruta_id"]
@@ -375,6 +468,7 @@ export type Database = {
           fecha: string
           id: string
           motivo: string | null
+          organization_id: string
           producto_id: string
           tipo: Database["public"]["Enums"]["tipo_movimiento"]
           usuario_id: string | null
@@ -384,6 +478,7 @@ export type Database = {
           fecha?: string
           id?: string
           motivo?: string | null
+          organization_id?: string
           producto_id: string
           tipo: Database["public"]["Enums"]["tipo_movimiento"]
           usuario_id?: string | null
@@ -393,16 +488,118 @@ export type Database = {
           fecha?: string
           id?: string
           motivo?: string | null
+          organization_id?: string
           producto_id?: string
           tipo?: Database["public"]["Enums"]["tipo_movimiento"]
           usuario_id?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "movimientos_inventario_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "movimientos_inventario_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          es_predeterminada: boolean
+          estado: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          es_predeterminada?: boolean
+          estado?: string
+          id?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          es_predeterminada?: boolean
+          estado?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          organizacion_activa: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          organizacion_activa?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          organizacion_activa?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_admins_organizacion_activa_fkey"
+            columns: ["organizacion_activa"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -418,6 +615,7 @@ export type Database = {
           existencia_minima: number
           id: string
           nombre: string
+          organization_id: string
           precio: number
           updated_at: string
         }
@@ -431,6 +629,7 @@ export type Database = {
           existencia_minima?: number
           id?: string
           nombre: string
+          organization_id?: string
           precio?: number
           updated_at?: string
         }
@@ -444,6 +643,7 @@ export type Database = {
           existencia_minima?: number
           id?: string
           nombre?: string
+          organization_id?: string
           precio?: number
           updated_at?: string
         }
@@ -453,6 +653,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -490,20 +697,31 @@ export type Database = {
           dia: string | null
           id: string
           nombre: string
+          organization_id: string
         }
         Insert: {
           created_at?: string
           dia?: string | null
           id?: string
           nombre: string
+          organization_id?: string
         }
         Update: {
           created_at?: string
           dia?: string | null
           id?: string
           nombre?: string
+          organization_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rutas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -536,6 +754,7 @@ export type Database = {
           latitud: number | null
           longitud: number | null
           metodo_pago: Database["public"]["Enums"]["metodo_pago"]
+          organization_id: string
           ruta_id: string | null
           subtotal: number
           total: number
@@ -550,6 +769,7 @@ export type Database = {
           latitud?: number | null
           longitud?: number | null
           metodo_pago?: Database["public"]["Enums"]["metodo_pago"]
+          organization_id?: string
           ruta_id?: string | null
           subtotal?: number
           total?: number
@@ -564,6 +784,7 @@ export type Database = {
           latitud?: number | null
           longitud?: number | null
           metodo_pago?: Database["public"]["Enums"]["metodo_pago"]
+          organization_id?: string
           ruta_id?: string | null
           subtotal?: number
           total?: number
@@ -575,6 +796,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ventas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -591,6 +819,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_organization_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -599,7 +828,9 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_platform_admin: { Args: { _uid?: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      set_default_organization: { Args: { p_org: string }; Returns: undefined }
     }
     Enums: {
       app_role: "administrador" | "vendedor" | "cobrador"

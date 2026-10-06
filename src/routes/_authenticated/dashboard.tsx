@@ -142,7 +142,14 @@ export function DashboardPage() {
         </div>
 
         <div>
-          <h2 className="mb-3 font-bold">Rutas de Distribución</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-bold">Rutas de Distribución</h2>
+            {isAdmin && (
+              <Button size="sm" variant="outline" onClick={() => setAdminRutas(true)}>
+                Administrar rutas
+              </Button>
+            )}
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             {(data?.rutasDetalle ?? []).map((r) => (
               <Card key={r.id} className="p-4">

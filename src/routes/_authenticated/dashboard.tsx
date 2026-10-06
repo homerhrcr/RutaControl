@@ -1,10 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CatalogoDialog } from "@/components/CatalogSelect";
+import { useAuth } from "@/lib/auth";
 import { formatCRC, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
@@ -23,6 +27,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 export function DashboardPage() {
+  const { isAdmin } = useAuth();
+  const qc = useQueryClient();
+  const [adminRutas, setAdminRutas] = useState(false);
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
@@ -135,7 +142,14 @@ export function DashboardPage() {
         </div>
 
         <div>
-          <h2 className="mb-3 font-bold">Rutas de Distribución</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-bold">Rutas de Distribución</h2>
+            {isAdmin && (
+              <Button size="sm" variant="outline" onClick={() => setAdminRutas(true)}>
+                Administrar rutas
+              </Button>
+            )}
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             {(data?.rutasDetalle ?? []).map((r) => (
               <Card key={r.id} className="p-4">
@@ -185,6 +199,15 @@ export function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      <CatalogoDialog
+        catalogo="rutas"
+        abierto={adminRutas}
+        cerrar={() => {
+          setAdminRutas(false);
+          qc.invalidateQueries({ queryKey: ["dashboard"] });
+        }}
+      />
     </div>
   );
 }

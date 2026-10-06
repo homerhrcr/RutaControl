@@ -199,6 +199,15 @@ export function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      <CatalogoDialog
+        catalogo="rutas"
+        abierto={adminRutas}
+        cerrar={() => {
+          setAdminRutas(false);
+          qc.invalidateQueries({ queryKey: ["dashboard"] });
+        }}
+      />
     </div>
   );
 }

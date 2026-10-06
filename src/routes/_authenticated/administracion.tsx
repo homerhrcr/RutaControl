@@ -10,6 +10,7 @@ import { CatalogoDialog, useCatalogo } from "@/components/CatalogSelect";
 import { UsuariosPage } from "./usuarios";
 import { AuditoriaPage } from "./auditoria";
 import { Map } from "lucide-react";
+import { EmpresasAdmin } from "@/components/EmpresasAdmin";
 
 export const Route = createFileRoute("/_authenticated/administracion")({
   head: () => ({
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/administracion")({
 });
 
 function AdministracionPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, esSuperadmin } = useAuth();
   if (!isAdmin) {
     return <div className="p-6 text-muted-foreground">Solo los administradores pueden ver esta sección.</div>;
   }
@@ -35,10 +36,12 @@ function AdministracionPage() {
             <TabsTrigger value="usuarios">Usuarios</TabsTrigger>
             <TabsTrigger value="rutas">Rutas</TabsTrigger>
             <TabsTrigger value="auditoria">Auditoría</TabsTrigger>
+            {esSuperadmin && <TabsTrigger value="empresas">Empresas</TabsTrigger>}
           </TabsList>
           <TabsContent value="usuarios" className="-mx-4 md:-mx-6"><UsuariosPage /></TabsContent>
           <TabsContent value="rutas"><RutasAdmin /></TabsContent>
           <TabsContent value="auditoria" className="-mx-4 md:-mx-6"><AuditoriaPage /></TabsContent>
+          {esSuperadmin && <TabsContent value="empresas"><EmpresasAdmin /></TabsContent>}
         </Tabs>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useOfflineQueue } from "@/lib/offline";
 import { OfflineStatus } from "@/components/OfflineStatus";
+import { OrgSwitcher } from "@/components/OrgSwitcher";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo-ruta-directo.jpg.asset.json";
@@ -48,7 +49,7 @@ const NAV: NavItem[] = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { nombre, roles, isAdmin, signOut } = useAuth();
+  const { nombre, roles, isAdmin, esSuperadmin, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -59,7 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   }
 
-  const roleLabel = roles[0] ? roles[0].charAt(0).toUpperCase() + roles[0].slice(1) : "Usuario";
+  const roleLabel = esSuperadmin ? "Superadmin" : roles[0] ? roles[0].charAt(0).toUpperCase() + roles[0].slice(1) : "Usuario";
   const navItems = NAV.filter((n) => !n.adminOnly || isAdmin);
   const mobileItems = navItems.filter((n) => n.mobile);
 
@@ -75,6 +76,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="truncate text-sm font-bold leading-tight">Ruta Directo</p>
             <p className="truncate text-xs text-sidebar-foreground/60">Gestión Comercial</p>
           </div>
+        </div>
+        <div className="px-3 pb-2">
+          <OrgSwitcher className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
         </div>
         <nav className="flex-1 space-y-1 px-3 py-2">
           {navItems.map((item) => {
@@ -136,6 +140,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
           </div>
         </header>
+        <div className="border-b bg-card px-2 py-1 md:hidden">
+          <OrgSwitcher />
+        </div>
 
         {(!online || count > 0) && (
           <div

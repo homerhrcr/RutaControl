@@ -27,6 +27,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 export function DashboardPage() {
+  const { isAdmin } = useAuth();
+  const qc = useQueryClient();
+  const [adminRutas, setAdminRutas] = useState(false);
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {

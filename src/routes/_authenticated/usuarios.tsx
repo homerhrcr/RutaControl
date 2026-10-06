@@ -70,7 +70,7 @@ const emptyForm = {
   role: "vendedor" as (typeof ROLES)[number]["value"],
 };
 
-function UsuariosPage() {
+export function UsuariosPage() {
   const { isAdmin } = useAuth();
   const qc = useQueryClient();
   const listFn = useServerFn(listUsuarios);

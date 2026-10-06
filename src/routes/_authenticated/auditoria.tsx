@@ -52,7 +52,7 @@ function accionVariant(accion: string): "default" | "secondary" | "destructive" 
   return "default";
 }
 
-function AuditoriaPage() {
+export function AuditoriaPage() {
   const { isAdmin } = useAuth();
   const [entidad, setEntidad] = useState<string>("todas");
 

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { queryClient } from "@/lib/query-client-ref";
+import { useQueryClient } from "@tanstack/react-query";
 
 export type AppRole = "administrador" | "vendedor" | "cobrador";
 
@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [nombre, setNombre] = useState("");
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [esSuperadmin, setEsSuperadmin] = useState(false);
   const [organizaciones, setOrganizaciones] = useState<Organizacion[]>([]);
   const [orgActivaId, setOrgActivaId] = useState<string | null>(null);
@@ -99,9 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const { error } = await supabase.rpc("set_default_organization", { p_org: id });
     if (error) throw new Error(error.message);
-    queryClient.current?.clear();
+    queryClient.clear();
     if (user) await loadProfile(user.id);
-    await queryClient.current?.invalidateQueries();
+    await queryClient.invalidateQueries();
   }
 
   return (

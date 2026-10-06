@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CatalogoDialog } from "@/components/CatalogSelect";
 import { useAuth } from "@/lib/auth";
 import { formatCRC, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -29,7 +28,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 export function DashboardPage() {
   const { isAdmin } = useAuth();
   const qc = useQueryClient();
-  const [adminRutas, setAdminRutas] = useState(false);
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
@@ -144,11 +142,6 @@ export function DashboardPage() {
         <div>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-bold">Rutas de Distribución</h2>
-            {isAdmin && (
-              <Button size="sm" variant="outline" onClick={() => setAdminRutas(true)}>
-                Administrar rutas
-              </Button>
-            )}
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {(data?.rutasDetalle ?? []).map((r) => (
@@ -200,14 +193,6 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <CatalogoDialog
-        catalogo="rutas"
-        abierto={adminRutas}
-        cerrar={() => {
-          setAdminRutas(false);
-          qc.invalidateQueries({ queryKey: ["dashboard"] });
-        }}
-      />
     </div>
   );
 }

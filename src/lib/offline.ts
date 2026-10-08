@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { registrarVenta, registrarAbono } from "@/lib/data";
 import type { CartItem } from "@/lib/data";
 
@@ -42,16 +43,32 @@ export interface AbonoParams {
   saldoActual: number;
 }
 
+export interface EvidenciaParams {
+  id: string;
+  organization_id: string;
+  entidad: string;
+  entidad_id: string;
+  nombre_archivo: string;
+  mime_type: string;
+  tamano: number;
+  sha256: string;
+  capturada_en: string;
+  latitud: number | null;
+  longitud: number | null;
+  usuario_id: string;
+}
+
 export type OutboxStatus = "PENDING" | "PROCESSING" | "SYNCED" | "FAILED" | "CONFLICT";
+export type OutboxEntity = "ventas" | "abonos" | "evidencias";
 
 export interface OutboxOp {
   operation_id: string;
   user_id: string;
   device_id: string;
-  entity: "ventas" | "abonos";
+  entity: OutboxEntity;
   entity_id: string;
   action: "create";
-  payload: VentaParams | AbonoParams;
+  payload: VentaParams | AbonoParams | EvidenciaParams;
   created_at_local: number;
   status: OutboxStatus;
   retry_count: number;
@@ -59,45 +76,55 @@ export interface OutboxOp {
   synced_at: number | null;
 }
 
-/* ---------------- IndexedDB (outbox persistente) ---------------- */
+/* ---------------- IndexedDB (outbox + archivos) ---------------- */
 
 const DB_NAME = "ruta_directo";
 const STORE = "outbox";
+const FILES = "archivos";
 const LEGACY_KEY = "lr_offline_ventas";
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
+    // v2 agrega el almacén de archivos; la actualización conserva el outbox existente
+    const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {
         const s = db.createObjectStore(STORE, { keyPath: "operation_id" });
         s.createIndex("status", "status");
       }
+      if (!db.objectStoreNames.contains(FILES)) db.createObjectStore(FILES);
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T> | void): Promise<T | undefined> {
+async function tx<T>(
+  store: string,
+  mode: IDBTransactionMode,
+  fn: (s: IDBObjectStore) => IDBRequest<T> | void,
+): Promise<T | undefined> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
-    const t = db.transaction(STORE, mode);
-    const r = fn(t.objectStore(STORE));
+    const t = db.transaction(store, mode);
+    const r = fn(t.objectStore(store));
     t.oncomplete = () => resolve(r ? (r as IDBRequest<T>).result : undefined);
     t.onerror = () => reject(t.error);
   });
 }
 
-async function allOps(): Promise<OutboxOp[]> {
-  const r = await tx<OutboxOp[]>("readonly", (s) => s.getAll());
+export async function allOps(): Promise<OutboxOp[]> {
+  const r = await tx<OutboxOp[]>(STORE, "readonly", (s) => s.getAll());
   return (r ?? []).sort((a, b) => a.created_at_local - b.created_at_local);
 }
-const putOp = (op: OutboxOp) => tx("readwrite", (s) => s.put(op));
-const deleteOp = (id: string) => tx("readwrite", (s) => s.delete(id));
+const putOp = (op: OutboxOp) => tx(STORE, "readwrite", (s) => s.put(op));
+const deleteOp = (id: string) => tx(STORE, "readwrite", (s) => s.delete(id));
+const putFile = (id: string, blob: Blob) => tx(FILES, "readwrite", (s) => s.put(blob, id));
+export const getFile = (id: string) => tx<Blob>(FILES, "readonly", (s) => s.get(id));
+const deleteFile = (id: string) => tx(FILES, "readwrite", (s) => s.delete(id));
 
-function deviceId(): string {
+export function deviceId(): string {
   let id = localStorage.getItem("lr_device_id");
   if (!id) {
     id = crypto.randomUUID();
@@ -106,14 +133,30 @@ function deviceId(): string {
   return id;
 }
 
-/* ---------------- Pending count store ---------------- */
+/* ---------------- Contadores ---------------- */
 
+export interface QueueStats {
+  registros: number;
+  archivos: number;
+  errores: number;
+  conflictos: number;
+}
+const EMPTY: QueueStats = { registros: 0, archivos: 0, errores: 0, conflictos: 0 };
 const listeners = new Set<() => void>();
+let stats: QueueStats = EMPTY;
 let pendingCount = 0;
+
 async function refreshCount() {
   try {
     const ops = await allOps();
-    pendingCount = ops.filter((o) => o.status !== "SYNCED").length;
+    const activos = ops.filter((o) => o.status !== "SYNCED" && o.status !== "CONFLICT");
+    stats = {
+      registros: activos.filter((o) => o.entity !== "evidencias").length,
+      archivos: activos.filter((o) => o.entity === "evidencias").length,
+      errores: ops.filter((o) => o.status === "FAILED").length,
+      conflictos: ops.filter((o) => o.status === "CONFLICT").length,
+    };
+    pendingCount = activos.length;
   } catch {
     /* IndexedDB no disponible */
   }
@@ -125,7 +168,10 @@ async function migrateLegacy() {
   if (migrated || typeof window === "undefined") return;
   migrated = true;
   try {
-    const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY) || "[]") as (VentaParams & { _localId: string; _ts: number })[];
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY) || "[]") as (VentaParams & {
+      _localId: string;
+      _ts: number;
+    })[];
     for (const v of legacy) {
       const { _localId, _ts, ...p } = v;
       await enqueue("ventas", { ...p, id: p.id ?? _localId }, p.vendedor_id, _ts);
@@ -137,7 +183,12 @@ async function migrateLegacy() {
   await refreshCount();
 }
 
-async function enqueue(entity: OutboxOp["entity"], payload: VentaParams | AbonoParams, user_id: string, ts = Date.now()) {
+async function enqueue(
+  entity: OutboxEntity,
+  payload: VentaParams | AbonoParams | EvidenciaParams,
+  user_id: string,
+  ts = Date.now(),
+) {
   const entity_id = payload.id ?? crypto.randomUUID();
   await putOp({
     operation_id: crypto.randomUUID(),
@@ -164,6 +215,47 @@ export function queueAbono(params: AbonoParams) {
   return enqueue("abonos", { ...params, id: params.id ?? crypto.randomUUID() }, params.cobrador_id);
 }
 
+async function sha256(blob: Blob): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", await blob.arrayBuffer());
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/** Guarda la foto en el dispositivo (IndexedDB) y la encola. No requiere internet. */
+export async function queueEvidencia(input: {
+  file: Blob;
+  nombre?: string;
+  entidad: string;
+  entidad_id: string;
+  usuario_id: string;
+  organization_id: string;
+  lat?: number | null;
+  lng?: number | null;
+}): Promise<string> {
+  const id = crypto.randomUUID();
+  const mime = input.file.type || "image/jpeg";
+  const meta: EvidenciaParams = {
+    id,
+    organization_id: input.organization_id,
+    entidad: input.entidad,
+    entidad_id: input.entidad_id,
+    nombre_archivo: input.nombre || `foto-${id}.jpg`,
+    mime_type: mime,
+    tamano: input.file.size,
+    sha256: await sha256(input.file),
+    capturada_en: new Date().toISOString(),
+    latitud: input.lat ?? null,
+    longitud: input.lng ?? null,
+    usuario_id: input.usuario_id,
+  };
+  // Primero el archivo, luego la operación: si se cae entre ambos no queda una operación sin archivo
+  await putFile(id, input.file);
+  await enqueue("evidencias", meta, input.usuario_id);
+  if (navigator.onLine) void syncQueue();
+  return id;
+}
+
 export function getQueueCount(): number {
   return pendingCount;
 }
@@ -178,12 +270,103 @@ export interface SyncProgress {
   lastSyncedAt: number | null;
 }
 
-let progress: SyncProgress = { syncing: false, total: 0, done: 0, failed: false, lastSyncedAt: null };
+const LAST_SYNC_KEY = "lr_last_sync_at";
+let progress: SyncProgress = {
+  syncing: false,
+  total: 0,
+  done: 0,
+  failed: false,
+  lastSyncedAt: typeof window !== "undefined" ? Number(localStorage.getItem(LAST_SYNC_KEY)) || null : null,
+};
 const progressListeners = new Set<() => void>();
 function setProgress(patch: Partial<SyncProgress>) {
   progress = { ...progress, ...patch };
+  if (patch.lastSyncedAt) localStorage.setItem(LAST_SYNC_KEY, String(patch.lastSyncedAt));
   progressListeners.forEach((l) => l());
 }
+
+/* ---------------- Procesadores por entidad ---------------- */
+
+class ConflictError extends Error {
+  constructor(
+    public conflict_type: string,
+    public server_data: unknown,
+  ) {
+    super(conflict_type);
+  }
+}
+
+async function registrarConflicto(op: OutboxOp, e: ConflictError) {
+  const { error } = await supabase.from("sync_conflicts").upsert(
+    {
+      operation_id: op.operation_id,
+      entity: op.entity,
+      entity_id: op.entity_id,
+      device_id: op.device_id,
+      user_id: op.user_id,
+      local_data: op.payload as never,
+      server_data: (e.server_data ?? null) as never,
+      conflict_type: e.conflict_type,
+    },
+    { onConflict: "operation_id", ignoreDuplicates: true },
+  );
+  if (error) throw error;
+}
+
+async function procesarAbono(p: AbonoParams) {
+  // Idempotencia
+  const { data: existe } = await supabase.from("abonos").select("id").eq("id", p.id!).maybeSingle();
+  if (existe) return;
+  // Detección de conflicto: no se recorta el monto en silencio
+  const { data: cred, error } = await supabase
+    .from("creditos")
+    .select("id, saldo, monto, estado")
+    .eq("id", p.credito_id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!cred) throw new ConflictError("credito_inexistente", null);
+  if (Number(cred.saldo) <= 0) throw new ConflictError("credito_ya_cancelado", cred);
+  if (Number(cred.saldo) + 0.005 < p.monto) throw new ConflictError("abono_mayor_al_saldo", cred);
+  await registrarAbono(p);
+}
+
+async function procesarEvidencia(p: EvidenciaParams, op: OutboxOp) {
+  const { data: existe } = await supabase.from("evidencias").select("id").eq("id", p.id).maybeSingle();
+  if (existe) {
+    await deleteFile(p.id);
+    return;
+  }
+  const blob = await getFile(p.id);
+  if (!blob) throw new Error("Archivo local no encontrado");
+  const ext = (p.mime_type.split("/")[1] || "jpg").replace("jpeg", "jpg");
+  const path = `${p.organization_id}/${p.id}.${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from("evidencias")
+    .upload(path, blob, { contentType: p.mime_type, upsert: false });
+  // Reintento tras subida previa exitosa: el archivo ya existe → continuar
+  if (upErr && !/exist|duplicate/i.test(upErr.message)) throw upErr;
+  const { error } = await supabase.from("evidencias").insert({
+    id: p.id,
+    organization_id: p.organization_id,
+    entidad: p.entidad,
+    entidad_id: p.entidad_id,
+    storage_path: path,
+    nombre_archivo: p.nombre_archivo,
+    mime_type: p.mime_type,
+    tamano: p.tamano,
+    sha256: p.sha256,
+    capturada_en: p.capturada_en,
+    latitud: p.latitud,
+    longitud: p.longitud,
+    usuario_id: p.usuario_id,
+    device_id: op.device_id,
+  });
+  if (error && error.code !== "23505") throw error;
+  // Solo después de la confirmación del servidor se borra la copia local
+  await deleteFile(p.id);
+}
+
+/* ---------------- Sincronización ---------------- */
 
 let syncing = false;
 
@@ -193,19 +376,36 @@ export async function syncQueue(): Promise<number> {
   let done = 0;
   try {
     await migrateLegacy();
-    const ops = (await allOps()).filter((o) => o.status !== "SYNCED");
+    const ops = (await allOps()).filter((o) => o.status !== "SYNCED" && o.status !== "CONFLICT");
     setProgress({ syncing: true, total: ops.length, done: 0, failed: false });
     for (const op of ops) {
       await putOp({ ...op, status: "PROCESSING" });
       try {
         if (op.entity === "ventas") await registrarVenta(op.payload as VentaParams);
-        else await registrarAbono(op.payload as AbonoParams);
+        else if (op.entity === "abonos") await procesarAbono(op.payload as AbonoParams);
+        else await procesarEvidencia(op.payload as EvidenciaParams, op);
         await deleteOp(op.operation_id);
         done++;
         setProgress({ done });
       } catch (e: any) {
+        if (e instanceof ConflictError) {
+          try {
+            await registrarConflicto(op, e);
+            await putOp({ ...op, status: "CONFLICT", last_error: e.conflict_type });
+            done++;
+            setProgress({ done });
+            continue;
+          } catch (e2: any) {
+            e = e2;
+          }
+        }
         // Se conserva en el dispositivo y se reintenta luego (en orden, sin pérdida)
-        await putOp({ ...op, status: "FAILED", retry_count: op.retry_count + 1, last_error: String(e?.message ?? e) });
+        await putOp({
+          ...op,
+          status: "FAILED",
+          retry_count: op.retry_count + 1,
+          last_error: String(e?.message ?? e),
+        });
         setProgress({ failed: true });
         break;
       }
@@ -218,6 +418,38 @@ export async function syncQueue(): Promise<number> {
   return done;
 }
 
+/** Descarta del dispositivo una operación en conflicto (ya registrada en el servidor). */
+export async function descartarConflictoLocal(operation_id: string) {
+  const op = (await allOps()).find((o) => o.operation_id === operation_id);
+  if (!op || op.status !== "CONFLICT") return;
+  await deleteOp(operation_id);
+  await refreshCount();
+}
+
+/* ---------------- Server → dispositivo (incremental) ---------------- */
+
+const CURSOR_KEY = "lr_sync_cursor";
+
+/**
+ * Consulta solo qué tablas cambiaron desde el último cursor confirmado y
+ * devuelve sus nombres para refrescar únicamente esas consultas.
+ */
+export async function pullCambios(orgId: string | null): Promise<string[]> {
+  if (!navigator.onLine || !orgId) return [];
+  const key = `${CURSOR_KEY}_${orgId}`;
+  const desde = localStorage.getItem(key);
+  const { data, error } = await supabase.rpc("cambios_desde", {
+    p_desde: desde ?? new Date(0).toISOString(),
+  });
+  if (error) throw error;
+  const rows = (data ?? []) as { entidad: string; cambios: number; ultimo: string | null }[];
+  const cambiadas = rows.filter((r) => Number(r.cambios) > 0);
+  const max = cambiadas.reduce<string | null>((m, r) => (r.ultimo && (!m || r.ultimo > m) ? r.ultimo : m), desde);
+  if (max) localStorage.setItem(key, max);
+  // Primera vez: no se fuerza recarga (los datos ya se bajaron al abrir)
+  return desde ? cambiadas.map((r) => r.entidad) : [];
+}
+
 export function useSyncProgress(): SyncProgress {
   return useSyncExternalStore(
     (cb) => {
@@ -226,6 +458,17 @@ export function useSyncProgress(): SyncProgress {
     },
     () => progress,
     () => progress,
+  );
+}
+
+export function useQueueStats(): QueueStats {
+  return useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    () => stats,
+    () => EMPTY,
   );
 }
 

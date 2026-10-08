@@ -8,6 +8,20 @@
       "when": 1791247419366,
       "tag": "0000_multiempresa",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791476374883,
+      "tag": "0001_evidencias_conflictos_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791476391395,
+      "tag": "0002_evidencias_storage_policies",
+      "breakpoints": true
     }
   ]
 }

@@ -12,3 +12,6 @@
 
 - Offline: pending sales/payments live in an IndexedDB outbox (src/lib/offline.ts) with client-generated UUIDs; registrarVenta/registrarAbono skip ids that already exist — prevents duplicates on retry.
 - Android: Capacitor loads the published domain (server.url) because TanStack Start emits no static index.html; the service worker provides offline.
+- Offline photos: blobs live in the IndexedDB "archivos" store and an "evidencias" outbox op; the local copy is deleted only after both the storage upload and the evidencias row are confirmed — photos survive restarts and retries never duplicate.
+- Sync conflicts: critical ops (abonos) that no longer fit server state are written to sync_conflicts and kept locally as CONFLICT instead of being clamped; admins resolve them in /sincronizacion.
+- Server→device sync uses the cambios_desde(cursor) RPC with a per-company cursor in localStorage and invalidates only changed tables' queries — avoids re-downloading everything on reconnect.

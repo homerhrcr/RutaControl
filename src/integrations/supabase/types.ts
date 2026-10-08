@@ -408,6 +408,60 @@ export type Database = {
           },
         ]
       }
+      evidencias: {
+        Row: {
+          capturada_en: string
+          created_at: string
+          device_id: string
+          entidad: string
+          entidad_id: string
+          id: string
+          latitud: number | null
+          longitud: number | null
+          mime_type: string
+          nombre_archivo: string
+          organization_id: string
+          sha256: string
+          storage_path: string
+          tamano: number
+          usuario_id: string
+        }
+        Insert: {
+          capturada_en: string
+          created_at?: string
+          device_id: string
+          entidad: string
+          entidad_id: string
+          id: string
+          latitud?: number | null
+          longitud?: number | null
+          mime_type: string
+          nombre_archivo: string
+          organization_id?: string
+          sha256: string
+          storage_path: string
+          tamano: number
+          usuario_id: string
+        }
+        Update: {
+          capturada_en?: string
+          created_at?: string
+          device_id?: string
+          entidad?: string
+          entidad_id?: string
+          id?: string
+          latitud?: number | null
+          longitud?: number | null
+          mime_type?: string
+          nombre_archivo?: string
+          organization_id?: string
+          sha256?: string
+          storage_path?: string
+          tamano?: number
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       gastos: {
         Row: {
           categoria: string
@@ -723,6 +777,60 @@ export type Database = {
           },
         ]
       }
+      sync_conflicts: {
+        Row: {
+          conflict_type: string
+          created_at: string
+          device_id: string
+          entity: string
+          entity_id: string
+          id: string
+          local_data: Json
+          operation_id: string
+          organization_id: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          server_data: Json | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          conflict_type: string
+          created_at?: string
+          device_id: string
+          entity: string
+          entity_id: string
+          id?: string
+          local_data: Json
+          operation_id: string
+          organization_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          server_data?: Json | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          conflict_type?: string
+          created_at?: string
+          device_id?: string
+          entity?: string
+          entity_id?: string
+          id?: string
+          local_data?: Json
+          operation_id?: string
+          organization_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          server_data?: Json | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -819,6 +927,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cambios_desde: {
+        Args: { p_desde: string }
+        Returns: {
+          cambios: number
+          entidad: string
+          ultimo: string
+        }[]
+      }
       current_organization_id: { Args: never; Returns: string }
       has_role: {
         Args: {

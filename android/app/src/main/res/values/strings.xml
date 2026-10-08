@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ruta Directo</string>
+    <string name="title_activity_main">Ruta Directo</string>
+    <string name="package_name">com.rutadirecto.app</string>
+    <string name="custom_url_scheme">com.rutadirecto.app</string>
+</resources>

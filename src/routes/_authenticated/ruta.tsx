@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { QuickSale } from "@/components/QuickSale";
 import { AbonoDialog } from "@/components/AbonoDialog";
 import { HistorialCliente } from "@/components/HistorialCliente";
+import { EvidenciaButton } from "@/components/EvidenciaButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -379,9 +380,11 @@ export function RutaPage() {
                     >
                       <HandCoins className="h-4 w-4" /> Abonar
                     </Button>
-                    <Button variant="outline" className="col-span-2 h-11 gap-1.5" onClick={() => setHistClient(c)}>
+                    <Button variant="outline" className="h-11 gap-1.5" onClick={() => setHistClient(c)}>
                       <History className="h-4 w-4" /> Historial
                     </Button>
+                    <EvidenciaButton entidad="clientes" entidadId={c.id} />
+
                   </div>
                 </Card>
               );

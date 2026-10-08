@@ -3,7 +3,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useOfflineQueue, useSyncProgress, syncQueue } from "@/lib/offline";
+import { useOfflineQueue, useSyncProgress, syncQueue, useQueueStats } from "@/lib/offline";
+import { Link } from "@tanstack/react-router";
 
 function timeAgo(ts: number | null): string {
   if (!ts) return "—";
@@ -17,6 +18,7 @@ function timeAgo(ts: number | null): string {
 export function OfflineStatus() {
   const { online, count } = useOfflineQueue();
   const progress = useSyncProgress();
+  const stats = useQueueStats();
 
   const syncing = progress.syncing;
   const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
@@ -92,6 +94,11 @@ export function OfflineStatus() {
               <span className="text-xs text-muted-foreground">Operaciones en cola</span>
               <span className="text-sm font-semibold">{count}</span>
             </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {stats.registros} registros · {stats.archivos} archivos pendientes
+              {stats.errores > 0 && ` · ${stats.errores} errores de sincronización`}
+              {stats.conflictos > 0 && ` · ${stats.conflictos} conflictos`}
+            </p>
 
             {syncing && (
               <div className="mt-3 space-y-1.5">
@@ -134,6 +141,9 @@ export function OfflineStatus() {
             <RefreshCw className={cn("mr-2 h-3.5 w-3.5", syncing && "animate-spin")} />
             Sincronizar ahora
           </Button>
+          <Link to="/sincronizacion" className="block text-center text-xs text-primary underline">
+            Ver qué está pendiente
+          </Link>
         </div>
       </PopoverContent>
     </Popover>

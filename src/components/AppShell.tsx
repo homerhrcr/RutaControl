@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useOfflineQueue } from "@/lib/offline";
+import { useIncrementalPull } from "@/lib/sync-pull";
 import { OfflineStatus } from "@/components/OfflineStatus";
 import { OrgSwitcher } from "@/components/OrgSwitcher";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ const NAV: NavItem[] = [
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/gastos", label: "Gastos", icon: Wallet },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
+  { to: "/sincronizacion", label: "Sincronización", icon: RefreshCw },
   { to: "/administracion", label: "Administración", icon: UserCog, adminOnly: true },
 
 ];
@@ -54,6 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { online, count } = useOfflineQueue();
+  useIncrementalPull();
 
   async function handleSignOut() {
     await signOut();

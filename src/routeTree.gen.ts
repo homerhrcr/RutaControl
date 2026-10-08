@@ -27,6 +27,7 @@ import { Route as AuthenticatedProductosRouteImport } from './routes/_authentica
 import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
 import { Route as AuthenticatedRutaRouteImport } from './routes/_authenticated/ruta'
 import { Route as AuthenticatedRutasRouteImport } from './routes/_authenticated/rutas'
+import { Route as AuthenticatedSincronizacionRouteImport } from './routes/_authenticated/sincronizacion'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedVendedorRouteImport } from './routes/_authenticated/vendedor'
 import { Route as AuthenticatedVentasRouteImport } from './routes/_authenticated/ventas'
@@ -121,6 +122,12 @@ const AuthenticatedRutasRoute = AuthenticatedRutasRouteImport.update({
   path: '/rutas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSincronizacionRoute =
+  AuthenticatedSincronizacionRouteImport.update({
+    id: '/sincronizacion',
+    path: '/sincronizacion',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -155,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/reportes': typeof AuthenticatedReportesRoute
   '/ruta': typeof AuthenticatedRutaRoute
   '/rutas': typeof AuthenticatedRutasRoute
+  '/sincronizacion': typeof AuthenticatedSincronizacionRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
   '/ventas': typeof AuthenticatedVentasRoute
@@ -177,6 +185,7 @@ export interface FileRoutesByTo {
   '/reportes': typeof AuthenticatedReportesRoute
   '/ruta': typeof AuthenticatedRutaRoute
   '/rutas': typeof AuthenticatedRutasRoute
+  '/sincronizacion': typeof AuthenticatedSincronizacionRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
   '/ventas': typeof AuthenticatedVentasRoute
@@ -201,6 +210,7 @@ export interface FileRoutesById {
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
   '/_authenticated/ruta': typeof AuthenticatedRutaRoute
   '/_authenticated/rutas': typeof AuthenticatedRutasRoute
+  '/_authenticated/sincronizacion': typeof AuthenticatedSincronizacionRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/vendedor': typeof AuthenticatedVendedorRoute
   '/_authenticated/ventas': typeof AuthenticatedVentasRoute
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/ruta'
     | '/rutas'
+    | '/sincronizacion'
     | '/usuarios'
     | '/vendedor'
     | '/ventas'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/ruta'
     | '/rutas'
+    | '/sincronizacion'
     | '/usuarios'
     | '/vendedor'
     | '/ventas'
@@ -270,6 +282,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reportes'
     | '/_authenticated/ruta'
     | '/_authenticated/rutas'
+    | '/_authenticated/sincronizacion'
     | '/_authenticated/usuarios'
     | '/_authenticated/vendedor'
     | '/_authenticated/ventas'
@@ -409,6 +422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRutasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sincronizacion': {
+      id: '/_authenticated/sincronizacion'
+      path: '/sincronizacion'
+      fullPath: '/sincronizacion'
+      preLoaderRoute: typeof AuthenticatedSincronizacionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/usuarios': {
       id: '/_authenticated/usuarios'
       path: '/usuarios'
@@ -449,6 +469,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
   AuthenticatedRutaRoute: typeof AuthenticatedRutaRoute
   AuthenticatedRutasRoute: typeof AuthenticatedRutasRoute
+  AuthenticatedSincronizacionRoute: typeof AuthenticatedSincronizacionRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedVendedorRoute: typeof AuthenticatedVendedorRoute
   AuthenticatedVentasRoute: typeof AuthenticatedVentasRoute
@@ -470,6 +491,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
   AuthenticatedRutaRoute: AuthenticatedRutaRoute,
   AuthenticatedRutasRoute: AuthenticatedRutasRoute,
+  AuthenticatedSincronizacionRoute: AuthenticatedSincronizacionRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedVendedorRoute: AuthenticatedVendedorRoute,
   AuthenticatedVentasRoute: AuthenticatedVentasRoute,

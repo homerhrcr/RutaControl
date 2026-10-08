@@ -112,6 +112,7 @@ export function QuickSale({
     const ventaParams = {
       cliente_id: cliente.id,
       cliente_nombre: cliente.nombre,
+      id: crypto.randomUUID(),
       ruta_id: cliente.ruta_id,
       vendedor_id: user.id,
       items,

@@ -173,6 +173,7 @@ export interface CartItem {
 }
 
 export async function registrarVenta(params: {
+  id?: string;
   cliente_id: string;
   ruta_id: string | null;
   vendedor_id: string;
@@ -186,9 +187,16 @@ export async function registrarVenta(params: {
   const subtotal = params.items.reduce((s, i) => s + i.precio * i.cantidad, 0);
   const total = Math.max(0, subtotal - params.descuento);
 
+  // Idempotencia: si la venta con este id ya existe, no se duplica
+  if (params.id) {
+    const { data: existente } = await supabase.from("ventas").select("*").eq("id", params.id).maybeSingle();
+    if (existente) return existente;
+  }
+
   const { data: venta, error: vErr } = await supabase
     .from("ventas")
     .insert({
+      ...(params.id ? { id: params.id } : {}),
       cliente_id: params.cliente_id,
       ruta_id: params.ruta_id,
       vendedor_id: params.vendedor_id,
@@ -251,13 +259,23 @@ export async function registrarVenta(params: {
 }
 
 export async function registrarAbono(params: {
+  id?: string;
   credito_id: string;
   cliente_id: string;
   monto: number;
   cobrador_id: string;
   saldoActual: number;
 }) {
+  // Idempotencia: no duplicar un abono ya sincronizado
+  if (params.id) {
+    const { data: existente } = await supabase.from("abonos").select("id").eq("id", params.id).maybeSingle();
+    if (existente) return;
+  }
+  // Saldo real del servidor (el local puede estar desactualizado si se registró offline)
+  const { data: credActual } = await supabase.from("creditos").select("saldo").eq("id", params.credito_id).maybeSingle();
+  const saldoBase = credActual ? Number(credActual.saldo) : params.saldoActual;
   const { error: aErr } = await supabase.from("abonos").insert({
+    ...(params.id ? { id: params.id } : {}),
     credito_id: params.credito_id,
     cliente_id: params.cliente_id,
     monto: params.monto,
@@ -265,7 +283,7 @@ export async function registrarAbono(params: {
   });
   if (aErr) throw aErr;
 
-  const nuevoSaldo = Math.max(0, params.saldoActual - params.monto);
+  const nuevoSaldo = Math.max(0, saldoBase - params.monto);
   await supabase
     .from("creditos")
     .update({ saldo: nuevoSaldo, estado: nuevoSaldo === 0 ? "cancelado" : "al_dia" })

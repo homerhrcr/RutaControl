@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useCreditosCliente, registrarAbono } from "@/lib/data";
+import { queueAbono } from "@/lib/offline";
 import { useAuth } from "@/lib/auth";
 import { formatCRC, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export function AbonoDialog({
     setBusy(true);
     try {
       let restante = montoAbono;
+      let offline = false;
       // Si se eligió un día específico, aplicar solo a ese crédito.
       // De lo contrario, aplicar a los créditos más antiguos primero.
       // forzarTodos se usa en "Pagar todo" para ignorar la selección actual.
@@ -59,18 +61,30 @@ export function AbonoDialog({
       for (const c of lista) {
         if (restante <= 0) break;
         const aplicar = Math.min(restante, Number(c.saldo));
-        await registrarAbono({
+        const abonoParams = {
+          id: crypto.randomUUID(),
           credito_id: c.id,
           cliente_id: cliente.id,
           monto: aplicar,
           cobrador_id: user.id,
           saldoActual: Number(c.saldo),
-        });
+        };
+        if (!navigator.onLine) {
+          await queueAbono(abonoParams);
+          offline = true;
+        } else {
+          try {
+            await registrarAbono(abonoParams);
+          } catch {
+            await queueAbono(abonoParams);
+            offline = true;
+          }
+        }
         restante -= aplicar;
       }
       const aplicado = montoAbono - restante;
-      toast.success(`Abono registrado · ${formatCRC(aplicado)}`);
-      await refetch();
+      toast.success(`Abono ${offline ? "guardado offline" : "registrado"} · ${formatCRC(aplicado)}`);
+      if (!offline) await refetch();
       onDone();
       onClose();
     } catch (e: any) {

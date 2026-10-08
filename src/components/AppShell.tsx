@@ -26,6 +26,7 @@ import {
   UserCog,
   Wifi,
   WifiOff,
+  RefreshCw,
 } from "lucide-react";
 
 interface NavItem {

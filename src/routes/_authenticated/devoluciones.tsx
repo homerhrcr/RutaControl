@@ -13,6 +13,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatCRC, formatDateTime } from "@/lib/format";
 import { toast } from "sonner";
+import { queueDevolucion } from "@/lib/offline";
+import { useAuth } from "@/lib/auth";
 import { Plus, Undo2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/devoluciones")({
@@ -90,6 +92,7 @@ function DevolucionesPage() {
 export function NuevaDevolucion({ open, onOpenChange, clienteId }: { open: boolean; onOpenChange: (v: boolean) => void; clienteId?: string }) {
   const { data: clientes } = useClientes();
   const { data: rutas } = useRutas();
+  const { user } = useAuth();
   const invalidate = useInvalidate();
   const [cliente, setCliente] = useState(clienteId ?? "");
   const [ruta, setRuta] = useState("");
@@ -102,8 +105,7 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId }: { open: boole
   async function guardar() {
     if (!items.length || items.some((i) => i.cantidad <= 0)) return toast.error("Agregue productos con cantidad");
     setBusy(true);
-    const { error } = await supabase.rpc("registrar_devolucion", {
-      p: {
+    const p = {
         id: crypto.randomUUID(),
         cliente_id: cliente || null,
         ruta_id: ruta || null,
@@ -111,8 +113,15 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId }: { open: boole
         aplicar_credito: aplicar && !!cliente,
         notas,
         items: items.map((i) => ({ producto_id: i.producto_id, nombre: i.nombre, cantidad: i.cantidad, precio: i.precio, motivo: i.motivo, destino: i.destino })),
-      },
-    });
+      };
+    if (!navigator.onLine) {
+      await queueDevolucion(p, user?.id ?? "");
+      setBusy(false);
+      toast.info("Sin conexión: devolución guardada en el dispositivo");
+      setItems([]); setNotas(""); setAplicar(false); onOpenChange(false);
+      return;
+    }
+    const { error } = await supabase.rpc("registrar_devolucion", { p });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Devolución registrada");

@@ -59,7 +59,22 @@ export interface EvidenciaParams {
 }
 
 export type OutboxStatus = "PENDING" | "PROCESSING" | "SYNCED" | "FAILED" | "CONFLICT";
-export type OutboxEntity = "ventas" | "abonos" | "evidencias";
+export type OutboxEntity = "ventas" | "abonos" | "evidencias" | "pedidos" | "pedido_estado" | "entregas" | "devoluciones";
+
+export interface PedidoParams {
+  id: string;
+  cliente_id: string;
+  ruta_id: string | null;
+  fecha_entrega: string;
+  total: number;
+  notas: string | null;
+  usuario_id?: string;
+  items: { producto_id: string; nombre: string; cantidad: number; precio: number }[];
+}
+export interface PedidoEstadoParams { id: string; ids: string[]; estado: string }
+export interface EntregaParams { id: string; pedido_id: string; venta: VentaParams }
+export interface DevolucionParams { id: string; [k: string]: unknown }
+type AnyPayload = VentaParams | AbonoParams | EvidenciaParams | PedidoParams | PedidoEstadoParams | EntregaParams | DevolucionParams;
 
 export interface OutboxOp {
   operation_id: string;
@@ -68,7 +83,7 @@ export interface OutboxOp {
   entity: OutboxEntity;
   entity_id: string;
   action: "create";
-  payload: VentaParams | AbonoParams | EvidenciaParams;
+  payload: AnyPayload;
   created_at_local: number;
   status: OutboxStatus;
   retry_count: number;
@@ -185,7 +200,7 @@ async function migrateLegacy() {
 
 async function enqueue(
   entity: OutboxEntity,
-  payload: VentaParams | AbonoParams | EvidenciaParams,
+  payload: AnyPayload,
   user_id: string,
   ts = Date.now(),
 ) {
@@ -210,6 +225,15 @@ async function enqueue(
 export function queueVenta(params: VentaParams) {
   return enqueue("ventas", { ...params, id: params.id ?? crypto.randomUUID() }, params.vendedor_id);
 }
+
+export function queuePedido(p: PedidoParams, uid: string) { return enqueue("pedidos", p, uid); }
+export function queuePedidoEstado(ids: string[], estado: string, uid: string) {
+  return enqueue("pedido_estado", { id: crypto.randomUUID(), ids, estado }, uid);
+}
+export function queueEntrega(pedido_id: string, venta: VentaParams) {
+  return enqueue("entregas", { id: crypto.randomUUID(), pedido_id, venta }, venta.vendedor_id);
+}
+export function queueDevolucion(p: DevolucionParams, uid: string) { return enqueue("devoluciones", p, uid); }
 
 export function queueAbono(params: AbonoParams) {
   return enqueue("abonos", { ...params, id: params.id ?? crypto.randomUUID() }, params.cobrador_id);
@@ -366,6 +390,26 @@ async function procesarEvidencia(p: EvidenciaParams, op: OutboxOp) {
   await deleteFile(p.id);
 }
 
+async function procesarPedido(p: PedidoParams) {
+  const { error } = await supabase.from("pedidos").upsert(
+    { id: p.id, cliente_id: p.cliente_id, ruta_id: p.ruta_id, fecha_entrega: p.fecha_entrega, total: p.total, notas: p.notas, usuario_id: p.usuario_id },
+    { onConflict: "id", ignoreDuplicates: true },
+  );
+  if (error) throw error;
+  const { count } = await supabase.from("pedidos_detalle").select("id", { count: "exact", head: true }).eq("pedido_id", p.id);
+  if (count) return;
+  const { error: e2 } = await supabase.from("pedidos_detalle").insert(
+    p.items.map((i) => ({ pedido_id: p.id, producto_id: i.producto_id, nombre_producto: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio })),
+  );
+  if (e2) throw e2;
+}
+
+async function procesarEntrega(p: EntregaParams) {
+  const v = await registrarVenta(p.venta);
+  const { error } = await supabase.from("pedidos").update({ estado: "entregado", venta_id: v.id }).eq("id", p.pedido_id);
+  if (error) throw error;
+}
+
 /* ---------------- Sincronización ---------------- */
 
 let syncing = false;
@@ -383,7 +427,16 @@ export async function syncQueue(): Promise<number> {
       try {
         if (op.entity === "ventas") await registrarVenta(op.payload as VentaParams);
         else if (op.entity === "abonos") await procesarAbono(op.payload as AbonoParams);
-        else await procesarEvidencia(op.payload as EvidenciaParams, op);
+        else if (op.entity === "pedidos") await procesarPedido(op.payload as PedidoParams);
+        else if (op.entity === "pedido_estado") {
+          const p = op.payload as PedidoEstadoParams;
+          const { error } = await supabase.from("pedidos").update({ estado: p.estado }).in("id", p.ids);
+          if (error) throw error;
+        } else if (op.entity === "entregas") await procesarEntrega(op.payload as EntregaParams);
+        else if (op.entity === "devoluciones") {
+          const { error } = await supabase.rpc("registrar_devolucion", { p: op.payload as never });
+          if (error) throw error;
+        } else await procesarEvidencia(op.payload as EvidenciaParams, op);
         await deleteOp(op.operation_id);
         done++;
         setProgress({ done });

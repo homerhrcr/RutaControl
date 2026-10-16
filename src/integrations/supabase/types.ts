@@ -221,11 +221,13 @@ export type Database = {
         Row: {
           activo: boolean
           canton: string | null
+          correo_fe: string | null
           created_at: string
           direccion: string | null
           distrito: string | null
           foto_url: string | null
           id: string
+          identificacion: string | null
           latitud: number | null
           longitud: number | null
           nombre: string
@@ -234,16 +236,19 @@ export type Database = {
           referencia: string | null
           ruta_id: string | null
           telefono: string | null
+          tipo_identificacion: string | null
           updated_at: string
         }
         Insert: {
           activo?: boolean
           canton?: string | null
+          correo_fe?: string | null
           created_at?: string
           direccion?: string | null
           distrito?: string | null
           foto_url?: string | null
           id?: string
+          identificacion?: string | null
           latitud?: number | null
           longitud?: number | null
           nombre: string
@@ -252,16 +257,19 @@ export type Database = {
           referencia?: string | null
           ruta_id?: string | null
           telefono?: string | null
+          tipo_identificacion?: string | null
           updated_at?: string
         }
         Update: {
           activo?: boolean
           canton?: string | null
+          correo_fe?: string | null
           created_at?: string
           direccion?: string | null
           distrito?: string | null
           foto_url?: string | null
           id?: string
+          identificacion?: string | null
           latitud?: number | null
           longitud?: number | null
           nombre?: string
@@ -270,6 +278,7 @@ export type Database = {
           referencia?: string | null
           ruta_id?: string | null
           telefono?: string | null
+          tipo_identificacion?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -285,6 +294,74 @@ export type Database = {
             columns: ["ruta_id"]
             isOneToOne: false
             referencedRelation: "rutas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      config_fiscal: {
+        Row: {
+          actividad_economica: string
+          activo: boolean
+          ambiente: string
+          canton: string | null
+          correo: string | null
+          distrito: string | null
+          identificacion: string
+          nombre_comercial: string | null
+          nombre_fiscal: string
+          organization_id: string
+          otras_senas: string | null
+          provincia: string | null
+          sucursal: string
+          telefono: string | null
+          terminal: string
+          tipo_identificacion: string
+          updated_at: string
+        }
+        Insert: {
+          actividad_economica?: string
+          activo?: boolean
+          ambiente?: string
+          canton?: string | null
+          correo?: string | null
+          distrito?: string | null
+          identificacion?: string
+          nombre_comercial?: string | null
+          nombre_fiscal?: string
+          organization_id?: string
+          otras_senas?: string | null
+          provincia?: string | null
+          sucursal?: string
+          telefono?: string | null
+          terminal?: string
+          tipo_identificacion?: string
+          updated_at?: string
+        }
+        Update: {
+          actividad_economica?: string
+          activo?: boolean
+          ambiente?: string
+          canton?: string | null
+          correo?: string | null
+          distrito?: string | null
+          identificacion?: string
+          nombre_comercial?: string | null
+          nombre_fiscal?: string
+          organization_id?: string
+          otras_senas?: string | null
+          provincia?: string | null
+          sucursal?: string
+          telefono?: string | null
+          terminal?: string
+          tipo_identificacion?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "config_fiscal_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -404,6 +481,128 @@ export type Database = {
             columns: ["venta_id"]
             isOneToOne: false
             referencedRelation: "ventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      devoluciones: {
+        Row: {
+          aplicado_credito: number
+          cliente_id: string | null
+          created_at: string
+          fecha: string
+          id: string
+          notas: string | null
+          organization_id: string
+          ruta_id: string | null
+          tipo: string
+          total: number
+          usuario_id: string | null
+        }
+        Insert: {
+          aplicado_credito?: number
+          cliente_id?: string | null
+          created_at?: string
+          fecha?: string
+          id?: string
+          notas?: string | null
+          organization_id?: string
+          ruta_id?: string | null
+          tipo?: string
+          total?: number
+          usuario_id?: string | null
+        }
+        Update: {
+          aplicado_credito?: number
+          cliente_id?: string | null
+          created_at?: string
+          fecha?: string
+          id?: string
+          notas?: string | null
+          organization_id?: string
+          ruta_id?: string | null
+          tipo?: string
+          total?: number
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devoluciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devoluciones_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devoluciones_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "rutas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      devoluciones_detalle: {
+        Row: {
+          cantidad: number
+          destino: string
+          devolucion_id: string
+          id: string
+          motivo: string
+          nombre_producto: string
+          organization_id: string
+          precio_unitario: number
+          producto_id: string | null
+        }
+        Insert: {
+          cantidad: number
+          destino: string
+          devolucion_id: string
+          id?: string
+          motivo: string
+          nombre_producto: string
+          organization_id?: string
+          precio_unitario?: number
+          producto_id?: string | null
+        }
+        Update: {
+          cantidad?: number
+          destino?: string
+          devolucion_id?: string
+          id?: string
+          motivo?: string
+          nombre_producto?: string
+          organization_id?: string
+          precio_unitario?: number
+          producto_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devoluciones_detalle_devolucion_id_fkey"
+            columns: ["devolucion_id"]
+            isOneToOne: false
+            referencedRelation: "devoluciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devoluciones_detalle_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devoluciones_detalle_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
             referencedColumns: ["id"]
           },
         ]
@@ -632,6 +831,132 @@ export type Database = {
         }
         Relationships: []
       }
+      pedidos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          estado: string
+          fecha_entrega: string
+          id: string
+          notas: string | null
+          organization_id: string
+          ruta_id: string | null
+          total: number
+          updated_at: string
+          usuario_id: string | null
+          venta_id: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          estado?: string
+          fecha_entrega: string
+          id?: string
+          notas?: string | null
+          organization_id?: string
+          ruta_id?: string | null
+          total?: number
+          updated_at?: string
+          usuario_id?: string | null
+          venta_id?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          estado?: string
+          fecha_entrega?: string
+          id?: string
+          notas?: string | null
+          organization_id?: string
+          ruta_id?: string | null
+          total?: number
+          updated_at?: string
+          usuario_id?: string | null
+          venta_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "rutas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_venta_id_fkey"
+            columns: ["venta_id"]
+            isOneToOne: false
+            referencedRelation: "ventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedidos_detalle: {
+        Row: {
+          cantidad: number
+          id: string
+          nombre_producto: string
+          organization_id: string
+          pedido_id: string
+          precio_unitario: number
+          producto_id: string
+        }
+        Insert: {
+          cantidad: number
+          id?: string
+          nombre_producto: string
+          organization_id?: string
+          pedido_id: string
+          precio_unitario: number
+          producto_id: string
+        }
+        Update: {
+          cantidad?: number
+          id?: string
+          nombre_producto?: string
+          organization_id?: string
+          pedido_id?: string
+          precio_unitario?: number
+          producto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_detalle_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_detalle_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_detalle_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_admins: {
         Row: {
           created_at: string
@@ -661,6 +986,7 @@ export type Database = {
       productos: {
         Row: {
           activo: boolean
+          cabys: string | null
           categoria_id: string | null
           codigo: string
           costo: number
@@ -671,10 +997,12 @@ export type Database = {
           nombre: string
           organization_id: string
           precio: number
+          tarifa_iva: number
           updated_at: string
         }
         Insert: {
           activo?: boolean
+          cabys?: string | null
           categoria_id?: string | null
           codigo: string
           costo?: number
@@ -685,10 +1013,12 @@ export type Database = {
           nombre: string
           organization_id?: string
           precio?: number
+          tarifa_iva?: number
           updated_at?: string
         }
         Update: {
           activo?: boolean
+          cabys?: string | null
           categoria_id?: string | null
           codigo?: string
           costo?: number
@@ -699,6 +1029,7 @@ export type Database = {
           nombre?: string
           organization_id?: string
           precio?: number
+          tarifa_iva?: number
           updated_at?: string
         }
         Relationships: [
@@ -946,6 +1277,7 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _uid?: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      registrar_devolucion: { Args: { p: Json }; Returns: string }
       set_default_organization: { Args: { p_org: string }; Returns: undefined }
     }
     Enums: {

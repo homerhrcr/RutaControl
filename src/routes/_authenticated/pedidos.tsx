@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatCRC } from "@/lib/format";
 import { toast } from "sonner";
+import { queuePedido, queuePedidoEstado, queueEntrega } from "@/lib/offline";
 import { Plus, Truck, CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
@@ -81,6 +82,7 @@ function PedidosPage() {
   }, [pedidos]);
 
   async function cambiarEstado(id: string, estado: string) {
+    if (!navigator.onLine) { await queuePedidoEstado([id], estado, user?.id ?? ""); return toast.info("Sin conexión: se actualizará al reconectar"); }
     const { error } = await supabase.from("pedidos").update({ estado }).eq("id", id);
     if (error) return toast.error(error.message);
     invalidate(["pedidos"]);
@@ -89,6 +91,7 @@ function PedidosPage() {
   async function marcarCargados() {
     const ids = (pedidos ?? []).filter((p) => p.estado === "confirmado").map((p) => p.id);
     if (!ids.length) return;
+    if (!navigator.onLine) { await queuePedidoEstado(ids, "cargado", user?.id ?? ""); return toast.info("Sin conexión: se actualizará al reconectar"); }
     const { error } = await supabase.from("pedidos").update({ estado: "cargado" }).in("id", ids);
     if (error) return toast.error(error.message);
     toast.success(`${ids.length} pedidos marcados como cargados`);
@@ -180,7 +183,16 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId }: { open: boolean; 
     setBusy(true);
     const c: any = clientes?.find((x) => x.id === cliente);
     const rutaId = c?.cliente_rutas?.[0]?.ruta_id ?? c?.ruta_id ?? null;
-    const { data: ped, error } = await supabase.from("pedidos").insert({ cliente_id: cliente, ruta_id: rutaId, fecha_entrega: f, total, notas: notas || null, usuario_id: usuarioId }).select("id").single();
+    const id = crypto.randomUUID();
+    const payload = { id, cliente_id: cliente, ruta_id: rutaId, fecha_entrega: f, total, notas: notas || null, usuario_id: usuarioId, items: items.map((i) => ({ producto_id: i.producto_id, nombre: i.nombre, cantidad: i.cantidad, precio: i.precio })) };
+    if (!navigator.onLine) {
+      await queuePedido(payload, usuarioId ?? "");
+      setBusy(false);
+      toast.info("Sin conexión: pedido guardado en el dispositivo");
+      setItems([]); setCliente(""); setNotas(""); onOpenChange(false);
+      return;
+    }
+    const { data: ped, error } = await supabase.from("pedidos").insert({ id, cliente_id: cliente, ruta_id: rutaId, fecha_entrega: f, total, notas: notas || null, usuario_id: usuarioId }).select("id").single();
     if (!error) {
       const { error: dErr } = await supabase.from("pedidos_detalle").insert(items.map((i) => ({ pedido_id: ped.id, producto_id: i.producto_id, nombre_producto: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio })));
       if (dErr) { await supabase.from("pedidos").delete().eq("id", ped.id); setBusy(false); return toast.error(dErr.message); }
@@ -230,6 +242,13 @@ function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; onClose:
     const entregados = items.filter((i) => i.cantidad > 0);
     if (!entregados.length) return toast.error("No hay productos entregados");
     setBusy(true);
+    const ventaP = { id: pedido.venta_id ?? pedido.id, cliente_id: pedido.cliente_id, ruta_id: pedido.ruta_id, vendedor_id: vendedorId, items: entregados, descuento: 0, metodo };
+    if (!navigator.onLine) {
+      await queueEntrega(pedido.id, ventaP);
+      setBusy(false);
+      toast.info("Sin conexión: la entrega se facturará al reconectar");
+      return onClose();
+    }
     try {
       // El id de la venta es estable por pedido: si se reintenta, no se duplica.
       const venta = await registrarVenta({

@@ -17,6 +17,16 @@ import { Plus, Search, AlertTriangle } from "lucide-react";
 import { formatCRC } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/productos")({
+  head: () => ({
+    meta: [
+      { title: "Productos — Ruta Directo" },
+      { name: "description", content: "Catálogo y existencias de Ruta Directo." },
+      { property: "og:title", content: "Productos — Ruta Directo" },
+      { property: "og:description", content: "Catálogo y existencias de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ProductosPage,
 });
 

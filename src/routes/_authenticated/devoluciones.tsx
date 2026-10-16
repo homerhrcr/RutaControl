@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { queueDevolucion } from "@/lib/offline";
 import { useAuth } from "@/lib/auth";
 import { Plus, Undo2 } from "lucide-react";
+import { DevolucionInspeccion, FotoDevolucion, type InspeccionProducto } from "@/components/DevolucionInspeccion";
 
 export const Route = createFileRoute("/_authenticated/devoluciones")({
   head: () => ({
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/devoluciones")({
 });
 
 const MOTIVOS = ["Vencido", "Dañado / quebrado", "Mal estado", "No vendido", "Error de pedido"];
-type Linea = LineaItem & { motivo: string; destino: "reingreso" | "merma" };
+type Linea = LineaItem & InspeccionProducto & { motivo: string; destino: "reingreso" | "merma" };
 
 function DevolucionesPage() {
   const [open, setOpen] = useState(false);
@@ -81,6 +82,8 @@ function DevolucionesPage() {
                 </li>
               ))}
             </ul>
+            {d.notas && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{d.notas}</p>}
+            {Array.from((d.notas ?? "").matchAll(/Foto: ([0-9a-f-]{36})/g)).map((m) => <FotoDevolucion key={m[1]} id={m[1]} nombre="producto devuelto" />)}
           </Card>
         ))}
       </div>
@@ -93,6 +96,7 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId }: { open: boole
   const { data: clientes } = useClientes();
   const { data: rutas } = useRutas();
   const { user } = useAuth();
+  const [devolucionId, setDevolucionId] = useState(() => crypto.randomUUID());
   const invalidate = useInvalidate();
   const [cliente, setCliente] = useState(clienteId ?? "");
   const [ruta, setRuta] = useState("");
@@ -103,22 +107,28 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId }: { open: boole
   const total = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
   async function guardar() {
+    if (!user) return toast.error("Inicie sesión para registrar la devolución");
     if (!items.length || items.some((i) => i.cantidad <= 0)) return toast.error("Agregue productos con cantidad");
     setBusy(true);
     const p = {
-        id: crypto.randomUUID(),
+        id: devolucionId,
         cliente_id: cliente || null,
         ruta_id: ruta || null,
         tipo: cliente ? "cliente" : "ruta",
         aplicar_credito: aplicar && !!cliente,
-        notas,
+        notas: [notas, ...items.filter((i) => i.descripcion || i.evidencia_id || i.recomendacion).map((i) => [
+          `${i.nombre}: ${i.descripcion ?? ""}`,
+          i.evidencia_id ? `Foto: ${i.evidencia_id}` : "",
+          i.recomendacion ? `IA: ${i.recomendacion.destino} — ${i.recomendacion.razon}\n${i.recomendacion.observaciones}` : "",
+          `Destino confirmado: ${i.destino}`,
+        ].filter(Boolean).join("\n"))].filter(Boolean).join("\n\n"),
         items: items.map((i) => ({ producto_id: i.producto_id, nombre: i.nombre, cantidad: i.cantidad, precio: i.precio, motivo: i.motivo, destino: i.destino })),
       };
     if (!navigator.onLine) {
       await queueDevolucion(p, user?.id ?? "");
       setBusy(false);
       toast.info("Sin conexión: devolución guardada en el dispositivo");
-      setItems([]); setNotas(""); setAplicar(false); onOpenChange(false);
+      setItems([]); setNotas(""); setAplicar(false); setDevolucionId(crypto.randomUUID()); onOpenChange(false);
       return;
     }
     const { error } = await supabase.rpc("registrar_devolucion", { p });
@@ -126,7 +136,7 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId }: { open: boole
     if (error) return toast.error(error.message);
     toast.success("Devolución registrada");
     invalidate(["devoluciones", "productos", "creditos", "creditos-pendientes"]);
-    setItems([]); setNotas(""); setAplicar(false);
+    setItems([]); setNotas(""); setAplicar(false); setDevolucionId(crypto.randomUUID());
     onOpenChange(false);
   }
 
@@ -156,14 +166,17 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId }: { open: boole
             onChange={setItems}
             nuevo={(b) => ({ ...b, motivo: MOTIVOS[0], destino: "merma" })}
             extra={(it, set) => (
+              <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <select className="h-9 rounded-md border bg-background px-2 text-sm" value={it.motivo} onChange={(e) => set({ motivo: e.target.value })}>
                   {MOTIVOS.map((m) => <option key={m}>{m}</option>)}
                 </select>
-                <select className="h-9 rounded-md border bg-background px-2 text-sm" value={it.destino} onChange={(e) => set({ destino: e.target.value as Linea["destino"] })}>
+                <select aria-label={`Destino de ${it.nombre}`} className="h-9 rounded-md border bg-background px-2 text-sm" value={it.destino} onChange={(e) => set({ destino: e.target.value as Linea["destino"], recomendacion_aplicada: false })}>
                   <option value="merma">Merma (se desecha)</option>
                   <option value="reingreso">Regresa a bodega</option>
                 </select>
+              </div>
+              <DevolucionInspeccion productoId={it.producto_id} nombre={it.nombre} devolucionId={devolucionId} value={it} onChange={set} />
               </div>
             )}
           />

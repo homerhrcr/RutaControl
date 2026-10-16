@@ -20,6 +20,16 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/menu")({
+  head: () => ({
+    meta: [
+      { title: "Más opciones — Ruta Directo" },
+      { name: "description", content: "Opciones y configuración de Ruta Directo." },
+      { property: "og:title", content: "Más opciones — Ruta Directo" },
+      { property: "og:description", content: "Opciones y configuración de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: MenuPage,
 });
 

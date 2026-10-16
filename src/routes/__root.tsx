@@ -97,8 +97,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@RutaDirecto" },
       { name: "twitter:title", content: "Ruta Directo — Sistema de Ventas y Gestión" },
       { name: "twitter:description", content: "Sistema de ventas y gestión comercial de Ruta Directo." },
-      { property: "og:image", content: "https://ventaslacteoslarivera.lovable.app/__l5e/assets-v1/c1e180e9-d63f-4956-881f-538a7907e82b/logo-ruta-directo.jpg" },
-      { name: "twitter:image", content: "https://ventaslacteoslarivera.lovable.app/__l5e/assets-v1/c1e180e9-d63f-4956-881f-538a7907e82b/logo-ruta-directo.jpg" },
     ],
     links: [
       {

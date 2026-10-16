@@ -35,6 +35,16 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ruta")({
+  head: () => ({
+    meta: [
+      { title: "Iniciar Ruta — Ruta Directo" },
+      { name: "description", content: "Ventas y cobros por cliente en las rutas de Ruta Directo." },
+      { property: "og:title", content: "Iniciar Ruta — Ruta Directo" },
+      { property: "og:description", content: "Ventas y cobros por cliente en las rutas de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: RutaPage,
 });
 

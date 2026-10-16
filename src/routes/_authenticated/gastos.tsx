@@ -34,6 +34,16 @@ import { toast } from "sonner";
 import { Wallet, Plus, Pencil, Trash2, Fuel } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/gastos")({
+  head: () => ({
+    meta: [
+      { title: "Gastos — Ruta Directo" },
+      { name: "description", content: "Control de gastos de las rutas de Ruta Directo." },
+      { property: "og:title", content: "Gastos — Ruta Directo" },
+      { property: "og:description", content: "Control de gastos de las rutas de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: GastosPage,
 });
 

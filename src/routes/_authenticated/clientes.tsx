@@ -32,6 +32,16 @@ import { HistorialCliente } from "@/components/HistorialCliente";
 
 
 export const Route = createFileRoute("/_authenticated/clientes")({
+  head: () => ({
+    meta: [
+      { title: "Clientes — Ruta Directo" },
+      { name: "description", content: "Clientes y su historial comercial en Ruta Directo." },
+      { property: "og:title", content: "Clientes — Ruta Directo" },
+      { property: "og:description", content: "Clientes y su historial comercial en Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ClientesPage,
 });
 

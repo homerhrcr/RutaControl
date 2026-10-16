@@ -18,6 +18,10 @@ export const Route = createFileRoute("/_authenticated/administracion")({
     meta: [
       { title: "Administración — Ruta Directo" },
       { name: "description", content: "Usuarios, auditoría y rutas de Ruta Directo." },
+      { property: "og:title", content: "Administración — Ruta Directo" },
+      { property: "og:description", content: "Usuarios, auditoría y rutas de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AdministracionPage,

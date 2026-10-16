@@ -13,6 +13,16 @@ import { toast } from "sonner";
 import { TrendingUp, Receipt, Banknote, Users, FileSpreadsheet, Wallet } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reportes")({
+  head: () => ({
+    meta: [
+      { title: "Reportes — Ruta Directo" },
+      { name: "description", content: "Reportes de ventas, gastos y cobranza de Ruta Directo." },
+      { property: "og:title", content: "Reportes — Ruta Directo" },
+      { property: "og:description", content: "Reportes de ventas, gastos y cobranza de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ReportesPage,
 });
 

@@ -16,4 +16,5 @@
 - Sync conflicts: critical ops (abonos) that no longer fit server state are written to sync_conflicts and kept locally as CONFLICT instead of being clamped; admins resolve them in /sincronizacion.
 - Server→device sync uses the cambios_desde(cursor) RPC with a per-company cursor in localStorage and invalidates only changed tables' queries — avoids re-downloading everything on reconnect.
 - Returns use the registrar_devolucion(jsonb) RPC with a client UUID — stock, waste and credit reduction happen atomically and retries are no-ops.
+- Return inspection AI uses authenticated server functions and server-only Responses helpers; evidence uses the existing photo outbox and inspection text is stored in return notes — recommendations never mutate inventory until the user confirms a return.
 - Delivering a preventa order calls registrarVenta with the order id as sale id — retries resume instead of duplicating.

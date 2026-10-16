@@ -43,6 +43,9 @@ const empty = {
   canton: "",
   provincia: "",
   referencia: "",
+  tipo_identificacion: "",
+  identificacion: "",
+  correo_fe: "",
   ruta_ids: [] as string[],
   latitud: null as number | null,
   longitud: null as number | null,
@@ -94,6 +97,9 @@ function ClientesPage() {
       canton: c.canton ?? "",
       provincia: c.provincia ?? "",
       referencia: c.referencia ?? "",
+      tipo_identificacion: c.tipo_identificacion ?? "",
+      identificacion: c.identificacion ?? "",
+      correo_fe: c.correo_fe ?? "",
       ruta_ids: (c.cliente_rutas ?? []).map((cr: any) => cr.ruta_id),
       latitud: c.latitud,
       longitud: c.longitud,
@@ -119,7 +125,7 @@ function ClientesPage() {
     if (!form.nombre.trim()) return toast.error("El nombre es obligatorio");
     setBusy(true);
     const { ruta_ids, ...rest } = form;
-    const payload = { ...rest, ruta_id: ruta_ids[0] ?? null };
+    const payload = { ...rest, ruta_id: ruta_ids[0] ?? null, tipo_identificacion: rest.tipo_identificacion || null, identificacion: rest.identificacion || null, correo_fe: rest.correo_fe || null };
 
     let clienteId = editId;
     if (editId) {
@@ -248,6 +254,23 @@ function ClientesPage() {
             </Field>
             <Field label="Teléfono">
               <Input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Tipo de cédula">
+                <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.tipo_identificacion} onChange={(e) => setForm({ ...form, tipo_identificacion: e.target.value })}>
+                  <option value="">Sin cédula</option>
+                  <option value="01">Física</option>
+                  <option value="02">Jurídica</option>
+                  <option value="03">DIMEX</option>
+                  <option value="04">NITE</option>
+                </select>
+              </Field>
+              <Field label="Cédula">
+                <Input value={form.identificacion} onChange={(e) => setForm({ ...form, identificacion: e.target.value.replace(/\D/g, "") })} />
+              </Field>
+            </div>
+            <Field label="Correo para factura electrónica">
+              <Input type="email" value={form.correo_fe} onChange={(e) => setForm({ ...form, correo_fe: e.target.value })} />
             </Field>
             <Field label="Dirección exacta">
               <Input value={form.direccion} onChange={(e) => setForm({ ...form, direccion: e.target.value })} />

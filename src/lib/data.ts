@@ -187,65 +187,101 @@ export async function registrarVenta(params: {
   const subtotal = params.items.reduce((s, i) => s + i.precio * i.cantidad, 0);
   const total = Math.max(0, subtotal - params.descuento);
 
-  // Idempotencia: si la venta con este id ya existe, no se duplica
+  // Idempotencia reanudable: si la venta ya existe (p.ej. quedó a medias por un corte),
+  // se completan solo los pasos que falten en lugar de darla por terminada.
+  let venta: any = null;
   if (params.id) {
-    const { data: existente } = await supabase.from("ventas").select("*").eq("id", params.id).maybeSingle();
-    if (existente) return existente;
+    const { data: existente, error: eErr } = await supabase.from("ventas").select("*").eq("id", params.id).maybeSingle();
+    if (eErr) throw eErr;
+    venta = existente;
   }
 
-  const { data: venta, error: vErr } = await supabase
-    .from("ventas")
-    .insert({
-      ...(params.id ? { id: params.id } : {}),
-      cliente_id: params.cliente_id,
-      ruta_id: params.ruta_id,
-      vendedor_id: params.vendedor_id,
-      subtotal,
-      descuento: params.descuento,
-      total,
-      metodo_pago: params.metodo,
-      latitud: params.lat ?? null,
-      longitud: params.lng ?? null,
-    })
-    .select()
-    .single();
-  if (vErr) throw vErr;
+  if (!venta) {
+    const { data: nueva, error: vErr } = await supabase
+      .from("ventas")
+      .insert({
+        ...(params.id ? { id: params.id } : {}),
+        cliente_id: params.cliente_id,
+        ruta_id: params.ruta_id,
+        vendedor_id: params.vendedor_id,
+        subtotal,
+        descuento: params.descuento,
+        total,
+        metodo_pago: params.metodo,
+        latitud: params.lat ?? null,
+        longitud: params.lng ?? null,
+      })
+      .select()
+      .single();
+    if (vErr) throw vErr;
+    venta = nueva;
+  }
 
-  const detalle = params.items.map((i) => ({
-    venta_id: venta.id,
-    producto_id: i.producto_id,
-    nombre_producto: i.nombre,
-    cantidad: i.cantidad,
-    precio_unitario: i.precio,
-    total_linea: i.precio * i.cantidad,
-  }));
-  const { error: dErr } = await supabase.from("detalle_ventas").insert(detalle);
-  if (dErr) throw dErr;
+  // Detalle: solo si aún no existe
+  const { count: detCount, error: dcErr } = await supabase
+    .from("detalle_ventas")
+    .select("id", { count: "exact", head: true })
+    .eq("venta_id", venta.id);
+  if (dcErr) throw dcErr;
+  if (!detCount) {
+    const detalle = params.items.map((i) => ({
+      venta_id: venta.id,
+      producto_id: i.producto_id,
+      nombre_producto: i.nombre,
+      cantidad: i.cantidad,
+      precio_unitario: i.precio,
+      total_linea: i.precio * i.cantidad,
+    }));
+    const { error: dErr } = await supabase.from("detalle_ventas").insert(detalle);
+    if (dErr) throw dErr;
+  }
 
-  // inventory movements + stock decrement
+  // Inventario: marcador por venta y producto para no descontar dos veces
+  const motivo = `Venta ${venta.id}`;
   for (const i of params.items) {
-    await supabase.from("movimientos_inventario").insert({
+    const { data: mov, error: mErr } = await supabase
+      .from("movimientos_inventario")
+      .select("id")
+      .eq("producto_id", i.producto_id)
+      .eq("motivo", motivo)
+      .maybeSingle();
+    if (mErr) throw mErr;
+    if (mov) continue;
+    const { data: prod, error: pErr } = await supabase.from("productos").select("existencia").eq("id", i.producto_id).single();
+    if (pErr) throw pErr;
+    const { error: uErr } = await supabase
+      .from("productos")
+      .update({ existencia: Number(prod.existencia) - i.cantidad })
+      .eq("id", i.producto_id);
+    if (uErr) throw uErr;
+    const { error: iErr } = await supabase.from("movimientos_inventario").insert({
       producto_id: i.producto_id,
       tipo: "salida",
       cantidad: i.cantidad,
-      motivo: "Venta",
+      motivo,
       usuario_id: params.vendedor_id,
     });
-    const { data: prod } = await supabase.from("productos").select("existencia").eq("id", i.producto_id).single();
-    if (prod) {
-      await supabase.from("productos").update({ existencia: Number(prod.existencia) - i.cantidad }).eq("id", i.producto_id);
-    }
+    if (iErr) throw iErr;
   }
 
   if (params.metodo === "credito") {
-    await supabase.from("creditos").insert({
-      venta_id: venta.id,
-      cliente_id: params.cliente_id,
-      monto: total,
-      saldo: total,
-      fecha_limite: params.fecha_limite ?? null,
-      estado: "al_dia",
-    });
+    const { data: cred, error: cErr } = await supabase
+      .from("creditos")
+      .select("id")
+      .eq("venta_id", venta.id)
+      .maybeSingle();
+    if (cErr) throw cErr;
+    if (!cred) {
+      const { error: ciErr } = await supabase.from("creditos").insert({
+        venta_id: venta.id,
+        cliente_id: params.cliente_id,
+        monto: total,
+        saldo: total,
+        fecha_limite: params.fecha_limite ?? null,
+        estado: "al_dia",
+      });
+      if (ciErr) throw ciErr;
+    }
   }
 
   await supabase.from("auditoria").insert({

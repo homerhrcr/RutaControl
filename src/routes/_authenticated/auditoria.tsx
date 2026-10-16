@@ -23,6 +23,16 @@ import { formatCRC, formatDateTime } from "@/lib/format";
 import { ChevronDown, ScrollText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/auditoria")({
+  head: () => ({
+    meta: [
+      { title: "Auditoría — Ruta Directo" },
+      { name: "description", content: "Registro de cambios en ventas y abonos de Ruta Directo." },
+      { property: "og:title", content: "Auditoría — Ruta Directo" },
+      { property: "og:description", content: "Registro de cambios en ventas y abonos de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: AuditoriaPage,
 });
 

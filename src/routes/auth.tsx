@@ -14,6 +14,10 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { title: "Ingreso — Ruta Directo" },
       { name: "description", content: "Acceso al sistema de ventas y gestión de Ruta Directo." },
+      { property: "og:title", content: "Ingreso — Ruta Directo" },
+      { property: "og:description", content: "Acceso al sistema de ventas y gestión de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,

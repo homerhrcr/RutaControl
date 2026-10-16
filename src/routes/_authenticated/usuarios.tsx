@@ -44,6 +44,16 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, UserCog } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
+  head: () => ({
+    meta: [
+      { title: "Usuarios — Ruta Directo" },
+      { name: "description", content: "Administración de cuentas y roles de Ruta Directo." },
+      { property: "og:title", content: "Usuarios — Ruta Directo" },
+      { property: "og:description", content: "Administración de cuentas y roles de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: UsuariosPage,
 });
 

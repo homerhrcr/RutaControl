@@ -11,6 +11,16 @@ import { formatCRC, formatDate, daysBetween, agingBucket } from "@/lib/format";
 import { HandCoins, Phone, AlertTriangle, Receipt } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/cobranza")({
+  head: () => ({
+    meta: [
+      { title: "Crédito y Cobros — Ruta Directo" },
+      { name: "description", content: "Deudas y abonos de clientes de Ruta Directo." },
+      { property: "og:title", content: "Crédito y Cobros — Ruta Directo" },
+      { property: "og:description", content: "Deudas y abonos de clientes de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: CobranzaPage,
 });
 

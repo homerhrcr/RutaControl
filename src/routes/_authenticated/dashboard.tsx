@@ -22,6 +22,16 @@ import {
 import { TrendingUp, CreditCard, AlertTriangle, Wallet, Map, Receipt } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
+  head: () => ({
+    meta: [
+      { title: "Dashboard Gerencial — Ruta Directo" },
+      { name: "description", content: "Resumen de ventas, gastos y rutas de Ruta Directo." },
+      { property: "og:title", content: "Dashboard Gerencial — Ruta Directo" },
+      { property: "og:description", content: "Resumen de ventas, gastos y rutas de Ruta Directo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: DashboardPage,
 });
 

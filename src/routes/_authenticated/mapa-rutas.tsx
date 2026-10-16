@@ -14,10 +14,11 @@ export const Route = createFileRoute("/_authenticated/mapa-rutas")({
   head: () => ({
     meta: [
       { title: "Mapa de Rutas — Ruta Directo" },
-      {
-        name: "description",
-        content: "Ubicaciones de los clientes en Google Maps, separadas por ruta.",
-      },
+      { name: "description", content: "Ubicaciones de los clientes en Google Maps, separadas por ruta." },
+      { property: "og:title", content: "Mapa de Rutas — Ruta Directo" },
+      { property: "og:description", content: "Ubicaciones de los clientes en Google Maps, separadas por ruta." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: MapaRutasPage,

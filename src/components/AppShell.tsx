@@ -27,6 +27,8 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
+  ClipboardList,
+  Undo2,
 } from "lucide-react";
 
 interface NavItem {
@@ -39,6 +41,8 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { to: "/ruta", label: "Iniciar Ruta", icon: Truck, mobile: true },
+  { to: "/pedidos", label: "Preventa", icon: ClipboardList, mobile: true },
+  { to: "/devoluciones", label: "Devoluciones", icon: Undo2 },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/clientes", label: "Clientes", icon: Users, mobile: true },
   { to: "/mapa-rutas", label: "Mapa Rutas", icon: MapIcon },

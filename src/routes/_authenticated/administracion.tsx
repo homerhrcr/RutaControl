@@ -1,3 +1,4 @@
+import { ConfigFiscal } from "@/components/ConfigFiscal";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -36,11 +37,13 @@ function AdministracionPage() {
             <TabsTrigger value="usuarios">Usuarios</TabsTrigger>
             <TabsTrigger value="rutas">Rutas</TabsTrigger>
             <TabsTrigger value="auditoria">Auditoría</TabsTrigger>
+            <TabsTrigger value="fiscal">Facturación</TabsTrigger>
             {esSuperadmin && <TabsTrigger value="empresas">Empresas</TabsTrigger>}
           </TabsList>
           <TabsContent value="usuarios" className="-mx-4 md:-mx-6"><UsuariosPage /></TabsContent>
           <TabsContent value="rutas"><RutasAdmin /></TabsContent>
           <TabsContent value="auditoria" className="-mx-4 md:-mx-6"><AuditoriaPage /></TabsContent>
+          <TabsContent value="fiscal"><ConfigFiscal /></TabsContent>
           {esSuperadmin && <TabsContent value="empresas"><EmpresasAdmin /></TabsContent>}
         </Tabs>
       </div>

@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/productos")({
   component: ProductosPage,
 });
 
-const empty = { codigo: "", nombre: "", categoria_id: "", precio: 0, costo: 0, existencia: 0, existencia_minima: 5, activo: true };
+const empty = { codigo: "", nombre: "", categoria_id: "", precio: 0, costo: 0, existencia: 0, existencia_minima: 5, activo: true, cabys: "", tarifa_iva: 13 };
 
 export function ProductosPage() {
   const { data: productos } = useProductos();
@@ -64,14 +64,14 @@ export function ProductosPage() {
 
   function openNew() { setForm(empty); setEditId(null); setOpen(true); }
   function openEdit(p: any) {
-    setForm({ codigo: p.codigo, nombre: p.nombre, categoria_id: p.categoria_id ?? "", precio: Number(p.precio), costo: Number(p.costo), existencia: Number(p.existencia), existencia_minima: Number(p.existencia_minima), activo: p.activo });
+    setForm({ codigo: p.codigo, nombre: p.nombre, categoria_id: p.categoria_id ?? "", precio: Number(p.precio), costo: Number(p.costo), existencia: Number(p.existencia), existencia_minima: Number(p.existencia_minima), activo: p.activo, cabys: p.cabys ?? "", tarifa_iva: Number(p.tarifa_iva ?? 13) });
     setEditId(p.id); setOpen(true);
   }
 
   async function save() {
     if (!form.codigo.trim() || !form.nombre.trim()) return toast.error("Código y nombre son obligatorios");
     setBusy(true);
-    const payload = { ...form, categoria_id: form.categoria_id || null };
+    const payload = { ...form, categoria_id: form.categoria_id || null, cabys: form.cabys || null };
     const { error } = editId
       ? await supabase.from("productos").update(payload).eq("id", editId)
       : await supabase.from("productos").insert(payload);
@@ -154,6 +154,10 @@ export function ProductosPage() {
             <div className="grid grid-cols-2 gap-3">
               <F label="Existencia"><Input type="number" value={form.existencia || ""} onChange={(e) => setForm({ ...form, existencia: Number(e.target.value) || 0 })} /></F>
               <F label="Mínimo"><Input type="number" value={form.existencia_minima || ""} onChange={(e) => setForm({ ...form, existencia_minima: Number(e.target.value) || 0 })} /></F>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <F label="Código CABYS"><Input inputMode="numeric" maxLength={13} value={form.cabys} onChange={(e) => setForm({ ...form, cabys: e.target.value.replace(/\D/g, "") })} /></F>
+              <F label="IVA %"><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.tarifa_iva} onChange={(e) => setForm({ ...form, tarifa_iva: Number(e.target.value) })}>{[0,1,2,4,13].map((t) => <option key={t} value={t}>{t}%</option>)}</select></F>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
               <Label>Producto activo</Label>

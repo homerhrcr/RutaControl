@@ -1162,6 +1162,174 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_clientes: {
+        Row: {
+          activo: boolean
+          chat_id: number | null
+          cliente_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          telegram_nombre: string | null
+          vinculado_en: string | null
+        }
+        Insert: {
+          activo?: boolean
+          chat_id?: number | null
+          cliente_id: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          telegram_nombre?: string | null
+          vinculado_en?: string | null
+        }
+        Update: {
+          activo?: boolean
+          chat_id?: number | null
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          telegram_nombre?: string | null
+          vinculado_en?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_clientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telegram_clientes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_codigos: {
+        Row: {
+          cliente_id: string
+          consumed_at: string | null
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          organization_id: string
+          token_hash: string
+        }
+        Insert: {
+          cliente_id: string
+          consumed_at?: string | null
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          organization_id: string
+          token_hash: string
+        }
+        Update: {
+          cliente_id?: string
+          consumed_at?: string | null
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          organization_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_codigos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telegram_codigos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_mensajes: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          dedupe_key: string | null
+          direccion: string
+          error: string | null
+          estado: string
+          id: string
+          organization_id: string
+          telegram_message_id: number | null
+          telegram_update_id: number | null
+          texto: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          dedupe_key?: string | null
+          direccion: string
+          error?: string | null
+          estado?: string
+          id?: string
+          organization_id?: string
+          telegram_message_id?: number | null
+          telegram_update_id?: number | null
+          texto: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          dedupe_key?: string | null
+          direccion?: string
+          error?: string | null
+          estado?: string
+          id?: string
+          organization_id?: string
+          telegram_message_id?: number | null
+          telegram_update_id?: number | null
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_mensajes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telegram_mensajes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_updates: {
+        Row: {
+          created_at: string
+          update_id: number
+        }
+        Insert: {
+          created_at?: string
+          update_id: number
+        }
+        Update: {
+          created_at?: string
+          update_id?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1279,6 +1447,16 @@ export type Database = {
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       registrar_devolucion: { Args: { p: Json }; Returns: string }
       set_default_organization: { Args: { p_org: string }; Returns: undefined }
+      telegram_recibir: {
+        Args: {
+          p_chat_id: number
+          p_nombre: string
+          p_texto: string
+          p_token_hash?: string
+          p_update_id: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "administrador" | "vendedor" | "cobrador"

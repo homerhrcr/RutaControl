@@ -12,5 +12,5 @@ export const Route = createFileRoute("/")({
     ],
   }),
   ssr: false,
-  component: () => <Navigate to="/ruta" replace />,
+  component: () => <Navigate to="/dashboard" replace />,
 });

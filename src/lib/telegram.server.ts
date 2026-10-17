@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual, randomBytes } from "node:crypto";
 import { createHmac } from "node:crypto";
-import { tokenInicio, telegramUpdateSchema, esComandoPedido } from "./telegram";
+import { tokenInicio, telegramUpdateSchema, esComandoPedido, esComandoDevolucion, TEXTO_DEVOLUCION } from "./telegram";
 
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 export const nuevoToken = () => randomBytes(24).toString("hex");

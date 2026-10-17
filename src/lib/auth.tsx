@@ -39,23 +39,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [organizaciones, setOrganizaciones] = useState<Organizacion[]>([]);
   const [orgActivaId, setOrgActivaId] = useState<string | null>(null);
 
+  const CACHE_KEY = "rd_perfil_cache";
+
+  function applyProfile(p: { sa: boolean; orgId: string | null; orgs: Organizacion[]; roles: AppRole[]; nombre: string }) {
+    setEsSuperadmin(p.sa);
+    setOrgActivaId(p.orgId);
+    setOrganizaciones(p.orgs);
+    setRoles(p.roles);
+    setNombre(p.nombre);
+  }
+
   async function loadProfile(uid: string) {
-    const [{ data: superadmin }, { data: orgId }, { data: members }, { data: orgs }, { data: profile }] =
-      await Promise.all([
-        supabase.rpc("is_platform_admin", { _uid: uid }),
-        supabase.rpc("current_organization_id"),
-        supabase.from("organization_members").select("organization_id, role").eq("user_id", uid).eq("estado", "active"),
-        supabase.from("organizations").select("id, nombre, codigo").eq("estado", "active").order("nombre"),
-        supabase.from("profiles").select("nombre").eq("id", uid).maybeSingle(),
-      ]);
-    const sa = superadmin === true;
-    setEsSuperadmin(sa);
-    setOrgActivaId((orgId as string | null) ?? null);
-    setOrganizaciones((orgs ?? []) as Organizacion[]);
-    const r = (members ?? []).filter((m) => m.organization_id === orgId).map((m) => m.role as AppRole);
-    if (sa && !r.includes("administrador")) r.push("administrador");
-    setRoles(r);
-    setNombre(profile?.nombre ?? "");
+    try {
+      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+      if (cached?.uid === uid) applyProfile(cached);
+    } catch { /* ignore */ }
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+    try {
+      const [{ data: superadmin, error: e1 }, { data: orgId, error: e2 }, { data: members, error: e3 }, { data: orgs, error: e4 }, { data: profile, error: e5 }] =
+        await Promise.all([
+          supabase.rpc("is_platform_admin", { _uid: uid }),
+          supabase.rpc("current_organization_id"),
+          supabase.from("organization_members").select("organization_id, role").eq("user_id", uid).eq("estado", "active"),
+          supabase.from("organizations").select("id, nombre, codigo").eq("estado", "active").order("nombre"),
+          supabase.from("profiles").select("nombre").eq("id", uid).maybeSingle(),
+        ]);
+      if (e1 || e2 || e3 || e4 || e5) return; // conserva el perfil local si falla la red
+      const sa = superadmin === true;
+      const r = (members ?? []).filter((m) => m.organization_id === orgId).map((m) => m.role as AppRole);
+      if (sa && !r.includes("administrador")) r.push("administrador");
+      const p = { sa, orgId: (orgId as string | null) ?? null, orgs: (orgs ?? []) as Organizacion[], roles: r, nombre: profile?.nombre ?? "" };
+      applyProfile(p);
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ uid, ...p }));
+    } catch { /* sin conexión: se mantiene el perfil local */ }
   }
 
   useEffect(() => {
@@ -87,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signOut() {
+    localStorage.removeItem(CACHE_KEY);
     await supabase.auth.signOut();
   }
 

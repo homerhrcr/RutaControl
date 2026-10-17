@@ -51,7 +51,7 @@ export const enviarTelegram = createServerFn({ method: "POST" }).middleware([req
     if (data.tipo !== "mensaje") {
       if (!data.documentoId) throw new Error("Documento requerido");
       const result = data.tipo === "pedido"
-        ? await context.supabase.from("pedidos").select("*,pedidos_detalle(*)").eq("id", data.documentoId).eq("organization_id", org).single()
+        ? await context.supabase.from("pedidos").select("*,pedidos_detalle(*),rutas(nombre)").eq("id", data.documentoId).eq("organization_id", org).single()
         : await context.supabase.from("ventas").select("*,detalle_ventas(*)").eq("id", data.documentoId).eq("organization_id", org).single();
       const doc = result.data;
       const error = result.error;
@@ -64,6 +64,7 @@ export const enviarTelegram = createServerFn({ method: "POST" }).middleware([req
       if (!items?.length) throw new Error("El documento todavía no tiene productos");
       texto = textoDocumento({ empresa: organizacion?.nombre ?? "Ruta Directo", tipo: data.tipo, id: doc.id, cliente: cliente.nombre,
         fecha: "fecha_entrega" in doc ? doc.fecha_entrega : new Date(doc.fecha).toLocaleString("es-CR", { timeZone: "America/Costa_Rica" }),
+        ruta: "rutas" in doc ? (doc as any).rutas?.nombre ?? undefined : undefined,
         estado: data.tipo === "pedido" ? "Confirmado" : undefined, metodo: "metodo_pago" in doc ? doc.metodo_pago : undefined, total: Number(doc.total), descuento: "descuento" in doc ? Number(doc.descuento) : 0,
         items: items.map((i: any) => ({ nombre: i.nombre_producto, cantidad: Number(i.cantidad), total: Number(i.cantidad) * Number(i.precio_unitario) })),
       });

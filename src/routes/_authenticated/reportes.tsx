@@ -86,7 +86,7 @@ const REPORTES = [
 ] as const;
 
 function ReportesPage() {
-  const { nombre: usuario } = useAuth() as any;
+  const { nombre: usuario } = useAuth();
   const { data: empresa } = useEmpresa();
   const hoy = iso(new Date());
   const [preset, setPreset] = useState<Preset>("mes");

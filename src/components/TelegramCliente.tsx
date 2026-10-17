@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Send, Copy, Link2, Unlink, Loader2 } from "lucide-react";
+import { Send, Copy, Link2, Unlink, Loader2, MessageCircle, CheckCircle2 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 
 export function resultadoTelegram(status: string) {
@@ -39,12 +40,12 @@ export function TelegramCliente({ clienteId, nombre, iconOnly = false }: { clien
       <Send className="h-4 w-4" />{!iconOnly && "Telegram"}
     </Button>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto"><DialogHeader><DialogTitle>Telegram · {nombre}</DialogTitle></DialogHeader>
-      {open && <TelegramConversacion clienteId={clienteId} />}
+      {open && <TelegramConversacion clienteId={clienteId} nombre={nombre} />}
     </DialogContent></Dialog>
   </>;
 }
 
-export function TelegramConversacion({ clienteId }: { clienteId: string }) {
+export function TelegramConversacion({ clienteId, nombre }: { clienteId: string; nombre?: string }) {
   const { organizacionActiva } = useAuth();
   const orgId = organizacionActiva?.id;
   const qc = useQueryClient();
@@ -57,7 +58,7 @@ export function TelegramConversacion({ clienteId }: { clienteId: string }) {
   const [envioId, setEnvioId] = useState(() => crypto.randomUUID());
   const { data, error, isPending } = useQuery({
     queryKey: ["telegram-cliente", orgId, clienteId], enabled: !!orgId,
-    refetchInterval: 10000,
+    refetchInterval: url ? 3000 : 10000,
     queryFn: async () => {
       const [vinculo, mensajes] = await Promise.all([
         supabase.from("telegram_clientes").select("activo,telegram_nombre,vinculado_en").eq("cliente_id", clienteId).eq("organization_id", orgId ?? "").maybeSingle(),
@@ -68,6 +69,14 @@ export function TelegramConversacion({ clienteId }: { clienteId: string }) {
       return { vinculo: vinculo.data, mensajes: (mensajes.data ?? []).reverse() };
     },
   });
+  const [justLinked, setJustLinked] = useState(false);
+  const auto = useRef(false);
+  useEffect(() => { if (url && data?.vinculo?.activo) { setJustLinked(true); setUrl(""); toast.success("¡Cliente vinculado a Telegram!"); } }, [url, data?.vinculo?.activo]);
+  useEffect(() => {
+    if (auto.current || isPending || error || data?.vinculo?.activo || !navigator.onLine) return;
+    auto.current = true;
+    crear({ data: { clienteId } }).then((r) => setUrl(r.url)).catch(() => {});
+  }, [isPending, error, data?.vinculo?.activo, clienteId, crear]);
   async function refresh() { await qc.invalidateQueries({ queryKey: ["telegram-cliente", orgId, clienteId] }); }
   async function accion(fn: () => Promise<void>) {
     if (!navigator.onLine) return toast.info("Telegram requiere conexión");
@@ -81,13 +90,19 @@ export function TelegramConversacion({ clienteId }: { clienteId: string }) {
     <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
       <span className="text-sm font-semibold">{data?.vinculo?.activo ? `Vinculado · ${data.vinculo.telegram_nombre ?? "Cliente"}` : "Sin vincular"}</span>
       {data?.vinculo?.activo ? <Button variant="outline" size="sm" disabled={busy} onClick={() => accion(async () => { await quitar({ data: { clienteId } }); setUrl(""); await refresh(); })}><Unlink className="mr-1 h-4 w-4" />Desvincular</Button>
-        : <Button size="sm" disabled={busy} onClick={() => accion(async () => setUrl((await crear({ data: { clienteId } })).url))}><Link2 className="mr-1 h-4 w-4" />Generar enlace</Button>}
+        : <Button size="sm" disabled={busy} onClick={() => accion(async () => setUrl((await crear({ data: { clienteId } })).url))}><Link2 className="mr-1 h-4 w-4" />{url ? "Nuevo código" : "Generar código"}</Button>}
     </div>
-    {url && !data?.vinculo?.activo && <div className="space-y-2">
-      <div className="flex gap-2"><Input aria-label="Enlace de vinculación Telegram" readOnly value={url} /><Button variant="outline" size="icon" title="Copiar enlace" aria-label="Copiar enlace" onClick={async () => { try { await navigator.clipboard.writeText(url); toast.success("Enlace copiado"); } catch { toast.error("No se pudo copiar"); } }}><Copy className="h-4 w-4" /></Button></div>
-      <p className="text-xs text-muted-foreground">Vence en 24 horas. El cliente acepta las notificaciones al abrirlo y pulsar Iniciar en Telegram.</p>
-      <a href={url} target="_blank" rel="noreferrer" className="text-sm text-primary underline">Abrir Telegram</a>
+    {url && !data?.vinculo?.activo && <div className="space-y-3 text-center">
+      <p className="text-sm font-medium">Que el cliente escanee este código con la cámara del celular y toque «Iniciar»</p>
+      <div className="mx-auto w-fit rounded-lg bg-card p-3 ring-1 ring-border"><QRCodeSVG value={url} size={220} bgColor="#ffffff" fgColor="#000000" includeMargin /></div>
+      <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Esperando que el cliente toque «Iniciar»…</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Button asChild variant="outline"><a href={`https://wa.me/?text=${encodeURIComponent(`Hola ${nombre ?? ""}, toca este enlace para recibir tus comprobantes y hacer pedidos con nosotros por Telegram: ${url}`)}`} target="_blank" rel="noreferrer"><MessageCircle className="mr-1 h-4 w-4" />Invitar por WhatsApp</a></Button>
+        <Button variant="outline" onClick={async () => { try { await navigator.clipboard.writeText(url); toast.success("Enlace copiado"); } catch { toast.error("No se pudo copiar"); } }}><Copy className="mr-1 h-4 w-4" />Copiar enlace</Button>
+      </div>
+      <p className="text-xs text-muted-foreground">El enlace vence en 24 horas.</p>
     </div>}
+    {data?.vinculo?.activo && justLinked && <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 p-3 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-primary" />¡Vinculado con éxito! El cliente ya recibe comprobantes y puede hacer pedidos.</div>}
     <div className="max-h-80 space-y-3 overflow-y-auto" aria-label="Conversación Telegram">
       {!data?.mensajes.length && <p className="py-4 text-center text-sm text-muted-foreground">Sin mensajes.</p>}
       {data?.mensajes.map((m) => <div key={m.id} className={`max-w-[92%] rounded-md border p-3 ${m.direccion === "salida" ? "ml-auto bg-primary/10" : "bg-muted"}`}>

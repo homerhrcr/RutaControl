@@ -88,7 +88,7 @@ export const configurarWebhookTelegram = createServerFn({ method: "POST" }).midd
     const { data: permitido, error } = await context.supabase.rpc("is_platform_admin", { _uid: context.userId });
     if (error || !permitido) throw new Error("Solo el Superadmin puede configurar el bot");
     const { telegramApi, webhookSecret } = await import("./telegram.server");
-    const url = "https://project--cc5f4a56-2277-4d48-8fd8-6bf13c336ce5-dev.lovable.app/api/public/telegram/webhook";
+    const url = "https://rutadirecto.ingsoftcr.com/api/public/telegram/webhook";
     const info = await telegramApi("getWebhookInfo");
     if (!webhookPermitido(info.url, url)) throw new Error("Este bot está vinculado a otra aplicación; usa un bot exclusivo para Ruta Directo");
     const receptor = await fetch(url);

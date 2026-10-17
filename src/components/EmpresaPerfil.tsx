@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { DireccionCliente } from "@/components/DireccionCliente";
+import { normalizarDireccion } from "@/lib/division-territorial";
 
 const CAMPOS = {
   nombre_comercial: "", nombre_fiscal: "", tipo_identificacion: "02", identificacion: "",
@@ -54,7 +56,8 @@ export function EmpresaPerfil() {
   useEffect(() => {
     if (!data) return;
     const d: any = data;
-    setF(Object.fromEntries(Object.keys(CAMPOS).map((k) => [k, d[k] ?? (CAMPOS as any)[k]])) as F);
+    const base = Object.fromEntries(Object.keys(CAMPOS).map((k) => [k, d[k] ?? (CAMPOS as any)[k]])) as F;
+    setF({ ...base, ...normalizarDireccion({ provincia: base.provincia, canton: base.canton, distrito: base.distrito }) });
   }, [data]);
 
   async function guardar() {
@@ -126,10 +129,13 @@ export function EmpresaPerfil() {
         {campo("telefono", "Teléfono", { type: "tel" })}
         {campo("correo", "Correo electrónico", { type: "email" })}
         {campo("sitio_web", "Sitio web")}
-        {campo("provincia", "Provincia")}
-        {campo("canton", "Cantón")}
-        {campo("distrito", "Distrito")}
-        {campo("otras_senas", "Otras señas")}
+        <div className="md:col-span-2">
+          <DireccionCliente
+            value={{ provincia: f.provincia, canton: f.canton, distrito: f.distrito }}
+            onChange={(d) => setF((p) => ({ ...p, ...d }))}
+          />
+        </div>
+        <div className="md:col-span-2">{campo("otras_senas", "Otras señas")}</div>
       </div>
       <div className="space-y-1">
         <Label className="text-xs">Pie de página de reportes</Label>

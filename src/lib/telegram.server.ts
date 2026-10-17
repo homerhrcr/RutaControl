@@ -73,6 +73,9 @@ export async function procesarUpdate(input: unknown, admin: any, origin = "") {
     try { await ofrecerCatalogo(message.chat.id, origin, data?.status === "vinculado" ? `${respuestas.vinculado}\n\nTambién puedes hacer pedidos desde el botón «🛒 Hacer pedido».` : undefined); return { ok: true }; }
     catch (e) { console.error("Telegram catálogo", e); }
   }
+  if (data?.status === "recibido" && !texto.trim().startsWith("/")) {
+    respuestas.recibido = "✅ Recibimos su mensaje. Nuestro equipo de ruta le responderá pronto. Para hacer un pedido escriba /pedido.";
+  }
   const respuesta = respuestas[data?.status];
   if (respuesta) {
     try { await telegramApi("sendMessage", { chat_id: message.chat.id, text: respuesta }); }

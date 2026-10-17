@@ -11,3 +11,5 @@
 - [x] Fotos y descripción por producto devuelto, recomendación de IA y confirmación manual; análisis real verificado en navegador
 - [x] Mini App de Telegram: catálogo y pedidos de clientes vinculados (probar con un cliente real)
 - [x] Tarjetas de clientes en Iniciar Ruta compactas: una sola línea (45 px), dos columnas en computadora, acciones como iconos; verificado sin texto recortado en computadora y celular
+
+- [x] Telegram pedidos: confirmación explícita "en ruta", aviso de confirmación ya enviada, mensaje adicional del pedido y reenvío controlado

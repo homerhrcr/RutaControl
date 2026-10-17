@@ -27,8 +27,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Search, MapPin, Phone, Crosshair, MessageCircle, History, Trash2 } from "lucide-react";
+import { Plus, Search, MapPin, Phone, MessageCircle, History, Trash2 } from "lucide-react";
 import { HistorialCliente } from "@/components/HistorialCliente";
+import { ClienteUbicacion } from "@/components/ClienteUbicacion";
+import { leerCoordenadas } from "@/lib/coordenadas";
 
 
 export const Route = createFileRoute("/_authenticated/clientes")({
@@ -57,8 +59,8 @@ const empty = {
   identificacion: "",
   correo_fe: "",
   ruta_ids: [] as string[],
-  latitud: null as number | null,
-  longitud: null as number | null,
+  latitud: "",
+  longitud: "",
 };
 
 function ClientesPage() {
@@ -111,31 +113,21 @@ function ClientesPage() {
       identificacion: c.identificacion ?? "",
       correo_fe: c.correo_fe ?? "",
       ruta_ids: (c.cliente_rutas ?? []).map((cr: any) => cr.ruta_id),
-      latitud: c.latitud,
-      longitud: c.longitud,
+      latitud: c.latitud != null ? String(c.latitud) : "",
+      longitud: c.longitud != null ? String(c.longitud) : "",
     });
     setEditId(c.id);
     setOpen(true);
   }
 
-  function capturar() {
-    if (!navigator.geolocation) return toast.error("GPS no disponible");
-    toast.loading("Obteniendo ubicación…", { id: "gps" });
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setForm((f) => ({ ...f, latitud: pos.coords.latitude, longitud: pos.coords.longitude }));
-        toast.success("Ubicación capturada", { id: "gps" });
-      },
-      () => toast.error("No se pudo obtener la ubicación", { id: "gps" }),
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-  }
-
   async function save() {
     if (!form.nombre.trim()) return toast.error("El nombre es obligatorio");
+    let ubicacion;
+    try { ubicacion = leerCoordenadas(form.latitud, form.longitud); }
+    catch (e) { return toast.error(e instanceof Error ? e.message : "Coordenadas inválidas"); }
     setBusy(true);
     const { ruta_ids, ...rest } = form;
-    const payload = { ...rest, ruta_id: ruta_ids[0] ?? null, tipo_identificacion: rest.tipo_identificacion || null, identificacion: rest.identificacion || null, correo_fe: rest.correo_fe || null };
+    const payload = { ...rest, latitud: ubicacion?.lat ?? null, longitud: ubicacion?.lng ?? null, ruta_id: ruta_ids[0] ?? null, tipo_identificacion: rest.tipo_identificacion || null, identificacion: rest.identificacion || null, correo_fe: rest.correo_fe || null };
 
     let clienteId = editId;
     if (editId) {
@@ -154,11 +146,12 @@ function ClientesPage() {
     }
 
     // Sincronizar rutas del cliente
-    await supabase.from("cliente_rutas").delete().eq("cliente_id", clienteId!);
+    if (!clienteId) { setBusy(false); return; }
+    await supabase.from("cliente_rutas").delete().eq("cliente_id", clienteId);
     if (ruta_ids.length) {
       const { error: relErr } = await supabase
         .from("cliente_rutas")
-        .insert(ruta_ids.map((ruta_id) => ({ cliente_id: clienteId!, ruta_id })));
+        .insert(ruta_ids.map((ruta_id) => ({ cliente_id: clienteId, ruta_id })));
       if (relErr) {
         setBusy(false);
         return toast.error(relErr.message);
@@ -225,7 +218,7 @@ function ClientesPage() {
                       <MessageCircle className="h-4 w-4" />
                     </a>
                   )}
-                  {c.latitud && c.longitud && (
+                  {c.latitud != null && c.longitud != null && (
                     <a
                       href={`https://www.google.com/maps/search/?api=1&query=${c.latitud},${c.longitud}`}
                       target="_blank"
@@ -327,30 +320,7 @@ function ClientesPage() {
                 )}
               </div>
             </Field>
-            <Button variant="outline" className="w-full gap-2" onClick={capturar}>
-              <Crosshair className="h-4 w-4" />
-              {form.latitud ? "Ubicación capturada ✓" : "Capturar ubicación actual"}
-            </Button>
-            {form.latitud != null && form.longitud != null && (
-              <div className="space-y-1.5">
-                <div className="overflow-hidden rounded-xl border">
-                  <iframe
-                    title="Mapa de ubicación"
-                    className="h-44 w-full"
-                    loading="lazy"
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${form.longitud - 0.003}%2C${form.latitud - 0.003}%2C${form.longitud + 0.003}%2C${form.latitud + 0.003}&layer=mapnik&marker=${form.latitud}%2C${form.longitud}`}
-                  />
-                </div>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${form.latitud},${form.longitud}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <MapPin className="h-3 w-3" /> Abrir en Google Maps
-                </a>
-              </div>
-            )}
+            <ClienteUbicacion latitud={form.latitud} longitud={form.longitud} onChange={(latitud, longitud) => setForm((f) => ({ ...f, latitud, longitud }))} />
             <Button className="w-full" size="lg" disabled={busy} onClick={save}>
               {busy ? "Guardando…" : "Guardar"}
             </Button>

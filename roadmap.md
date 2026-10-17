@@ -9,3 +9,4 @@
 - [ ] Fase 3b: Firma y envío a Hacienda — bloqueado: requiere certificado .p12, PIN y usuario/clave ATV del cliente
 - [x] Devoluciones y pedidos con cola sin conexión (prueba en dispositivo real pendiente)
 - [x] Fotos y descripción por producto devuelto, recomendación de IA y confirmación manual; análisis real verificado en navegador
+- [x] Mini App de Telegram: catálogo y pedidos de clientes vinculados (probar con un cliente real)

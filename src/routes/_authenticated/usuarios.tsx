@@ -346,6 +346,76 @@ export function UsuariosPage() {
             ))}
           </div>
         )}
+
+        {/* Detalle del usuario */}
+        <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Detalle del usuario</DialogTitle>
+            </DialogHeader>
+            {detail && (
+              <div className="space-y-2 text-sm">
+                <p><span className="font-semibold">Nombre:</span> {detail.nombre || "—"}</p>
+                <p><span className="font-semibold">Correo:</span> {detail.email || "—"}</p>
+                <p><span className="font-semibold">Teléfono:</span> {detail.telefono || "—"}</p>
+                <p>
+                  <span className="font-semibold">Roles:</span>{" "}
+                  {detail.roles.length ? detail.roles.join(", ") : "sin rol"}
+                </p>
+                <p>
+                  <span className="font-semibold">Creado:</span>{" "}
+                  {new Date(detail.created_at).toLocaleDateString("es-CR")}
+                </p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Cambiar contraseña */}
+        <Dialog open={!!passUser} onOpenChange={(o) => !o && setPassUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cambiar contraseña</DialogTitle>
+            </DialogHeader>
+            {passUser && (
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  resetMut.mutate();
+                }}
+              >
+                <p className="text-sm text-muted-foreground">
+                  Nueva contraseña para <span className="font-semibold">{passUser.nombre || passUser.email}</span>.
+                </p>
+                <div className="space-y-1.5">
+                  <Label>Nueva contraseña</Label>
+                  <div className="relative">
+                    <Input
+                      type={showNewPass ? "text" : "password"}
+                      value={newPass}
+                      onChange={(e) => setNewPass(e.target.value)}
+                      minLength={6}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      aria-label={showNewPass ? "Ocultar contraseña" : "Ver contraseña"}
+                    >
+                      {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={resetMut.isPending}>
+                  {resetMut.isPending ? "Guardando…" : "Guardar contraseña"}
+                </Button>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

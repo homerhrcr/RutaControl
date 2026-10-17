@@ -21,3 +21,4 @@
 - Client location editing uses ClienteUbicacion with validated decimal coordinates and a lazy Google Maps picker; reuse the existing SDK script/callback to avoid loading Maps twice.
 - Client administrative addresses use a bundled territorial catalog and shared cascade helpers, storing names in the existing columns — keeps dependent options available without network access and preserves the existing data format.
 - Telegram uses a dedicated gateway-backed bot with a verified public webhook, hashed expiring one-use client links and company-scoped conversations; notifications use persisted document deduplication and never cause a saved sale to retry on delivery failure.
+- Telegram ordering Mini App (/telegram/catalogo) authenticates by an HMAC of the chat id signed with the webhook secret and requires an active link; prices are read server-side and orders use a client UUID — the gateway hides the bot token so initData cannot be verified, and retries never duplicate.

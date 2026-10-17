@@ -35,6 +35,8 @@ import { Route as AuthenticatedTelegramRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedVendedorRouteImport } from './routes/_authenticated/vendedor'
 import { Route as AuthenticatedVentasRouteImport } from './routes/_authenticated/ventas'
+import { Route as TelegramCatalogoRouteImport } from './routes/telegram.catalogo'
+import { Route as ApiPublicTelegramCatalogoRouteImport } from './routes/api/public/telegram/catalogo'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -169,6 +171,17 @@ const AuthenticatedVentasRoute = AuthenticatedVentasRouteImport.update({
   path: '/ventas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const TelegramCatalogoRoute = TelegramCatalogoRouteImport.update({
+  id: '/telegram/catalogo',
+  path: '/telegram/catalogo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTelegramCatalogoRoute =
+  ApiPublicTelegramCatalogoRouteImport.update({
+    id: '/api/public/telegram/catalogo',
+    path: '/api/public/telegram/catalogo',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTelegramWebhookRoute =
   ApiPublicTelegramWebhookRouteImport.update({
     id: '/api/public/telegram/webhook',
@@ -202,6 +215,8 @@ export interface FileRoutesByFullPath {
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
   '/ventas': typeof AuthenticatedVentasRoute
+  '/telegram/catalogo': typeof TelegramCatalogoRoute
+  '/api/public/telegram/catalogo': typeof ApiPublicTelegramCatalogoRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -230,6 +245,8 @@ export interface FileRoutesByTo {
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
   '/ventas': typeof AuthenticatedVentasRoute
+  '/telegram/catalogo': typeof TelegramCatalogoRoute
+  '/api/public/telegram/catalogo': typeof ApiPublicTelegramCatalogoRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
@@ -260,6 +277,8 @@ export interface FileRoutesById {
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/vendedor': typeof AuthenticatedVendedorRoute
   '/_authenticated/ventas': typeof AuthenticatedVentasRoute
+  '/telegram/catalogo': typeof TelegramCatalogoRoute
+  '/api/public/telegram/catalogo': typeof ApiPublicTelegramCatalogoRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
@@ -290,6 +309,8 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/vendedor'
     | '/ventas'
+    | '/telegram/catalogo'
+    | '/api/public/telegram/catalogo'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -318,6 +339,8 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/vendedor'
     | '/ventas'
+    | '/telegram/catalogo'
+    | '/api/public/telegram/catalogo'
     | '/api/public/telegram/webhook'
   id:
     | '__root__'
@@ -347,6 +370,8 @@ export interface FileRouteTypes {
     | '/_authenticated/usuarios'
     | '/_authenticated/vendedor'
     | '/_authenticated/ventas'
+    | '/telegram/catalogo'
+    | '/api/public/telegram/catalogo'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -355,6 +380,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  TelegramCatalogoRoute: typeof TelegramCatalogoRoute
+  ApiPublicTelegramCatalogoRoute: typeof ApiPublicTelegramCatalogoRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
@@ -542,6 +569,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVentasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/telegram/catalogo': {
+      id: '/telegram/catalogo'
+      path: '/telegram/catalogo'
+      fullPath: '/telegram/catalogo'
+      preLoaderRoute: typeof TelegramCatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telegram/catalogo': {
+      id: '/api/public/telegram/catalogo'
+      path: '/api/public/telegram/catalogo'
+      fullPath: '/api/public/telegram/catalogo'
+      preLoaderRoute: typeof ApiPublicTelegramCatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/telegram/webhook': {
       id: '/api/public/telegram/webhook'
       path: '/api/public/telegram/webhook'
@@ -610,6 +651,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  TelegramCatalogoRoute: TelegramCatalogoRoute,
+  ApiPublicTelegramCatalogoRoute: ApiPublicTelegramCatalogoRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport

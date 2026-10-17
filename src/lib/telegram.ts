@@ -29,4 +29,13 @@ export function textoDocumento(documento: { empresa: string; tipo: "pedido" | "t
     `TOTAL: ${crc(documento.total)}`, documento.metodo ? `Pago: ${documento.metodo === "credito" ? "Crédito" : "Contado"}` : null,
     "¡Gracias por su compra!",
   ].filter(Boolean).join("\n");
+}export function esComandoPedido(texto: string) {
+  return /^\/(pedido|catalogo|menu)(@\w+)?$/i.test(texto.trim()) || /^hacer pedido$/i.test(texto.trim());
 }
+export const pedidoTelegramSchema = z.object({
+  c: z.string().regex(/^-?\d{1,20}$/), s: z.string().regex(/^[A-Za-z0-9_-]{20,100}$/),
+  id: z.string().uuid(),
+  fecha_entrega: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  notas: z.string().max(500).optional(),
+  items: z.array(z.object({ producto_id: z.string().uuid(), cantidad: z.number().int().positive().max(9999) })).min(1).max(100),
+});

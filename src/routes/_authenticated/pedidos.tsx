@@ -20,6 +20,7 @@ import { queuePedido, queuePedidoEstado, queueEntrega } from "@/lib/offline";
 import { Plus, Truck, CheckCircle2, XCircle } from "lucide-react";
 import { TelegramEnviar, PedidoTelegram } from "@/components/TelegramCliente";
 import { notificarDocumentoTelegram } from "@/lib/telegram-notificar";
+import { fechaLegible } from "@/lib/telegram";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
@@ -54,7 +55,7 @@ function PedidosPage() {
   const { user } = useAuth();
   const { data: rutas } = useRutas();
   const invalidate = useInvalidate();
-  const [fecha, setFecha] = useState(hoy(1));
+  const [fecha, setFecha] = useState("");
   const [ruta, setRuta] = useState("all");
   const [nuevo, setNuevo] = useState(false);
   const [entregar, setEntregar] = useState<any>(null);
@@ -62,7 +63,8 @@ function PedidosPage() {
   const { data: pedidos } = useQuery({
     queryKey: ["pedidos", fecha, ruta],
     queryFn: async () => {
-      let q = supabase.from("pedidos").select("*, clientes(nombre), rutas(nombre), pedidos_detalle(*)").eq("fecha_entrega", fecha).order("created_at");
+      let q = supabase.from("pedidos").select("*, clientes(nombre), rutas(nombre), pedidos_detalle(*)").order("fecha_entrega").order("created_at");
+      if (fecha) q = q.eq("fecha_entrega", fecha);
       if (ruta !== "all") q = q.eq("ruta_id", ruta);
       const { data, error } = await q;
       if (error) throw error;
@@ -106,7 +108,7 @@ function PedidosPage() {
       <PageHeader title="Preventa" subtitle="Pedidos previos a la entrega" action={<Button onClick={() => setNuevo(true)}><Plus className="mr-1 h-4 w-4" />Pedido</Button>} />
       <div className="space-y-4 p-4 md:p-6">
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1"><Label className="text-xs">Fecha de entrega</Label><Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></div>
+          <div className="space-y-1"><Label className="text-xs">Fecha de entrega (vacío = todas)</Label><div className="flex gap-1"><Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />{fecha && <Button variant="ghost" size="sm" className="h-10" onClick={() => setFecha("")}>Todas</Button>}</div></div>
           <div className="space-y-1">
             <Label className="text-xs">Ruta</Label>
             <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={ruta} onChange={(e) => setRuta(e.target.value)}>
@@ -128,6 +130,7 @@ function PedidosPage() {
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{p.clientes?.nombre}</p>
                     <p className="text-xs text-muted-foreground">{p.rutas?.nombre ?? "Sin ruta"}</p>
+                    <p className="mt-1 inline-flex items-center gap-1 rounded-md bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">📅 Entrega: {fechaLegible(p.fecha_entrega)}</p>
                   </div>
                   <div className="text-right">
                     <Badge variant={ESTADOS[p.estado].variant}>{ESTADOS[p.estado].label}</Badge>

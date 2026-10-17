@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Selección en cascada de provincia, cantón y distrito en clientes, con catálogo local y validación.
 - [x] Ubicación en clientes como HidroGest: coordenadas, GPS, copiar/pegar y marcar en mapa; guardado verificado, cartografía pendiente de validar en dominio autorizado.
 - [x] Fase 1: Devoluciones y merma (reingreso a bodega / merma, rebajo a deuda)
 - [x] Fase 2: Preventa (pedidos, carga del camión, entregar y facturar)

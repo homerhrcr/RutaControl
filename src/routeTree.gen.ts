@@ -31,6 +31,7 @@ import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRutaRouteImport } from './routes/_authenticated/ruta'
 import { Route as AuthenticatedRutasRouteImport } from './routes/_authenticated/rutas'
 import { Route as AuthenticatedSincronizacionRouteImport } from './routes/_authenticated/sincronizacion'
+import { Route as AuthenticatedTelegramRouteImport } from './routes/_authenticated/telegram'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedVendedorRouteImport } from './routes/_authenticated/vendedor'
 import { Route as AuthenticatedVentasRouteImport } from './routes/_authenticated/ventas'
@@ -148,6 +149,11 @@ const AuthenticatedSincronizacionRoute =
     path: '/sincronizacion',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTelegramRoute = AuthenticatedTelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/ruta': typeof AuthenticatedRutaRoute
   '/rutas': typeof AuthenticatedRutasRoute
   '/sincronizacion': typeof AuthenticatedSincronizacionRoute
+  '/telegram': typeof AuthenticatedTelegramRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
   '/ventas': typeof AuthenticatedVentasRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/ruta': typeof AuthenticatedRutaRoute
   '/rutas': typeof AuthenticatedRutasRoute
   '/sincronizacion': typeof AuthenticatedSincronizacionRoute
+  '/telegram': typeof AuthenticatedTelegramRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
   '/ventas': typeof AuthenticatedVentasRoute
@@ -248,6 +256,7 @@ export interface FileRoutesById {
   '/_authenticated/ruta': typeof AuthenticatedRutaRoute
   '/_authenticated/rutas': typeof AuthenticatedRutasRoute
   '/_authenticated/sincronizacion': typeof AuthenticatedSincronizacionRoute
+  '/_authenticated/telegram': typeof AuthenticatedTelegramRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/vendedor': typeof AuthenticatedVendedorRoute
   '/_authenticated/ventas': typeof AuthenticatedVentasRoute
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/ruta'
     | '/rutas'
     | '/sincronizacion'
+    | '/telegram'
     | '/usuarios'
     | '/vendedor'
     | '/ventas'
@@ -304,6 +314,7 @@ export interface FileRouteTypes {
     | '/ruta'
     | '/rutas'
     | '/sincronizacion'
+    | '/telegram'
     | '/usuarios'
     | '/vendedor'
     | '/ventas'
@@ -332,6 +343,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ruta'
     | '/_authenticated/rutas'
     | '/_authenticated/sincronizacion'
+    | '/_authenticated/telegram'
     | '/_authenticated/usuarios'
     | '/_authenticated/vendedor'
     | '/_authenticated/ventas'
@@ -502,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSincronizacionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/telegram': {
+      id: '/_authenticated/telegram'
+      path: '/telegram'
+      fullPath: '/telegram'
+      preLoaderRoute: typeof AuthenticatedTelegramRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/usuarios': {
       id: '/_authenticated/usuarios'
       path: '/usuarios'
@@ -552,6 +571,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRutaRoute: typeof AuthenticatedRutaRoute
   AuthenticatedRutasRoute: typeof AuthenticatedRutasRoute
   AuthenticatedSincronizacionRoute: typeof AuthenticatedSincronizacionRoute
+  AuthenticatedTelegramRoute: typeof AuthenticatedTelegramRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedVendedorRoute: typeof AuthenticatedVendedorRoute
   AuthenticatedVentasRoute: typeof AuthenticatedVentasRoute
@@ -576,6 +596,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRutaRoute: AuthenticatedRutaRoute,
   AuthenticatedRutasRoute: AuthenticatedRutasRoute,
   AuthenticatedSincronizacionRoute: AuthenticatedSincronizacionRoute,
+  AuthenticatedTelegramRoute: AuthenticatedTelegramRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedVendedorRoute: AuthenticatedVendedorRoute,
   AuthenticatedVentasRoute: AuthenticatedVentasRoute,

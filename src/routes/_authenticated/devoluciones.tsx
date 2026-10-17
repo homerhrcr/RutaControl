@@ -179,7 +179,7 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { 
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Devolución registrada");
-    invalidate(["devoluciones", "productos", "creditos", "creditos-pendientes"]);
+    invalidate(["devoluciones", "productos", "creditos", "creditos-pendientes", "solicitudes-devolucion"]);
     setItems([]); setNotas(""); setAplicar(false); setDevolucionId(crypto.randomUUID());
     onOpenChange(false);
   }

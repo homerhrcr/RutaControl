@@ -106,7 +106,7 @@
     background-size: auto, auto, 40px 40px, 40px 40px;
     background-attachment: fixed;
   }
-  [data-slot="card"] {
+  .rounded-xl.border.bg-card, [data-slot="card"] {
     backdrop-filter: blur(8px);
     box-shadow: var(--glow), inset 0 1px 0 oklch(0.82 0.14 205 / 0.12);
   }

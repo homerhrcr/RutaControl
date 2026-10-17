@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual, randomBytes } from "node:crypto";
 import { createHmac } from "node:crypto";
-import { tokenInicio, telegramUpdateSchema, esComandoPedido } from "./telegram";
+import { tokenInicio, telegramUpdateSchema, esComandoPedido, esComandoDevolucion, TEXTO_DEVOLUCION } from "./telegram";
 
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 export const nuevoToken = () => randomBytes(24).toString("hex");
@@ -45,7 +45,10 @@ export async function ofrecerCatalogo(chatId: number, origin: string, texto = "T
   const url = `${origin}/telegram/catalogo?c=${chatId}&s=${firmaPedido(chatId)}`;
   try { await telegramApi("setChatMenuButton", { chat_id: chatId, menu_button: { type: "web_app", text: "🛒 Hacer pedido", web_app: { url } } }); }
   catch (e) { console.error("Telegram menú", e); }
+  try { await telegramApi("setMyCommands", { commands: [{ command: "pedido", description: "Hacer un pedido" }, { command: "devolucion", description: "Solicitar una devolución" }] }); }
+  catch (e) { console.error("Telegram comandos", e); }
   await telegramApi("sendMessage", { chat_id: chatId, text: texto, reply_markup: { inline_keyboard: [[{ text: "🛒 Hacer pedido", web_app: { url } }]] } });
+  await telegramApi("sendMessage", { chat_id: chatId, text: "¿Tiene productos para devolver? Toque «↩️ Devoluciones».", reply_markup: { keyboard: [[{ text: "↩️ Devoluciones" }]], resize_keyboard: true, is_persistent: true } });
 }
 
 export async function procesarUpdate(input: unknown, admin: any, origin = "") {
@@ -73,8 +76,10 @@ export async function procesarUpdate(input: unknown, admin: any, origin = "") {
     try { await ofrecerCatalogo(message.chat.id, origin, data?.status === "vinculado" ? `${respuestas.vinculado}\n\nTambién puedes hacer pedidos desde el botón «🛒 Hacer pedido».` : undefined); return { ok: true }; }
     catch (e) { console.error("Telegram catálogo", e); }
   }
-  if (data?.status === "recibido" && !texto.trim().startsWith("/")) {
-    respuestas.recibido = "✅ Recibimos su mensaje. Nuestro equipo de ruta le responderá pronto. Para hacer un pedido escriba /pedido.";
+  if (data?.status === "recibido" && esComandoDevolucion(texto)) {
+    respuestas.recibido = TEXTO_DEVOLUCION;
+  } else if (data?.status === "recibido" && !texto.trim().startsWith("/")) {
+    respuestas.recibido = "✅ Recibimos su mensaje. Nuestro equipo de ruta le responderá pronto. Para hacer un pedido escriba /pedido. Para devoluciones escriba /devolucion.";
   }
   const respuesta = respuestas[data?.status];
   if (respuesta) {

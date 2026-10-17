@@ -138,7 +138,7 @@ function PedidosPage() {
                   {p.pedidos_detalle.map((l) => <li key={l.id}>{Number(l.cantidad)} × {l.nombre_producto}</li>)}
                 </ul>
                 {p.notas && <p className="text-xs italic">{p.notas}</p>}
-                {["confirmado", "cargado", "entregado"].includes(p.estado) && <PedidoTelegram pedidoId={p.id} clienteId={p.cliente_id} nombre={p.clientes?.nombre} />}
+                {["confirmado", "cargado", "entregado"].includes(p.estado) && <PedidoTelegram pedidoId={p.id} clienteId={p.cliente_id} nombre={p.clientes?.nombre} rutaId={p.ruta_id} fechaEntrega={p.fecha_entrega} rutas={rutas ?? []} />}
                 {p.estado === "entregado" && p.venta_id && <TelegramEnviar tipo="tiquete" documentoId={p.venta_id} />}
                 {p.estado !== "entregado" && p.estado !== "anulado" && (
                   <div className="flex flex-wrap gap-2">

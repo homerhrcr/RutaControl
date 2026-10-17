@@ -51,6 +51,16 @@ export function textoDocumento(documento: { empresa: string; tipo: "pedido" | "t
 export function esComandoPedido(texto: string) {
   return /^\/(pedido|catalogo|menu)(@\w+)?$/i.test(texto.trim()) || /^hacer pedido$/i.test(texto.trim());
 }
+export function esComandoDevolucion(texto: string) {
+  return /^\/(devolucion|devoluciones)(@\w+)?$/i.test(texto.trim()) || /^(↩️\s*)?devoluci[oó]n(es)?$/i.test(texto.trim());
+}
+export const TEXTO_DEVOLUCION = [
+  "↩️ Solicitud de devolución recibida.",
+  "",
+  "⚠️ Importante: los productos a devolver deben estar COMPLETOS y en su EMPAQUE ORIGINAL para poder recibirlos.",
+  "",
+  "Escríbanos aquí qué productos y cantidades desea devolver y el motivo. Nuestro vendedor los recogerá en su próxima visita de ruta.",
+].join("\n");
 export const pedidoTelegramSchema = z.object({
   c: z.string().regex(/^-?\d{1,20}$/), s: z.string().regex(/^[A-Za-z0-9_-]{20,100}$/),
   id: z.string().uuid(),

@@ -113,24 +113,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="mx-3 mb-3 overflow-hidden rounded-xl border border-sidebar-border shadow-[var(--glow)]">
           <div className="relative">
-            <img src={truckImg} alt="Camión en ruta" loading="lazy" width={992} height={672} className="h-24 w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-sidebar to-transparent" />
-          </div>
-          <div className="px-3 pb-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-sidebar-primary">Tendencia</span>
-              <span className="text-success">{online ? "● En línea" : "● Offline"}</span>
-            </div>
-            <svg viewBox="0 0 100 28" className="mt-1 h-8 w-full" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="spark" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="var(--sidebar-primary)" stopOpacity="0.45" />
-                  <stop offset="100%" stopColor="var(--sidebar-primary)" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <path d="M0,22 L12,18 L24,20 L36,12 L48,15 L60,8 L72,11 L84,5 L100,3 L100,28 L0,28Z" fill="url(#spark)" />
-              <path d="M0,22 L12,18 L24,20 L36,12 L48,15 L60,8 L72,11 L84,5 L100,3" fill="none" stroke="var(--sidebar-primary)" strokeWidth="1.5" style={{ filter: "drop-shadow(0 0 3px var(--sidebar-primary))" }} />
-            </svg>
+            <img src={truckImg} alt="Camión en ruta" loading="lazy" width={992} height={672} className="h-28 w-full object-cover" />
           </div>
         </div>
         <div className="border-t border-sidebar-border p-3">

@@ -8,6 +8,7 @@ import {
   createUsuario,
   updateUsuario,
   deleteUsuario,
+  resetPasswordUsuario,
 } from "@/lib/usuarios.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, UserCog } from "lucide-react";
+import { Plus, Pencil, Trash2, UserCog, Eye, EyeOff, KeyRound } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
   head: () => ({
@@ -88,9 +89,15 @@ export function UsuariosPage() {
   const updateFn = useServerFn(updateUsuario);
   const deleteFn = useServerFn(deleteUsuario);
 
+  const resetFn = useServerFn(resetPasswordUsuario);
+
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [detail, setDetail] = useState<Usuario | null>(null);
+  const [passUser, setPassUser] = useState<Usuario | null>(null);
+  const [newPass, setNewPass] = useState("");
+  const [showNewPass, setShowNewPass] = useState(false);
 
   const { data: usuarios, isLoading } = useQuery({
     queryKey: ["usuarios"],
@@ -136,6 +143,19 @@ export function UsuariosPage() {
       qc.invalidateQueries({ queryKey: ["usuarios"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Error al eliminar"),
+  });
+
+  const resetMut = useMutation({
+    mutationFn: async () => {
+      if (!passUser) return;
+      await resetFn({ data: { id: passUser.id, password: newPass } });
+    },
+    onSuccess: () => {
+      toast.success("Contraseña actualizada");
+      setPassUser(null);
+      setNewPass("");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Error al cambiar la contraseña"),
   });
 
   function openNew() {
@@ -282,8 +302,23 @@ export function UsuariosPage() {
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(u)}>
+                  <Button variant="ghost" size="icon" onClick={() => setDetail(u)} aria-label="Ver usuario">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(u)} aria-label="Editar usuario">
                     <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setPassUser(u);
+                      setNewPass("");
+                      setShowNewPass(false);
+                    }}
+                    aria-label="Cambiar contraseña"
+                  >
+                    <KeyRound className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -311,6 +346,76 @@ export function UsuariosPage() {
             ))}
           </div>
         )}
+
+        {/* Detalle del usuario */}
+        <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Detalle del usuario</DialogTitle>
+            </DialogHeader>
+            {detail && (
+              <div className="space-y-2 text-sm">
+                <p><span className="font-semibold">Nombre:</span> {detail.nombre || "—"}</p>
+                <p><span className="font-semibold">Correo:</span> {detail.email || "—"}</p>
+                <p><span className="font-semibold">Teléfono:</span> {detail.telefono || "—"}</p>
+                <p>
+                  <span className="font-semibold">Roles:</span>{" "}
+                  {detail.roles.length ? detail.roles.join(", ") : "sin rol"}
+                </p>
+                <p>
+                  <span className="font-semibold">Creado:</span>{" "}
+                  {new Date(detail.created_at).toLocaleDateString("es-CR")}
+                </p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Cambiar contraseña */}
+        <Dialog open={!!passUser} onOpenChange={(o) => !o && setPassUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cambiar contraseña</DialogTitle>
+            </DialogHeader>
+            {passUser && (
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  resetMut.mutate();
+                }}
+              >
+                <p className="text-sm text-muted-foreground">
+                  Nueva contraseña para <span className="font-semibold">{passUser.nombre || passUser.email}</span>.
+                </p>
+                <div className="space-y-1.5">
+                  <Label>Nueva contraseña</Label>
+                  <div className="relative">
+                    <Input
+                      type={showNewPass ? "text" : "password"}
+                      value={newPass}
+                      onChange={(e) => setNewPass(e.target.value)}
+                      minLength={6}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      aria-label={showNewPass ? "Ocultar contraseña" : "Ver contraseña"}
+                    >
+                      {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={resetMut.isPending}>
+                  {resetMut.isPending ? "Guardando…" : "Guardar contraseña"}
+                </Button>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

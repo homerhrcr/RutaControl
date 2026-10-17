@@ -20,7 +20,15 @@ function posicion(): Promise<{ lat: number; lng: number } | null> {
  * Toma una foto con la cámara del dispositivo (input nativo: funciona en navegador,
  * PWA y en el WebView de Android) y la guarda localmente para subirla al reconectar.
  */
-export function EvidenciaButton({ entidad, entidadId }: { entidad: string; entidadId: string }) {
+export function EvidenciaButton({
+  entidad,
+  entidadId,
+  compact = false,
+}: {
+  entidad: string;
+  entidadId: string;
+  compact?: boolean;
+}) {
   const ref = useRef<HTMLInputElement>(null);
   const { user, organizacionActiva } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -59,8 +67,17 @@ export function EvidenciaButton({ entidad, entidadId }: { entidad: string; entid
         className="hidden"
         onChange={(e) => void onFile(e.target.files?.[0])}
       />
-      <Button variant="outline" className="h-11 gap-1.5" disabled={busy} onClick={() => ref.current?.click()}>
-        <Camera className="h-4 w-4" /> Foto
+      <Button
+        variant="outline"
+        size={compact ? "icon" : "default"}
+        className={compact ? "h-7 w-7" : "h-11 gap-1.5"}
+        disabled={busy}
+        onClick={() => ref.current?.click()}
+        title="Foto"
+        aria-label="Tomar foto"
+      >
+        <Camera className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
+        {!compact && "Foto"}
       </Button>
     </>
   );

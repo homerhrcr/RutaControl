@@ -40,7 +40,7 @@ export function TelegramCliente({ clienteId, nombre, iconOnly = false }: { clien
       <Send className="h-4 w-4" />{!iconOnly && "Telegram"}
     </Button>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto"><DialogHeader><DialogTitle>Telegram · {nombre}</DialogTitle></DialogHeader>
-      {open && <TelegramConversacion clienteId={clienteId} />}
+      {open && <TelegramConversacion clienteId={clienteId} nombre={nombre} />}
     </DialogContent></Dialog>
   </>;
 }

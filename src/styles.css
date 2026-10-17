@@ -48,8 +48,50 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-:root, .dark {
+:root {
   --radius: 0.75rem;
+  --background: oklch(0.965 0.012 215);
+  --foreground: oklch(0.22 0.045 245);
+  --card: oklch(1 0 0 / 0.92);
+  --card-foreground: oklch(0.22 0.045 245);
+  --popover: oklch(0.99 0.005 215);
+  --popover-foreground: oklch(0.22 0.045 245);
+  --primary: oklch(0.62 0.12 210);
+  --primary-foreground: oklch(0.99 0.01 215);
+  --secondary: oklch(0.9 0.03 220);
+  --secondary-foreground: oklch(0.3 0.05 240);
+  --muted: oklch(0.92 0.02 220);
+  --muted-foreground: oklch(0.45 0.04 235);
+  --accent: oklch(0.6 0.14 160);
+  --accent-foreground: oklch(0.99 0.01 160);
+  --destructive: oklch(0.58 0.21 22);
+  --destructive-foreground: oklch(0.99 0.01 22);
+  --success: oklch(0.55 0.13 158);
+  --success-foreground: oklch(0.99 0.01 158);
+  --warning: oklch(0.68 0.14 75);
+  --warning-foreground: oklch(0.22 0.06 75);
+  --border: oklch(0.62 0.12 210 / 0.28);
+  --input: oklch(0.62 0.12 210 / 0.32);
+  --ring: oklch(0.62 0.12 210);
+  --chart-1: oklch(0.62 0.12 210);
+  --chart-2: oklch(0.55 0.13 158);
+  --chart-3: oklch(0.68 0.14 75);
+  --chart-4: oklch(0.58 0.21 22);
+  --chart-5: oklch(0.55 0.15 290);
+  --sidebar: oklch(0.94 0.02 220);
+  --sidebar-foreground: oklch(0.26 0.05 240);
+  --sidebar-primary: oklch(0.6 0.12 210);
+  --sidebar-primary-foreground: oklch(0.99 0.01 215);
+  --sidebar-accent: oklch(0.6 0.12 210 / 0.12);
+  --sidebar-accent-foreground: oklch(0.3 0.06 235);
+  --sidebar-border: oklch(0.62 0.12 210 / 0.22);
+  --sidebar-ring: oklch(0.62 0.12 210);
+  --glow: 0 1px 3px oklch(0.35 0.05 235 / 0.08), 0 8px 24px oklch(0.62 0.12 210 / 0.08);
+  --heading-glow: none;
+  color-scheme: light;
+}
+
+.dark {
   --background: oklch(0.14 0.035 245);
   --foreground: oklch(0.95 0.02 220);
   --card: oklch(0.19 0.045 240 / 0.85);
@@ -87,6 +129,7 @@
   --sidebar-border: oklch(0.82 0.14 205 / 0.2);
   --sidebar-ring: oklch(0.82 0.14 205);
   --glow: 0 0 18px oklch(0.82 0.14 205 / 0.22);
+  --heading-glow: 0 0 14px oklch(0.82 0.14 205 / 0.35);
   color-scheme: dark;
 }
 
@@ -106,9 +149,16 @@
     background-size: auto, auto, 40px 40px, 40px 40px;
     background-attachment: fixed;
   }
+  .dark body {
+    background-image:
+      radial-gradient(ellipse at 15% 0%, oklch(0.82 0.14 205 / 0.12), transparent 50%),
+      radial-gradient(ellipse at 90% 100%, oklch(0.78 0.18 160 / 0.08), transparent 50%),
+      linear-gradient(oklch(0.82 0.14 205 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.82 0.14 205 / 0.035) 1px, transparent 1px);
+  }
   .rounded-xl.border.bg-card, [data-slot="card"] {
     backdrop-filter: blur(8px);
     box-shadow: var(--glow), inset 0 1px 0 oklch(0.82 0.14 205 / 0.12);
   }
-  h1, h2 { text-shadow: 0 0 14px oklch(0.82 0.14 205 / 0.35); }
+  h1, h2 { text-shadow: var(--heading-glow); }
 }

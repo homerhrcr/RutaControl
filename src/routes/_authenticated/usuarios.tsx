@@ -9,6 +9,7 @@ import {
   updateUsuario,
   deleteUsuario,
   resetPasswordUsuario,
+  updateEmailUsuario,
 } from "@/lib/usuarios.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,8 @@ export function UsuariosPage() {
     enabled: isAdmin,
   });
 
+  const emailFn = useServerFn(updateEmailUsuario);
+
   const saveMut = useMutation({
     mutationFn: async () => {
       if (editId) {
@@ -116,6 +119,10 @@ export function UsuariosPage() {
             role: form.role,
           },
         });
+        const original = (usuarios ?? []).find((u) => u.id === editId);
+        if (original && original.email.toLowerCase() !== form.email.trim().toLowerCase()) {
+          await emailFn({ data: { id: editId, email: form.email.trim() } });
+        }
       } else {
         await createFn({
           data: {
@@ -218,28 +225,26 @@ export function UsuariosPage() {
                   required
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label>Correo</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  required
+                />
+              </div>
               {!editId && (
-                <>
-                  <div className="space-y-1.5">
-                    <Label>Correo</Label>
-                    <Input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Contraseña</Label>
-                    <Input
-                      type="password"
-                      value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
-                      minLength={6}
-                      required
-                    />
-                  </div>
-                </>
+                <div className="space-y-1.5">
+                  <Label>Contraseña</Label>
+                  <Input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    minLength={6}
+                    required
+                  />
+                </div>
               )}
               <div className="space-y-1.5">
                 <Label>Teléfono</Label>

@@ -149,7 +149,12 @@ function MapaRutasPage() {
     mapInstance.current = new google.maps.Map(mapRef.current, {
       center: DEFAULT_CENTER,
       zoom: 9,
-      mapTypeControl: false,
+      mapTypeId: "terrain",
+      mapTypeControl: true,
+      mapTypeControlOptions: {
+        mapTypeIds: ["terrain", "roadmap"],
+        style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+      },
       streetViewControl: false,
     });
     infoWindow.current = new google.maps.InfoWindow();
@@ -205,7 +210,7 @@ function MapaRutasPage() {
     });
 
     if (count > 0) {
-      mapInstance.current.fitBounds(bounds);
+      mapInstance.current.fitBounds(bounds, 60);
       if (count === 1) mapInstance.current.setZoom(15);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

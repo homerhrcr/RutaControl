@@ -42,7 +42,7 @@ function AuthPage() {
   const [forgotBusy, setForgotBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/ruta" });
+    if (!loading && user) navigate({ to: "/dashboard" });
   }, [user, loading, navigate]);
 
   async function handleLogin(e: React.FormEvent) {
@@ -52,7 +52,7 @@ function AuthPage() {
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Bienvenido");
-    navigate({ to: "/ruta" });
+    navigate({ to: "/dashboard" });
   }
 
   async function handleForgot(e: React.FormEvent) {

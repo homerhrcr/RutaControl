@@ -31,9 +31,11 @@ import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRutaRouteImport } from './routes/_authenticated/ruta'
 import { Route as AuthenticatedRutasRouteImport } from './routes/_authenticated/rutas'
 import { Route as AuthenticatedSincronizacionRouteImport } from './routes/_authenticated/sincronizacion'
+import { Route as AuthenticatedTelegramRouteImport } from './routes/_authenticated/telegram'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedVendedorRouteImport } from './routes/_authenticated/vendedor'
 import { Route as AuthenticatedVentasRouteImport } from './routes/_authenticated/ventas'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -147,6 +149,11 @@ const AuthenticatedSincronizacionRoute =
     path: '/sincronizacion',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTelegramRoute = AuthenticatedTelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -162,6 +169,12 @@ const AuthenticatedVentasRoute = AuthenticatedVentasRouteImport.update({
   path: '/ventas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -185,9 +198,11 @@ export interface FileRoutesByFullPath {
   '/ruta': typeof AuthenticatedRutaRoute
   '/rutas': typeof AuthenticatedRutasRoute
   '/sincronizacion': typeof AuthenticatedSincronizacionRoute
+  '/telegram': typeof AuthenticatedTelegramRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
   '/ventas': typeof AuthenticatedVentasRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -211,9 +226,11 @@ export interface FileRoutesByTo {
   '/ruta': typeof AuthenticatedRutaRoute
   '/rutas': typeof AuthenticatedRutasRoute
   '/sincronizacion': typeof AuthenticatedSincronizacionRoute
+  '/telegram': typeof AuthenticatedTelegramRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
   '/ventas': typeof AuthenticatedVentasRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -239,9 +256,11 @@ export interface FileRoutesById {
   '/_authenticated/ruta': typeof AuthenticatedRutaRoute
   '/_authenticated/rutas': typeof AuthenticatedRutasRoute
   '/_authenticated/sincronizacion': typeof AuthenticatedSincronizacionRoute
+  '/_authenticated/telegram': typeof AuthenticatedTelegramRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/vendedor': typeof AuthenticatedVendedorRoute
   '/_authenticated/ventas': typeof AuthenticatedVentasRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -267,9 +286,11 @@ export interface FileRouteTypes {
     | '/ruta'
     | '/rutas'
     | '/sincronizacion'
+    | '/telegram'
     | '/usuarios'
     | '/vendedor'
     | '/ventas'
+    | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -293,9 +314,11 @@ export interface FileRouteTypes {
     | '/ruta'
     | '/rutas'
     | '/sincronizacion'
+    | '/telegram'
     | '/usuarios'
     | '/vendedor'
     | '/ventas'
+    | '/api/public/telegram/webhook'
   id:
     | '__root__'
     | '/'
@@ -320,9 +343,11 @@ export interface FileRouteTypes {
     | '/_authenticated/ruta'
     | '/_authenticated/rutas'
     | '/_authenticated/sincronizacion'
+    | '/_authenticated/telegram'
     | '/_authenticated/usuarios'
     | '/_authenticated/vendedor'
     | '/_authenticated/ventas'
+    | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -330,6 +355,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -488,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSincronizacionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/telegram': {
+      id: '/_authenticated/telegram'
+      path: '/telegram'
+      fullPath: '/telegram'
+      preLoaderRoute: typeof AuthenticatedTelegramRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/usuarios': {
       id: '/_authenticated/usuarios'
       path: '/usuarios'
@@ -508,6 +541,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ventas'
       preLoaderRoute: typeof AuthenticatedVentasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -531,6 +571,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRutaRoute: typeof AuthenticatedRutaRoute
   AuthenticatedRutasRoute: typeof AuthenticatedRutasRoute
   AuthenticatedSincronizacionRoute: typeof AuthenticatedSincronizacionRoute
+  AuthenticatedTelegramRoute: typeof AuthenticatedTelegramRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedVendedorRoute: typeof AuthenticatedVendedorRoute
   AuthenticatedVentasRoute: typeof AuthenticatedVentasRoute
@@ -555,6 +596,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRutaRoute: AuthenticatedRutaRoute,
   AuthenticatedRutasRoute: AuthenticatedRutasRoute,
   AuthenticatedSincronizacionRoute: AuthenticatedSincronizacionRoute,
+  AuthenticatedTelegramRoute: AuthenticatedTelegramRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedVendedorRoute: AuthenticatedVendedorRoute,
   AuthenticatedVentasRoute: AuthenticatedVentasRoute,
@@ -568,6 +610,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

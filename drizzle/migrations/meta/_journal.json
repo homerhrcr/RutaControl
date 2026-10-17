@@ -29,6 +29,13 @@
       "when": 1792187756025,
       "tag": "0003_devoluciones_pedidos_fiscal",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792215298334,
+      "tag": "0004_telegram_clientes_mensajes",
+      "breakpoints": true
     }
   ]
 }

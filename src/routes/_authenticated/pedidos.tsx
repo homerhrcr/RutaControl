@@ -18,6 +18,8 @@ import { formatCRC } from "@/lib/format";
 import { toast } from "sonner";
 import { queuePedido, queuePedidoEstado, queueEntrega } from "@/lib/offline";
 import { Plus, Truck, CheckCircle2, XCircle } from "lucide-react";
+import { TelegramEnviar } from "@/components/TelegramCliente";
+import { notificarDocumentoTelegram } from "@/lib/telegram-notificar";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
@@ -85,6 +87,7 @@ function PedidosPage() {
     if (!navigator.onLine) { await queuePedidoEstado([id], estado, user?.id ?? ""); return toast.info("Sin conexión: se actualizará al reconectar"); }
     const { error } = await supabase.from("pedidos").update({ estado }).eq("id", id);
     if (error) return toast.error(error.message);
+    if (estado === "confirmado") await notificarDocumentoTelegram("pedido", id);
     invalidate(["pedidos"]);
   }
 
@@ -135,6 +138,8 @@ function PedidosPage() {
                   {p.pedidos_detalle.map((l) => <li key={l.id}>{Number(l.cantidad)} × {l.nombre_producto}</li>)}
                 </ul>
                 {p.notas && <p className="text-xs italic">{p.notas}</p>}
+                {["confirmado", "cargado", "entregado"].includes(p.estado) && <TelegramEnviar tipo="pedido" documentoId={p.id} />}
+                {p.estado === "entregado" && p.venta_id && <TelegramEnviar tipo="tiquete" documentoId={p.venta_id} />}
                 {p.estado !== "entregado" && p.estado !== "anulado" && (
                   <div className="flex flex-wrap gap-2">
                     {p.estado === "borrador" && <Button size="sm" variant="secondary" onClick={() => cambiarEstado(p.id, "confirmado")}>Confirmar</Button>}

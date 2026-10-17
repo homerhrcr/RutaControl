@@ -30,6 +30,7 @@ import {
   RefreshCw,
   ClipboardList,
   Undo2,
+  Send,
 } from "lucide-react";
 
 interface NavItem {
@@ -52,6 +53,7 @@ const NAV: NavItem[] = [
   { to: "/gastos", label: "Gastos", icon: Wallet },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
   { to: "/sincronizacion", label: "Sincronización", icon: RefreshCw },
+  { to: "/telegram", label: "Telegram", icon: Send },
   { to: "/administracion", label: "Administración", icon: UserCog, adminOnly: true },
 
 ];

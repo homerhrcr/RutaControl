@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCRC, formatDate, daysBetween, agingBucket } from "@/lib/format";
 import { HandCoins, Phone, AlertTriangle, Receipt } from "lucide-react";
+import { TelegramEnviar } from "@/components/TelegramCliente";
 
 export const Route = createFileRoute("/_authenticated/cobranza")({
   head: () => ({
@@ -90,18 +91,7 @@ export function CobranzaPage() {
                   >
                     <Receipt className="h-4 w-4" /> Ver detalle de deuda
                   </Button>
-                  {r.cliente.telefono && (
-                    <a
-                      href={`https://wa.me/506${r.cliente.telefono.replace(/\D/g, "")}?text=${encodeURIComponent(
-                        `Hola ${r.cliente.nombre}, le recordamos su saldo pendiente de ${formatCRC(r.saldo)} con Ruta Directo.`,
-                      )}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-accent/15 text-accent"
-                    >
-                      <Phone className="h-4 w-4" />
-                    </a>
-                  )}
+                  <TelegramEnviar iconOnly clienteId={r.cliente.id} texto={`Hola ${r.cliente.nombre}, le recordamos su saldo pendiente de ${formatCRC(r.saldo)} con Ruta Directo.`} />
                 </div>
               </Card>
             );

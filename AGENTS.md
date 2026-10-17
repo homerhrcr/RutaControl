@@ -20,3 +20,4 @@
 - Delivering a preventa order calls registrarVenta with the order id as sale id — retries resume instead of duplicating.
 - Client location editing uses ClienteUbicacion with validated decimal coordinates and a lazy Google Maps picker; reuse the existing SDK script/callback to avoid loading Maps twice.
 - Client administrative addresses use a bundled territorial catalog and shared cascade helpers, storing names in the existing columns — keeps dependent options available without network access and preserves the existing data format.
+- Telegram uses a dedicated gateway-backed bot with a verified public webhook, hashed expiring one-use client links and company-scoped conversations; notifications use persisted document deduplication and never cause a saved sale to retry on delivery failure.

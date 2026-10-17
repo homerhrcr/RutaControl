@@ -143,6 +143,7 @@ export function QuickSale({
       toast.success(`Venta ${metodo} registrada · ${formatCRC(total)}`);
       setTiquete({
         venta_id: venta.id,
+        cliente_id: cliente.id,
         fecha: venta.fecha ?? new Date().toISOString(),
         cliente_nombre: cliente.nombre,
         cliente_telefono: (clienteFull as any)?.telefono ?? null,

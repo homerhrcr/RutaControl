@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { TelegramEnviar } from "@/components/TelegramCliente";
 
 type Evento =
   | { tipo: "venta"; id: string; fecha: string; venta: any }
@@ -102,20 +103,6 @@ export function HistorialCliente({
       toast.success("Estado de cuenta copiado");
     } catch {
       toast.error("No se pudo copiar");
-    }
-  }
-
-  async function enviarWhatsApp() {
-    const texto = buildMensaje();
-    try {
-      await navigator.clipboard.writeText(texto);
-    } catch {
-      // ignore clipboard errors
-    }
-    const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
-    const win = window.open(url, "_blank", "noopener,noreferrer");
-    if (!win) {
-      toast.success("Mensaje copiado. Pégalo en WhatsApp.");
     }
   }
 
@@ -212,9 +199,7 @@ export function HistorialCliente({
                 ))}
               </div>
               <div className="mt-3 flex gap-2">
-                <Button size="sm" className="flex-1 gap-1.5" onClick={enviarWhatsApp}>
-                  <MessageCircle className="h-4 w-4" /> Enviar por WhatsApp
-                </Button>
+                <TelegramEnviar clienteId={cliente?.id} texto={buildMensaje()} />
                 <Button size="sm" variant="outline" className="gap-1.5" onClick={copiarMensaje}>
                   <Copy className="h-4 w-4" /> Copiar
                 </Button>
@@ -282,6 +267,7 @@ export function HistorialCliente({
                     ))}
                   </div>
                   <div className="mt-2 flex items-center justify-between border-t pt-2">
+                    <TelegramEnviar tipo="tiquete" documentoId={v.id} />
                     {Number(v.descuento) > 0 ? (
                       <span className="text-xs text-muted-foreground">Desc. {formatCRC(Number(v.descuento))}</span>
                     ) : (

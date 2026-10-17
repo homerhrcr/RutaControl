@@ -17,6 +17,7 @@ import {
   Sun,
   LogOut,
   ChevronRight,
+  Send,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/menu")({
@@ -40,6 +41,7 @@ const ITEMS = [
   { to: "/cobranza", label: "Crédito y Cobros", icon: CreditCard },
   { to: "/gastos", label: "Gastos", icon: Wallet },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
+  { to: "/telegram", label: "Telegram", icon: Send },
   { to: "/usuarios", label: "Usuarios", icon: UserCog, adminOnly: true },
   { to: "/auditoria", label: "Auditoría", icon: ScrollText, adminOnly: true },
 ] as const;

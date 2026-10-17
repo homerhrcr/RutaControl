@@ -1,5 +1,6 @@
 # Roadmap
-- [ ] Telegram como Impulso ERP: vinculación voluntaria de clientes, confirmaciones de pedidos, tiquetes y recepción de mensajes; requiere conexión del bot.
+- [x] Telegram: bot RutaDirectoBot conectado, vinculación voluntaria, confirmaciones y tiquetes, conversación y protecciones implementadas; enlace y controles verificados con sesión real.
+- [ ] Activar recepción y probar envío/recepción real de Telegram — bloqueado: receptor público devuelve 404 hasta desplegar los cambios; un cliente debe iniciar el bot mediante su enlace para la prueba real.
 - [x] Selección en cascada de provincia, cantón y distrito en clientes; catálogo local, siete pruebas y guardado/lectura verificados.
 - [x] Ubicación en clientes como HidroGest: coordenadas, GPS, copiar/pegar y marcar en mapa; guardado verificado, cartografía pendiente de validar en dominio autorizado.
 - [x] Fase 1: Devoluciones y merma (reingreso a bodega / merma, rebajo a deuda)

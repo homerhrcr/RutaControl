@@ -16,6 +16,7 @@ import { ThemeProvider } from "../lib/theme";
 import { registerServiceWorker } from "../lib/sw-register";
 import { enableQueryPersistence } from "../lib/query-persist";
 import { Toaster } from "../components/ui/sonner";
+import { PdfPreviewHost } from "../components/PdfPreviewHost";
 
 function NotFoundComponent() {
   return (
@@ -151,6 +152,7 @@ function RootComponent() {
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Toaster richColors position="top-center" />
+          <PdfPreviewHost />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

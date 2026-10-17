@@ -307,11 +307,14 @@ export type Database = {
           correo: string | null
           distrito: string | null
           identificacion: string
+          logo_data: string | null
           nombre_comercial: string | null
           nombre_fiscal: string
           organization_id: string
           otras_senas: string | null
+          pie_reportes: string | null
           provincia: string | null
+          sitio_web: string | null
           sucursal: string
           telefono: string | null
           terminal: string
@@ -326,11 +329,14 @@ export type Database = {
           correo?: string | null
           distrito?: string | null
           identificacion?: string
+          logo_data?: string | null
           nombre_comercial?: string | null
           nombre_fiscal?: string
           organization_id?: string
           otras_senas?: string | null
+          pie_reportes?: string | null
           provincia?: string | null
+          sitio_web?: string | null
           sucursal?: string
           telefono?: string | null
           terminal?: string
@@ -345,11 +351,14 @@ export type Database = {
           correo?: string | null
           distrito?: string | null
           identificacion?: string
+          logo_data?: string | null
           nombre_comercial?: string | null
           nombre_fiscal?: string
           organization_id?: string
           otras_senas?: string | null
+          pie_reportes?: string | null
           provincia?: string | null
+          sitio_web?: string | null
           sucursal?: string
           telefono?: string | null
           terminal?: string

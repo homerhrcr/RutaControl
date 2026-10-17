@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +69,14 @@ export function TelegramConversacion({ clienteId, nombre }: { clienteId: string;
       return { vinculo: vinculo.data, mensajes: (mensajes.data ?? []).reverse() };
     },
   });
+  const [justLinked, setJustLinked] = useState(false);
+  const auto = useRef(false);
+  useEffect(() => { if (url && data?.vinculo?.activo) { setJustLinked(true); setUrl(""); toast.success("¡Cliente vinculado a Telegram!"); } }, [url, data?.vinculo?.activo]);
+  useEffect(() => {
+    if (auto.current || isPending || error || data?.vinculo?.activo || !navigator.onLine) return;
+    auto.current = true;
+    crear({ data: { clienteId } }).then((r) => setUrl(r.url)).catch(() => {});
+  }, [isPending, error, data?.vinculo?.activo, clienteId, crear]);
   async function refresh() { await qc.invalidateQueries({ queryKey: ["telegram-cliente", orgId, clienteId] }); }
   async function accion(fn: () => Promise<void>) {
     if (!navigator.onLine) return toast.info("Telegram requiere conexión");
@@ -82,7 +90,7 @@ export function TelegramConversacion({ clienteId, nombre }: { clienteId: string;
     <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
       <span className="text-sm font-semibold">{data?.vinculo?.activo ? `Vinculado · ${data.vinculo.telegram_nombre ?? "Cliente"}` : "Sin vincular"}</span>
       {data?.vinculo?.activo ? <Button variant="outline" size="sm" disabled={busy} onClick={() => accion(async () => { await quitar({ data: { clienteId } }); setUrl(""); await refresh(); })}><Unlink className="mr-1 h-4 w-4" />Desvincular</Button>
-        : <Button size="sm" disabled={busy} onClick={() => accion(async () => setUrl((await crear({ data: { clienteId } })).url))}><Link2 className="mr-1 h-4 w-4" />Generar enlace</Button>}
+        : <Button size="sm" disabled={busy} onClick={() => accion(async () => setUrl((await crear({ data: { clienteId } })).url))}><Link2 className="mr-1 h-4 w-4" />{url ? "Nuevo código" : "Generar código"}</Button>}
     </div>
     {url && !data?.vinculo?.activo && <div className="space-y-3 text-center">
       <p className="text-sm font-medium">Que el cliente escanee este código con la cámara del celular y toque «Iniciar»</p>

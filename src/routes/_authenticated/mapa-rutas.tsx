@@ -116,7 +116,7 @@ function MapaRutasPage() {
   const [rutaFiltro, setRutaFiltro] = useState<string>("todas");
   const [marcando, setMarcando] = useState<ClienteMapa | null>(null);
   const [guardando, setGuardando] = useState(false);
-  const [tipoMapa, setTipoMapa] = useState<TipoMapa>(leerTipoMapa);
+  const [tipoMapa, setTipoMapa] = useState<TipoMapa>("satellite");
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);

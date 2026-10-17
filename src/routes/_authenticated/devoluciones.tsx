@@ -126,7 +126,7 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { 
   const { data: rutas } = useRutas();
   const { data: productos } = useProductos(true);
   const { user } = useAuth();
-  const [devolucionId, setDevolucionId] = useState(() => crypto.randomUUID());
+  const [devolucionId, setDevolucionId] = useState<string>(() => crypto.randomUUID());
   const invalidate = useInvalidate();
   const [cliente, setCliente] = useState(clienteId ?? "");
   const [ruta, setRuta] = useState("");

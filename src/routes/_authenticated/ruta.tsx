@@ -12,7 +12,6 @@ import { EvidenciaButton } from "@/components/EvidenciaButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -408,7 +407,7 @@ export function RutaPage() {
               );
             })}
             {filtered.length === 0 && (
-              <p className="py-10 text-center text-sm text-muted-foreground">No hay clientes en esta ruta.</p>
+              <p className="col-span-full py-10 text-center text-sm text-muted-foreground">No hay clientes en esta ruta.</p>
             )}
           </div>
         )}

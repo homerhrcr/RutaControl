@@ -11,7 +11,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
       let input;
       try { input = JSON.parse(raw); } catch { return new Response("Invalid JSON", { status: 400 }); }
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      try { return Response.json(await procesarUpdate(input, supabaseAdmin)); }
+      try { return Response.json(await procesarUpdate(input, supabaseAdmin, new URL(request.url).origin)); }
       catch (e) { console.error("Telegram recepción", e); return Response.json({ ok: false }, { status: 500 }); }
     },
   } },

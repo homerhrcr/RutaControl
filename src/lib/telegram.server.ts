@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual, randomBytes } from "node:crypto";
-import { tokenInicio, telegramUpdateSchema } from "./telegram";
+import { createHmac } from "node:crypto";
+import { tokenInicio, telegramUpdateSchema, esComandoPedido } from "./telegram";
 
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 export const nuevoToken = () => randomBytes(24).toString("hex");
@@ -33,7 +34,21 @@ export async function telegramApi(metodo: string, body: Record<string, unknown> 
   return result.result;
 }
 
-export async function procesarUpdate(input: unknown, admin: any) {
+export function firmaPedido(chatId: string | number) {
+  return createHmac("sha256", webhookSecret()).update(`pedido:${chatId}`).digest("base64url");
+}
+export function verificarFirmaPedido(chatId: string, firma: string) {
+  const a = Buffer.from(firmaPedido(chatId)); const b = Buffer.from(firma);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+export async function ofrecerCatalogo(chatId: number, origin: string, texto = "Toca el botón para ver el catálogo y hacer tu pedido.") {
+  const url = `${origin}/telegram/catalogo?c=${chatId}&s=${firmaPedido(chatId)}`;
+  try { await telegramApi("setChatMenuButton", { chat_id: chatId, menu_button: { type: "web_app", text: "🛒 Hacer pedido", web_app: { url } } }); }
+  catch (e) { console.error("Telegram menú", e); }
+  await telegramApi("sendMessage", { chat_id: chatId, text: texto, reply_markup: { inline_keyboard: [[{ text: "🛒 Hacer pedido", web_app: { url } }]] } });
+}
+
+export async function procesarUpdate(input: unknown, admin: any, origin = "") {
   const parsed = telegramUpdateSchema.safeParse(input);
   if (!parsed.success) return { ignored: true };
   const { update_id, message } = parsed.data;
@@ -54,6 +69,10 @@ export async function procesarUpdate(input: unknown, admin: any) {
     sin_vinculo: "Para vincularte solicita el enlace de Telegram a tu vendedor de Ruta Directo.",
     desvinculado: "Tu Telegram quedó desvinculado. No recibirás más notificaciones.",
   };
+  if (origin && (data?.status === "vinculado" || (data?.status === "recibido" && esComandoPedido(texto)))) {
+    try { await ofrecerCatalogo(message.chat.id, origin, data?.status === "vinculado" ? `${respuestas.vinculado}\n\nTambién puedes hacer pedidos desde el botón «🛒 Hacer pedido».` : undefined); return { ok: true }; }
+    catch (e) { console.error("Telegram catálogo", e); }
+  }
   const respuesta = respuestas[data?.status];
   if (respuesta) {
     try { await telegramApi("sendMessage", { chat_id: message.chat.id, text: respuesta }); }

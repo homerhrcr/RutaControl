@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import logo from "@/assets/logo-ruta-directo.jpg.asset.json";
 
 export const Route = createFileRoute("/auth")({
@@ -115,6 +122,31 @@ function AuthPage() {
             </p>
           </form>
         </Card>
+        <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Recuperar contraseña</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleForgot} className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.
+              </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="forgot-email">Correo</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={forgotBusy}>
+                {forgotBusy ? "Enviando…" : "Enviar enlace"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

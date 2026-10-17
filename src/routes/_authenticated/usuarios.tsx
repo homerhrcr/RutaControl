@@ -302,8 +302,23 @@ export function UsuariosPage() {
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(u)}>
+                  <Button variant="ghost" size="icon" onClick={() => setDetail(u)} aria-label="Ver usuario">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(u)} aria-label="Editar usuario">
                     <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setPassUser(u);
+                      setNewPass("");
+                      setShowNewPass(false);
+                    }}
+                    aria-label="Cambiar contraseña"
+                  >
+                    <KeyRound className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>

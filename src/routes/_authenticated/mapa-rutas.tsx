@@ -7,7 +7,14 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CatalogSelect } from "@/components/CatalogSelect";
-import { MapPin, Crosshair, X, Loader2 } from "lucide-react";
+import {
+  MapPin,
+  Crosshair,
+  X,
+  Loader2,
+  Satellite,
+  Map as MapIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/mapa-rutas")({
@@ -38,6 +45,24 @@ const COLORS = [
 
 // Centro por defecto: Costa Rica
 const DEFAULT_CENTER = { lat: 9.9281, lng: -84.0907 };
+
+// Tipo de mapa: satelital por defecto, con opción de pasar al clásico
+type TipoMapa = "satellite" | "roadmap";
+const TIPO_MAPA_KEY = "rutadirecto_mapa_tipo";
+const TIPO_MAPA_LABEL: Record<TipoMapa, string> = {
+  satellite: "Satelital",
+  roadmap: "Clásico",
+};
+
+function leerTipoMapa(): TipoMapa {
+  try {
+    const v = localStorage.getItem(TIPO_MAPA_KEY);
+    if (v === "roadmap" || v === "satellite") return v;
+  } catch {
+    // almacenamiento no disponible
+  }
+  return "satellite";
+}
 
 declare global {
   interface Window {
@@ -91,6 +116,7 @@ function MapaRutasPage() {
   const [rutaFiltro, setRutaFiltro] = useState<string>("todas");
   const [marcando, setMarcando] = useState<ClienteMapa | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [tipoMapa, setTipoMapa] = useState<TipoMapa>("satellite");
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
@@ -98,6 +124,11 @@ function MapaRutasPage() {
   const infoWindow = useRef<google.maps.InfoWindow | null>(null);
   const marcandoRef = useRef<ClienteMapa | null>(null);
   marcandoRef.current = marcando;
+
+  // Recuperar el tipo de mapa elegido la última vez
+  useEffect(() => {
+    setTipoMapa(leerTipoMapa());
+  }, []);
 
   // Mapa de color por ruta
   const colorPorRuta = useMemo(() => {
@@ -149,13 +180,10 @@ function MapaRutasPage() {
     mapInstance.current = new google.maps.Map(mapRef.current, {
       center: DEFAULT_CENTER,
       zoom: 9,
-      mapTypeId: "terrain",
-      mapTypeControl: true,
-      mapTypeControlOptions: {
-        mapTypeIds: ["terrain", "roadmap"],
-        style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-      },
+      mapTypeId: tipoMapa,
+      mapTypeControl: false,
       streetViewControl: false,
+      clickableIcons: false,
     });
     infoWindow.current = new google.maps.InfoWindow();
 
@@ -216,6 +244,17 @@ function MapaRutasPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, conUbicacion, colorPorRuta, rutaFiltro]);
 
+  // Cambiar entre satelital y clásico, y recordar la elección
+  useEffect(() => {
+    if (!ready || !mapInstance.current) return;
+    mapInstance.current.setMapTypeId(tipoMapa);
+    try {
+      localStorage.setItem(TIPO_MAPA_KEY, tipoMapa);
+    } catch {
+      // almacenamiento no disponible
+    }
+  }, [ready, tipoMapa]);
+
   async function guardarUbicacion(c: ClienteMapa, lat: number, lng: number) {
     setGuardando(true);
     const { error } = await supabase
@@ -246,6 +285,24 @@ function MapaRutasPage() {
               onChange={setRutaFiltro}
               extraOptions={[{ value: "todas", label: "Todas las rutas" }]}
             />
+          </div>
+          <div className="flex items-center gap-1 rounded-lg border p-1">
+            {(["satellite", "roadmap"] as TipoMapa[]).map((t) => (
+              <Button
+                key={t}
+                size="sm"
+                variant={tipoMapa === t ? "default" : "ghost"}
+                className="h-7 px-2.5 text-xs"
+                onClick={() => setTipoMapa(t)}
+              >
+                {t === "satellite" ? (
+                  <Satellite className="mr-1 h-3.5 w-3.5" />
+                ) : (
+                  <MapIcon className="mr-1 h-3.5 w-3.5" />
+                )}
+                {TIPO_MAPA_LABEL[t]}
+              </Button>
+            ))}
           </div>
           <div className="text-sm text-muted-foreground">
             {conUbicacion.length} ubicada(s) · {sinUbicacion.length} sin ubicación

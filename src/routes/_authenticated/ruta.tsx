@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRutas, useClientes, useInvalidate, guardarOrdenRuta } from "@/lib/data";
+import { useSolicitudesDevolucion } from "@/lib/solicitudes-devolucion";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickSale } from "@/components/QuickSale";
@@ -70,6 +71,8 @@ export function RutaPage() {
   const { data: clientes } = useClientes(rutaId === "all" ? undefined : rutaId);
 
   // saldos por cliente
+  const { data: solicitudesDev } = useSolicitudesDevolucion();
+  const conDevolucion = useMemo(() => new Set((solicitudesDev ?? []).map((s) => s.cliente_id)), [solicitudesDev]);
   const { data: saldos } = useQuery({
     queryKey: ["saldos-map"],
     queryFn: async () => {
@@ -359,6 +362,9 @@ export function RutaPage() {
                         {esSiguiente && <Navigation className="h-3 w-3 shrink-0 text-primary" />}
                         <span className="truncate">{c.nombre}</span>
                         {visitado && <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-accent" />}
+                        {conDevolucion.has(c.id) && (
+                          <span title="Tiene solicitud de devolución pendiente" className="shrink-0 rounded bg-warning/20 px-1 text-[10px] font-bold text-warning">↩️ Devolución</span>
+                        )}
                       </p>
                       <p className="flex items-center gap-1 overflow-hidden text-[11px] leading-tight text-muted-foreground">
                         <MapPin className="h-2.5 w-2.5 shrink-0" />

@@ -27,9 +27,9 @@ export async function verReportePdf(r: Reporte, emp: EmpresaDatos, ctx: Contexto
   if (emp.logo) {
     try {
       const p = doc.getImageProperties(emp.logo);
-      const h = 20;
-      const w = Math.min(45, (p.width / p.height) * h);
-      doc.addImage(emp.logo, p.fileType || "PNG", M, 10, w, (w / p.width) * p.height > h ? h : (w / p.width) * p.height);
+      const k = Math.min(45 / p.width, 20 / p.height);
+      const w = p.width * k;
+      doc.addImage(emp.logo, p.fileType || "PNG", M, 9, w, p.height * k);
       x = M + w + 5;
     } catch {
       /* logo inválido */

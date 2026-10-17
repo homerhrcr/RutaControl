@@ -23,7 +23,7 @@ describe("Telegram clientes", () => {
   test("tiquete toma cantidades, total y forma de pago del documento", () => {
     const texto = textoDocumento({ empresa: "Lácteos La Rivera", tipo: "tiquete", id: "12345678-abcd", cliente: "Cliente prueba", fecha: "2026-10-17", metodo: "credito", total: 7000, items: [{ nombre: "Leche", cantidad: 2, total: 7000 }] });
     expect(texto).toContain("2 × Leche");
-    expect(texto).toContain("7.000");
+    expect(texto.replace(/\s/g, "")).toContain("TOTAL:₡7000");
     expect(texto).toContain("Pago: Crédito");
   });
 });

@@ -31,6 +31,8 @@ import { Plus, Search, MapPin, Phone, MessageCircle, History, Trash2 } from "luc
 import { HistorialCliente } from "@/components/HistorialCliente";
 import { ClienteUbicacion } from "@/components/ClienteUbicacion";
 import { leerCoordenadas } from "@/lib/coordenadas";
+import { DireccionCliente } from "@/components/DireccionCliente";
+import { normalizarDireccion, errorDireccion } from "@/lib/division-territorial";
 
 
 export const Route = createFileRoute("/_authenticated/clientes")({
@@ -105,9 +107,7 @@ function ClientesPage() {
       nombre: c.nombre ?? "",
       telefono: c.telefono ?? "",
       direccion: c.direccion ?? "",
-      distrito: c.distrito ?? "",
-      canton: c.canton ?? "",
-      provincia: c.provincia ?? "",
+      ...normalizarDireccion({ distrito: c.distrito ?? "", canton: c.canton ?? "", provincia: c.provincia ?? "" }),
       referencia: c.referencia ?? "",
       tipo_identificacion: c.tipo_identificacion ?? "",
       identificacion: c.identificacion ?? "",
@@ -122,6 +122,8 @@ function ClientesPage() {
 
   async function save() {
     if (!form.nombre.trim()) return toast.error("El nombre es obligatorio");
+    const errorTerritorial = errorDireccion(form);
+    if (errorTerritorial) return toast.error(errorTerritorial);
     let ubicacion;
     try { ubicacion = leerCoordenadas(form.latitud, form.longitud); }
     catch (e) { return toast.error(e instanceof Error ? e.message : "Coordenadas inválidas"); }
@@ -278,17 +280,7 @@ function ClientesPage() {
             <Field label="Dirección exacta">
               <Input value={form.direccion} onChange={(e) => setForm({ ...form, direccion: e.target.value })} />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Distrito">
-                <Input value={form.distrito} onChange={(e) => setForm({ ...form, distrito: e.target.value })} />
-              </Field>
-              <Field label="Cantón">
-                <Input value={form.canton} onChange={(e) => setForm({ ...form, canton: e.target.value })} />
-              </Field>
-            </div>
-            <Field label="Provincia">
-              <Input value={form.provincia} onChange={(e) => setForm({ ...form, provincia: e.target.value })} />
-            </Field>
+            <DireccionCliente value={form} onChange={(direccion) => setForm((f) => ({ ...f, ...direccion }))} />
             <Field label="Referencia">
               <Input value={form.referencia} onChange={(e) => setForm({ ...form, referencia: e.target.value })} />
             </Field>

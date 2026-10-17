@@ -119,3 +119,60 @@ export function TelegramConversacion({ clienteId, nombre }: { clienteId: string;
     </div>
   </div>;
 }
+/** Order confirmation dialog: shows whether it was already sent, prevents accidental repeats and allows follow-up messages. */
+export function PedidoTelegram({ pedidoId, clienteId, nombre }: { pedidoId: string; clienteId: string; nombre?: string }) {
+  const { organizacionActiva } = useAuth();
+  const orgId = organizacionActiva?.id;
+  const enviar = useServerFn(enviarTelegram);
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [texto, setTexto] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [envioId, setEnvioId] = useState(() => crypto.randomUUID());
+  const numero = pedidoId.replace(/-/g, "").slice(0, 8).toUpperCase();
+  const key = ["telegram-pedido", orgId, pedidoId];
+  const { data: enviada } = useQuery({
+    queryKey: key, enabled: !!orgId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("telegram_mensajes").select("created_at")
+        .eq("organization_id", orgId ?? "").eq("estado", "enviado").like("dedupe_key", `pedido:%:${pedidoId}%`)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (error) throw error;
+      return data?.created_at ?? null;
+    },
+  });
+  const fecha = enviada ? new Date(enviada).toLocaleString("es-CR", { timeZone: "America/Costa_Rica" }) : "";
+  async function correr(fn: () => Promise<string>) {
+    if (!navigator.onLine) return toast.info("Telegram requiere conexión");
+    setBusy(true);
+    try { resultadoTelegram(await fn()); await qc.invalidateQueries({ queryKey: key }); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "No se pudo enviar"); }
+    finally { setBusy(false); }
+  }
+  return <>
+    <Button size="sm" variant={enviada ? "outline" : "default"} className="gap-1.5" onClick={() => setOpen(true)}>
+      {enviada ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Send className="h-4 w-4" />}{enviada ? "Confirmación enviada" : "Enviar confirmación"}
+    </Button>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-lg"><DialogHeader><DialogTitle>Telegram · Pedido #{numero}</DialogTitle></DialogHeader>
+      <div className="space-y-4">
+        {enviada
+          ? <div className="flex items-start gap-2 rounded-md border border-primary/40 bg-primary/10 p-3 text-sm"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><span>La confirmación ya fue enviada a {nombre ?? "este cliente"} el {fecha}. No es necesario enviarla de nuevo.</span></div>
+          : <div className="space-y-2"><p className="text-sm text-muted-foreground">El cliente recibirá la confirmación de que su pedido fue recibido, que está en ruta y el detalle de productos.</p>
+              <Button className="w-full gap-2" disabled={busy} onClick={() => correr(async () => (await enviar({ data: { tipo: "pedido", documentoId: pedidoId } })).status)}><Send className="h-4 w-4" />Enviar confirmación</Button></div>}
+        <div className="space-y-2 border-t pt-3">
+          <p className="text-sm font-medium">Mensaje adicional sobre este pedido</p>
+          <Textarea aria-label="Mensaje adicional" placeholder="Ej.: Pasaremos por su local alrededor de las 10:30 a. m." maxLength={3900} value={texto} onChange={(e) => setTexto(e.target.value)} />
+          <Button className="w-full gap-2" variant="secondary" disabled={busy || !texto.trim()} onClick={() => correr(async () => {
+            const r = await enviar({ data: { clienteId, tipo: "mensaje", envioId, texto: `Sobre su pedido #${numero}:\n${texto.trim()}` } });
+            if (r.status === "enviado") { setTexto(""); setEnvioId(crypto.randomUUID()); }
+            return r.status;
+          })}><MessageCircle className="h-4 w-4" />Enviar mensaje</Button>
+        </div>
+        {enviada && <Button variant="ghost" size="sm" className="w-full" disabled={busy} onClick={() => {
+          if (!confirm("¿Reenviar la confirmación? El cliente la recibirá otra vez.")) return;
+          correr(async () => (await enviar({ data: { tipo: "pedido", documentoId: pedidoId, reenvioId: crypto.randomUUID() } })).status);
+        }}>Reenviar confirmación</Button>}
+      </div>
+    </DialogContent></Dialog>
+  </>;
+}

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { pedidoTelegramSchema } from "@/lib/telegram";
+import { pedidoTelegramSchema, devolucionTelegramSchema, textoSolicitudDevolucion } from "@/lib/telegram";
 
 const accesoSchema = z.object({ c: z.string().regex(/^-?\d{1,20}$/), s: z.string().regex(/^[A-Za-z0-9_-]{20,100}$/) });
 
@@ -37,8 +37,26 @@ export const Route = createFileRoute("/api/public/telegram/catalogo")({
       return Response.json({ empresa: r.empresa, cliente: r.cliente.nombre, ...cat, productos: cat.productos.map((x: any) => ({ id: x.id, nombre: x.nombre, precio: Number(x.precio), categoria_id: x.categoria_id, agotado: Number(x.existencia) <= 0 })) }, { headers: { "Cache-Control": "no-store" } });
     },
     POST: async ({ request }) => {
-      let body: unknown;
+      let body: any;
       try { body = await request.json(); } catch { return Response.json({ error: "Datos inválidos" }, { status: 400 }); }
+      if (body?.modo === "devolucion") {
+        const dv = devolucionTelegramSchema.safeParse(body);
+        if (!dv.success) return Response.json({ error: "Solicitud inválida" }, { status: 400 });
+        const r = await resolverCliente(dv.data.c, dv.data.s);
+        if (!r) return Response.json({ error: "Tu Telegram no está vinculado." }, { status: 403 });
+        const dedupe = `devolucion-telegram:${dv.data.id}`;
+        const { data: ya } = await r.admin.from("telegram_mensajes").select("id").eq("dedupe_key", dedupe).maybeSingle();
+        if (ya) return Response.json({ ok: true, id: dv.data.id });
+        const ids = [...new Set(dv.data.items.map((i) => i.producto_id))];
+        const { data: prods } = await r.admin.from("productos").select("id,nombre").eq("organization_id", r.org).in("id", ids);
+        const mapa = new Map((prods ?? []).map((x: any) => [x.id, x.nombre]));
+        if (mapa.size !== ids.length) return Response.json({ error: "Algún producto no existe" }, { status: 400 });
+        const texto = textoSolicitudDevolucion(dv.data.items.map((i) => ({ nombre: mapa.get(i.producto_id) as string, cantidad: i.cantidad, motivo: i.motivo })), dv.data.notas);
+        const { error } = await r.admin.from("telegram_mensajes").insert({ organization_id: r.org, cliente_id: r.cliente.id, direccion: "entrada", texto, estado: "recibido", dedupe_key: dedupe });
+        if (error) { console.error("Devolución Telegram", error); return Response.json({ error: "No se pudo guardar la solicitud" }, { status: 500 }); }
+        try { const { telegramApi } = await import("@/lib/telegram.server"); await telegramApi("sendMessage", { chat_id: Number(dv.data.c), text: `✅ ${texto}` }); } catch (e) { console.error("Confirmación devolución", e); }
+        return Response.json({ ok: true, id: dv.data.id });
+      }
       const p = pedidoTelegramSchema.safeParse(body);
       if (!p.success) return Response.json({ error: "Pedido inválido" }, { status: 400 });
       const d = p.data;

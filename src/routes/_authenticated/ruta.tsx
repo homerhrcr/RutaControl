@@ -281,15 +281,11 @@ export function RutaPage() {
 
         {/* siguiente cliente sugerido */}
         {!ordenMode && rutaId !== "all" && siguienteId && (
-          <Card className="border-primary/40 bg-primary/5 p-3">
-            <div className="flex items-center gap-2 text-sm">
-              <Navigation className="h-4 w-4 text-primary" />
-              <span className="font-medium">Siguiente entrega:</span>
-              <span className="font-bold">
-                {ordenados.find((c) => c.id === siguienteId)?.nombre}
-              </span>
-            </div>
-          </Card>
+          <div className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-2 py-1 text-xs">
+            <Navigation className="h-3 w-3 shrink-0 text-primary" />
+            <span className="shrink-0 font-medium">Siguiente:</span>
+            <span className="truncate font-bold">{ordenados.find((c) => c.id === siguienteId)?.nombre}</span>
+          </div>
         )}
 
         {!ordenMode && (
@@ -301,28 +297,29 @@ export function RutaPage() {
 
         {/* modo ordenar */}
         {ordenMode && orderList && (
-          <div className="space-y-2">
+          <div className="grid gap-1.5 md:grid-cols-2 xl:grid-cols-3">
             {orderList.map((c, idx) => (
-              <Card key={c.id} className="flex items-center gap-3 p-3">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+              <Card key={c.id} className="flex items-center gap-1.5 p-1.5">
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
                   {idx + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{c.nombre}</p>
-                  <p className="truncate text-xs text-muted-foreground">{c.distrito || c.direccion || "Sin dirección"}</p>
+                  <p className="truncate text-sm font-semibold leading-tight">{c.nombre}</p>
+                  <p className="truncate text-[11px] leading-tight text-muted-foreground">{c.distrito || c.direccion || "Sin dirección"}</p>
                 </div>
                 <div className="flex shrink-0 gap-1">
-                  <Button variant="outline" size="icon" className="h-9 w-9" disabled={idx === 0} onClick={() => moveItem(idx, -1)}>
-                    <ArrowUp className="h-4 w-4" />
+                  <Button variant="outline" size="icon" className="h-7 w-7" disabled={idx === 0} onClick={() => moveItem(idx, -1)} aria-label="Subir">
+                    <ArrowUp className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9"
+                    className="h-7 w-7"
                     disabled={idx === orderList.length - 1}
                     onClick={() => moveItem(idx, 1)}
+                    aria-label="Bajar"
                   >
-                    <ArrowDown className="h-4 w-4" />
+                    <ArrowDown className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </Card>
@@ -331,70 +328,81 @@ export function RutaPage() {
         )}
 
         {!ordenMode && (
-          <div className="space-y-2.5">
+          <div className="grid gap-1.5 md:grid-cols-2 xl:grid-cols-3">
             {filtered.map((c, idx) => {
               const saldo = saldos?.[c.id] ?? 0;
               const visitado = visitadosSet.has(c.id);
               const esSiguiente = c.id === siguienteId;
+              const rutasDe = Array.from(
+                new Set(
+                  ((c.cliente_rutas ?? []) as any[])
+                    .map((cr) => cr.rutas?.nombre as string | undefined)
+                    .filter((n): n is string => !!n),
+                ),
+              );
               return (
                 <Card
                   key={c.id}
                   className={cn(
-                    "p-3",
+                    "p-1.5",
                     esSiguiente && "border-primary ring-1 ring-primary",
-                    visitado && "opacity-70",
+                    visitado && "opacity-60",
                   )}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-start gap-2">
-                      {rutaId !== "all" && (
-                        <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
-                          {idx + 1}
-                        </span>
-                      )}
-                      <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 truncate font-semibold">
-                          {c.nombre}
-                          {visitado && <CheckCircle2 className="h-4 w-4 shrink-0 text-accent" />}
-                        </p>
-                        <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                          <MapPin className="h-3 w-3 shrink-0" /> {c.distrito || c.direccion || "Sin dirección"}
-                        </p>
-                        {esSiguiente && (
-                          <Badge className="mt-1.5 gap-1">
-                            <Navigation className="h-3 w-3" /> Siguiente
-                          </Badge>
-                        )}
-                        {saldo > 0 && (
-                          <Badge variant="outline" className="mt-1.5 border-destructive/40 text-destructive">
-                            Saldo: {formatCRC(saldo)}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    {(c as any).rutas?.nombre && (
-                      <Badge variant="secondary" className="shrink-0 text-[10px]">
-                        {(c as any).rutas.nombre.replace("Ruta ", "")}
-                      </Badge>
+                  <div className="flex items-center gap-1.5">
+                    {rutaId !== "all" && (
+                      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                        {idx + 1}
+                      </span>
                     )}
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <Button className="h-11 gap-1.5" onClick={() => setSaleClient(c)}>
-                      <Zap className="h-4 w-4" /> Vender
-                    </Button>
-                    <Button
-                      variant={saldo > 0 ? "secondary" : "outline"}
-                      className={cn("h-11 gap-1.5", saldo === 0 && "opacity-60")}
-                      disabled={saldo === 0}
-                      onClick={() => setAbonoClient(c)}
-                    >
-                      <HandCoins className="h-4 w-4" /> Abonar
-                    </Button>
-                    <Button variant="outline" className="h-11 gap-1.5" onClick={() => setHistClient(c)}>
-                      <History className="h-4 w-4" /> Historial
-                    </Button>
-                    <EvidenciaButton entidad="clientes" entidadId={c.id} />
-
+                    <div className="min-w-0 flex-1">
+                      <p className="flex items-center gap-1 text-sm font-semibold leading-tight">
+                        {esSiguiente && <Navigation className="h-3 w-3 shrink-0 text-primary" />}
+                        <span className="truncate">{c.nombre}</span>
+                        {visitado && <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-accent" />}
+                      </p>
+                      <p className="flex items-center gap-1 overflow-hidden text-[11px] leading-tight text-muted-foreground">
+                        <MapPin className="h-2.5 w-2.5 shrink-0" />
+                        <span className="truncate">{c.distrito || c.direccion || "Sin dirección"}</span>
+                        {saldo > 0 && (
+                          <span className="shrink-0 rounded bg-destructive/15 px-1 text-[10px] font-bold text-destructive">
+                            {formatCRC(saldo)}
+                          </span>
+                        )}
+                        {rutasDe.length > 0 && (
+                          <span className="hidden truncate font-medium sm:inline">
+                            · {rutasDe.map((n) => n.replace("Ruta ", "")).join(" · ")}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => setSaleClient(c)} title="Vender">
+                        <Zap className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Vender</span>
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant={saldo > 0 ? "secondary" : "outline"}
+                        className={cn("h-7 w-7", saldo === 0 && "opacity-50")}
+                        disabled={saldo === 0}
+                        onClick={() => setAbonoClient(c)}
+                        title="Abonar"
+                        aria-label="Abonar"
+                      >
+                        <HandCoins className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-7 w-7"
+                        onClick={() => setHistClient(c)}
+                        title="Historial"
+                        aria-label="Historial"
+                      >
+                        <History className="h-3.5 w-3.5" />
+                      </Button>
+                      <EvidenciaButton entidad="clientes" entidadId={c.id} compact />
+                    </div>
                   </div>
                 </Card>
               );

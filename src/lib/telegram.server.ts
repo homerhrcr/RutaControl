@@ -77,6 +77,13 @@ export async function procesarUpdate(input: unknown, admin: any, origin = "") {
     catch (e) { console.error("Telegram catálogo", e); }
   }
   if (data?.status === "recibido" && esComandoDevolucion(texto)) {
+    if (origin) {
+      try {
+        const url = `${origin}/telegram/catalogo?c=${message.chat.id}&s=${firmaPedido(message.chat.id)}&modo=devolucion`;
+        await telegramApi("sendMessage", { chat_id: message.chat.id, text: `${TEXTO_DEVOLUCION}\n\nToque el botón para seleccionar los productos a devolver.`, reply_markup: { inline_keyboard: [[{ text: "↩️ Seleccionar productos a devolver", web_app: { url } }]] } });
+        return { ok: true };
+      } catch (e) { console.error("Telegram devolución", e); }
+    }
     respuestas.recibido = TEXTO_DEVOLUCION;
   } else if (data?.status === "recibido" && !texto.trim().startsWith("/")) {
     respuestas.recibido = "✅ Recibimos su mensaje. Nuestro equipo de ruta le responderá pronto. Para hacer un pedido escriba /pedido. Para devoluciones escriba /devolucion.";

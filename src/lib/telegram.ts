@@ -68,3 +68,16 @@ export const pedidoTelegramSchema = z.object({
   notas: z.string().max(500).optional(),
   items: z.array(z.object({ producto_id: z.string().uuid(), cantidad: z.number().int().positive().max(9999) })).min(1).max(100),
 });
+
+export const MOTIVOS_DEVOLUCION = ["Vencimiento", "Empaque dañado", "Mal estado", "Producto no solicitado", "Otro"] as const;
+export const devolucionTelegramSchema = z.object({
+  modo: z.literal("devolucion"),
+  c: z.string().regex(/^-?\d{1,20}$/), s: z.string().regex(/^[A-Za-z0-9_-]{20,100}$/),
+  id: z.string().uuid(),
+  notas: z.string().max(500).optional(),
+  items: z.array(z.object({ producto_id: z.string().uuid(), cantidad: z.number().int().positive().max(9999), motivo: z.enum(MOTIVOS_DEVOLUCION) })).min(1).max(100),
+});
+
+export function textoSolicitudDevolucion(items: { nombre: string; cantidad: number; motivo: string }[], notas?: string) {
+  return ["↩️ Solicitud de devolución registrada:", ...items.map((i) => `• ${i.cantidad} × ${i.nombre} (${i.motivo})`), notas?.trim() ? `📝 ${notas.trim()}` : "", "", "Recuerde: los productos deben estar completos y en su empaque original. Nuestro vendedor los revisará en la próxima visita de ruta."].filter((l, i, a) => l !== "" || i === a.length - 2).join("\n");
+}

@@ -120,7 +120,7 @@ export function TelegramConversacion({ clienteId, nombre }: { clienteId: string;
   </div>;
 }
 /** Order confirmation dialog: shows whether it was already sent, prevents accidental repeats and allows follow-up messages. */
-export function PedidoTelegram({ pedidoId, clienteId, nombre }: { pedidoId: string; clienteId: string; nombre?: string }) {
+export function PedidoTelegram({ pedidoId, clienteId, nombre, rutaId, fechaEntrega, rutas }: { pedidoId: string; clienteId: string; nombre?: string; rutaId?: string | null; fechaEntrega?: string; rutas?: { id: string; nombre: string }[] }) {
   const { organizacionActiva } = useAuth();
   const orgId = organizacionActiva?.id;
   const enviar = useServerFn(enviarTelegram);
@@ -129,6 +129,16 @@ export function PedidoTelegram({ pedidoId, clienteId, nombre }: { pedidoId: stri
   const [texto, setTexto] = useState("");
   const [busy, setBusy] = useState(false);
   const [envioId, setEnvioId] = useState(() => crypto.randomUUID());
+  const [ruta, setRuta] = useState(rutaId ?? "");
+  const [fechaE, setFechaE] = useState(fechaEntrega ?? "");
+  useEffect(() => { if (open) { setRuta(rutaId ?? ""); setFechaE(fechaEntrega ?? ""); } }, [open, rutaId, fechaEntrega]);
+  async function guardarProgramacion() {
+    if (!fechaE) throw new Error("Indique la fecha estimada de entrega");
+    if (ruta === (rutaId ?? "") && fechaE === fechaEntrega) return;
+    const { error } = await supabase.from("pedidos").update({ ruta_id: ruta || null, fecha_entrega: fechaE }).eq("id", pedidoId);
+    if (error) throw error;
+    await qc.invalidateQueries({ queryKey: ["pedidos"] });
+  }
   const numero = pedidoId.replace(/-/g, "").slice(0, 8).toUpperCase();
   const key = ["telegram-pedido", orgId, pedidoId];
   const { data: enviada } = useQuery({
@@ -155,10 +165,19 @@ export function PedidoTelegram({ pedidoId, clienteId, nombre }: { pedidoId: stri
     </Button>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-lg"><DialogHeader><DialogTitle>Telegram · Pedido #{numero}</DialogTitle></DialogHeader>
       <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <label className="space-y-1 text-sm"><span className="font-medium">Ruta de entrega</span>
+            <select aria-label="Ruta de entrega" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={ruta} onChange={(e) => setRuta(e.target.value)}>
+              <option value="">Sin ruta</option>
+              {(rutas ?? []).map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+            </select></label>
+          <label className="space-y-1 text-sm"><span className="font-medium">Fecha estimada</span>
+            <Input aria-label="Fecha estimada de entrega" type="date" value={fechaE} onChange={(e) => setFechaE(e.target.value)} /></label>
+        </div>
         {enviada
-          ? <div className="flex items-start gap-2 rounded-md border border-primary/40 bg-primary/10 p-3 text-sm"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><span>La confirmación ya fue enviada a {nombre ?? "este cliente"} el {fecha}. No es necesario enviarla de nuevo.</span></div>
-          : <div className="space-y-2"><p className="text-sm text-muted-foreground">El cliente recibirá la confirmación de que su pedido fue recibido, que está en ruta y el detalle de productos.</p>
-              <Button className="w-full gap-2" disabled={busy} onClick={() => correr(async () => (await enviar({ data: { tipo: "pedido", documentoId: pedidoId } })).status)}><Send className="h-4 w-4" />Enviar confirmación</Button></div>}
+          ? <div className="flex items-start gap-2 rounded-md border border-primary/40 bg-primary/10 p-3 text-sm"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><span>La confirmación ya fue enviada a {nombre ?? "este cliente"} el {fecha}. Si cambió la ruta o la fecha, use «Reenviar confirmación».</span></div>
+          : <div className="space-y-2"><p className="text-sm text-muted-foreground">El cliente recibirá la confirmación con la ruta, la fecha estimada de entrega y el detalle de productos.</p>
+              <Button className="w-full gap-2" disabled={busy} onClick={() => correr(async () => { await guardarProgramacion(); return (await enviar({ data: { tipo: "pedido", documentoId: pedidoId } })).status; })}><Send className="h-4 w-4" />Guardar y notificar al cliente</Button></div>}
         <div className="space-y-2 border-t pt-3">
           <p className="text-sm font-medium">Mensaje adicional sobre este pedido</p>
           <Textarea aria-label="Mensaje adicional" placeholder="Ej.: Pasaremos por su local alrededor de las 10:30 a. m." maxLength={3900} value={texto} onChange={(e) => setTexto(e.target.value)} />
@@ -170,7 +189,7 @@ export function PedidoTelegram({ pedidoId, clienteId, nombre }: { pedidoId: stri
         </div>
         {enviada && <Button variant="ghost" size="sm" className="w-full" disabled={busy} onClick={() => {
           if (!confirm("¿Reenviar la confirmación? El cliente la recibirá otra vez.")) return;
-          correr(async () => (await enviar({ data: { tipo: "pedido", documentoId: pedidoId, reenvioId: crypto.randomUUID() } })).status);
+          correr(async () => { await guardarProgramacion(); return (await enviar({ data: { tipo: "pedido", documentoId: pedidoId, reenvioId: crypto.randomUUID() } })).status; });
         }}>Reenviar confirmación</Button>}
       </div>
     </DialogContent></Dialog>

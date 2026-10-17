@@ -79,5 +79,8 @@ export const devolucionTelegramSchema = z.object({
 });
 
 export function textoSolicitudDevolucion(items: { nombre: string; cantidad: number; motivo: string }[], notas?: string) {
-  return ["↩️ Solicitud de devolución registrada:", ...items.map((i) => `• ${i.cantidad} × ${i.nombre} (${i.motivo})`), notas?.trim() ? `📝 ${notas.trim()}` : "", "", "Recuerde: los productos deben estar completos y en su empaque original. Nuestro vendedor los revisará en la próxima visita de ruta."].filter((l, i, a) => l !== "" || i === a.length - 2).join("\n");
+  const lineas = ["↩️ Solicitud de devolución registrada:", ...items.map((i) => `• ${i.cantidad} × ${i.nombre} (${i.motivo})`)];
+  if (notas?.trim()) lineas.push(`📝 ${notas.trim()}`);
+  lineas.push("", "Recuerde: los productos deben estar completos y en su empaque original. Nuestro vendedor los revisará en la próxima visita de ruta.");
+  return lineas.join("\n");
 }

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus, ShoppingCart, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MOTIVOS_DEVOLUCION } from "@/lib/telegram";
 
 type Producto = { id: string; nombre: string; precio: number; categoria_id: string | null; agotado: boolean };
 type Datos = { empresa: string; cliente: string; productos: Producto[]; categorias: { id: string; nombre: string }[] };
@@ -26,7 +27,8 @@ const crc = (n: number) => new Intl.NumberFormat("es-CR", { style: "currency", c
 const manana = () => new Date(Date.now() - 6 * 3600000 + 86400000).toISOString().slice(0, 10);
 
 function Catalogo() {
-  const [{ c, s }, setAcceso] = useState({ c: "", s: "" });
+  const [{ c, s, dev }, setAcceso] = useState({ c: "", s: "", dev: false });
+  const [motivos, setMotivos] = useState<Record<string, string>>({});
   const [datos, setDatos] = useState<Datos | null>(null);
   const [error, setError] = useState("");
   const [cat, setCat] = useState("todas");
@@ -38,7 +40,7 @@ function Catalogo() {
   const [listo, setListo] = useState(false);
   const [pedidoId] = useState(() => crypto.randomUUID());
 
-  useEffect(() => { const q = new URLSearchParams(window.location.search); setAcceso({ c: q.get("c") ?? "", s: q.get("s") ?? "" }); }, []);
+  useEffect(() => { const q = new URLSearchParams(window.location.search); setAcceso({ c: q.get("c") ?? "", s: q.get("s") ?? "", dev: q.get("modo") === "devolucion" }); }, []);
   useEffect(() => {
     if (!c) return;
     const tg = (window as any).Telegram?.WebApp; tg?.ready?.(); tg?.expand?.();
@@ -55,7 +57,7 @@ function Catalogo() {
   async function enviar() {
     setEnviando(true); setError("");
     try {
-      const r = await fetch("/api/public/telegram/catalogo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ c, s, id: pedidoId, fecha_entrega: fecha, notas, items: items.map((i) => ({ producto_id: i.id, cantidad: i.cantidad })) }) });
+      const r = await fetch("/api/public/telegram/catalogo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dev ? { modo: "devolucion", c, s, id: pedidoId, notas, items: items.map((i) => ({ producto_id: i.id, cantidad: i.cantidad, motivo: motivos[i.id] ?? "Vencimiento" })) } : { c, s, id: pedidoId, fecha_entrega: fecha, notas, items: items.map((i) => ({ producto_id: i.id, cantidad: i.cantidad })) }) });
       const j = await r.json(); if (!r.ok) throw new Error(j.error);
       setListo(true);
     } catch (e: any) { setError(e.message || "No se pudo enviar"); } finally { setEnviando(false); }
@@ -64,8 +66,8 @@ function Catalogo() {
   if (listo) return (
     <main className="min-h-screen grid place-items-center p-6 text-center bg-background text-foreground">
       <div className="space-y-3"><CheckCircle2 className="mx-auto size-14 text-primary" />
-        <h1 className="text-xl font-bold">¡Pedido recibido!</h1>
-        <p className="text-muted-foreground">Te enviamos la confirmación por Telegram. Entrega: {fecha}.</p>
+        <h1 className="text-xl font-bold">{dev ? "¡Solicitud de devolución enviada!" : "¡Pedido recibido!"}</h1>
+        <p className="text-muted-foreground">{dev ? "Te enviamos el resumen por Telegram. Ten los productos completos y en su empaque original para la próxima visita." : `Te enviamos la confirmación por Telegram. Entrega: ${fecha}.`}</p>
         <Button onClick={() => (window as any).Telegram?.WebApp?.close?.()}>Cerrar</Button></div>
     </main>
   );
@@ -75,7 +77,8 @@ function Catalogo() {
     <main className="min-h-screen bg-background text-foreground pb-28">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border p-4">
         <h1 className="text-lg font-bold">{datos.empresa}</h1>
-        <p className="text-sm text-muted-foreground">Hola, {datos.cliente}</p>
+        <p className="text-sm text-muted-foreground">Hola, {datos.cliente}{dev ? " — Devolución de productos" : ""}</p>
+        {dev && <p className="mt-2 rounded-md border border-warning/50 bg-warning/10 p-2 text-sm">⚠️ Importante: los productos a devolver deben estar completos y en su empaque original para poder recibirlos.</p>}
         {!verCarrito && <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {[{ id: "todas", nombre: "Todos" }, ...datos.categorias].map((k) => (
             <button key={k.id} onClick={() => setCat(k.id)} className={`shrink-0 rounded-full border px-3 py-1 text-sm ${cat === k.id ? "bg-primary text-primary-foreground border-primary" : "border-border"}`}>{k.nombre}</button>
@@ -84,15 +87,19 @@ function Catalogo() {
 
       {verCarrito ? (
         <section className="p-4 space-y-3">
-          <h2 className="font-semibold">Tu pedido</h2>
+          <h2 className="font-semibold">{dev ? "Productos a devolver" : "Tu pedido"}</h2>
           {items.map((i) => (
             <div key={i.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
               <div><p className="font-medium">{i.nombre}</p><p className="text-sm text-muted-foreground">{i.cantidad} × {crc(i.precio)}</p></div>
-              <Cantidad n={i.cantidad} onMas={() => cambiar(i.id, 1)} onMenos={() => cambiar(i.id, -1)} />
+              <div className="flex flex-col items-end gap-2">
+                <Cantidad n={i.cantidad} onMas={() => cambiar(i.id, 1)} onMenos={() => cambiar(i.id, -1)} />
+                {dev && <select aria-label="Motivo" value={motivos[i.id] ?? "Vencimiento"} onChange={(e) => setMotivos((m) => ({ ...m, [i.id]: e.target.value }))} className="rounded-md border border-input bg-background p-1 text-sm">
+                  {MOTIVOS_DEVOLUCION.map((m) => <option key={m}>{m}</option>)}</select>}
+              </div>
             </div>))}
-          <label className="block text-sm">Fecha de entrega
-            <input type="date" min={manana()} value={fecha} onChange={(e) => setFecha(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background p-2" /></label>
-          <label className="block text-sm">Indicaciones (opcional)
+          {!dev && <label className="block text-sm">Fecha de entrega
+            <input type="date" min={manana()} value={fecha} onChange={(e) => setFecha(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background p-2" /></label>}
+          <label className="block text-sm">{dev ? "Observaciones (opcional)" : "Indicaciones (opcional)"}
             <textarea maxLength={500} value={notas} onChange={(e) => setNotas(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background p-2" rows={3} /></label>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button variant="outline" className="w-full" onClick={() => setVerCarrito(false)}>Seguir agregando</Button>
@@ -111,8 +118,8 @@ function Catalogo() {
 
       {items.length > 0 && <footer className="fixed inset-x-0 bottom-0 border-t border-border bg-background p-3">
         {verCarrito
-          ? <Button className="w-full h-12" disabled={enviando} onClick={enviar}>{enviando ? "Enviando…" : `Confirmar pedido • ${crc(total)}`}</Button>
-          : <Button className="w-full h-12" onClick={() => setVerCarrito(true)}><ShoppingCart className="mr-2 size-4" />Ver pedido ({items.length}) • {crc(total)}</Button>}
+          ? <Button className="w-full h-12" disabled={enviando} onClick={enviar}>{enviando ? "Enviando…" : dev ? "Enviar solicitud de devolución" : `Confirmar pedido • ${crc(total)}`}</Button>
+          : <Button className="w-full h-12" onClick={() => setVerCarrito(true)}><ShoppingCart className="mr-2 size-4" />{dev ? `Ver devolución (${items.length})` : `Ver pedido (${items.length}) • ${crc(total)}`}</Button>}
       </footer>}
     </main>
   );

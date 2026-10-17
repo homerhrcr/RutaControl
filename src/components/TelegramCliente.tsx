@@ -189,7 +189,7 @@ export function PedidoTelegram({ pedidoId, clienteId, nombre, rutaId, fechaEntre
         </div>
         {enviada && <Button variant="ghost" size="sm" className="w-full" disabled={busy} onClick={() => {
           if (!confirm("¿Reenviar la confirmación? El cliente la recibirá otra vez.")) return;
-          correr(async () => (await enviar({ data: { tipo: "pedido", documentoId: pedidoId, reenvioId: crypto.randomUUID() } })).status);
+          correr(async () => { await guardarProgramacion(); return (await enviar({ data: { tipo: "pedido", documentoId: pedidoId, reenvioId: crypto.randomUUID() } })).status; });
         }}>Reenviar confirmación</Button>}
       </div>
     </DialogContent></Dialog>

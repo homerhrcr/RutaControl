@@ -42,7 +42,7 @@ export const desvincularTelegram = createServerFn({ method: "POST" }).middleware
     return { ok: true };
   });
 export const enviarTelegram = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ clienteId: z.string().uuid().optional(), tipo: z.enum(["pedido", "tiquete", "mensaje"]), documentoId: z.string().uuid().optional(), texto: z.string().trim().min(1).max(4096).optional(), envioId: z.string().uuid().optional() }).parse(data))
+  .inputValidator((data) => z.object({ clienteId: z.string().uuid().optional(), tipo: z.enum(["pedido", "tiquete", "mensaje"]), documentoId: z.string().uuid().optional(), texto: z.string().trim().min(1).max(4096).optional(), envioId: z.string().uuid().optional(), reenvioId: z.string().uuid().optional() }).parse(data))
   .handler(async ({ data, context }) => {
     const org = await empresa(context);
     let clienteId = data.clienteId;
@@ -67,7 +67,8 @@ export const enviarTelegram = createServerFn({ method: "POST" }).middleware([req
         estado: data.tipo === "pedido" ? "Confirmado" : undefined, metodo: "metodo_pago" in doc ? doc.metodo_pago : undefined, total: Number(doc.total), descuento: "descuento" in doc ? Number(doc.descuento) : 0,
         items: items.map((i: any) => ({ nombre: i.nombre_producto, cantidad: Number(i.cantidad), total: Number(i.cantidad) * Number(i.precio_unitario) })),
       });
-      dedupe = `${data.tipo}:${org}:${doc.id}`;
+      // Explicit resends get their own key; the first send stays protected against duplicates.
+      dedupe = `${data.tipo}:${org}:${doc.id}${data.reenvioId ? `:reenvio:${data.reenvioId}` : ""}`;
     }
     if (!clienteId || !texto || texto.length > 4096) throw new Error("Seleccione cliente y un mensaje de hasta 4096 caracteres");
     await comprobarCliente(context, org, clienteId);

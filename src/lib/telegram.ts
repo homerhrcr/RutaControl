@@ -21,15 +21,28 @@ export function webhookPermitido(actual: string, destino: string) {
 }
 export function textoDocumento(documento: { empresa: string; tipo: "pedido" | "tiquete"; id: string; cliente: string; fecha: string; estado?: string; metodo?: string; total: number; descuento?: number; items: { nombre: string; cantidad: number; total: number }[] }) {
   const crc = (monto: number) => new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC", maximumFractionDigits: 0 }).format(monto);
-  return [documento.empresa, `${documento.tipo === "pedido" ? "Confirmación de pedido" : "Tiquete de caja"} #${documento.id.replace(/-/g, "").slice(0, 8).toUpperCase()}`,
-    `Cliente: ${documento.cliente}`, `Fecha${documento.tipo === "pedido" ? " de entrega" : ""}: ${documento.fecha}`,
+  const numero = documento.id.replace(/-/g, "").slice(0, 8).toUpperCase();
+  if (documento.tipo === "pedido") {
+    const enRuta = documento.estado !== "Recibido";
+    return [`🚚 ¡Hola ${documento.cliente}!`,
+      enRuta ? `Le confirmamos que hemos recibido su pedido #${numero} en ${documento.empresa} y se encuentra en ruta para ser entregado.`
+        : `Hemos recibido su pedido #${numero} en ${documento.empresa}. Le avisaremos cuando esté en ruta para ser entregado.`,
+      "", `📅 Fecha de entrega: ${documento.fecha}`, "", "📦 Productos confirmados:",
+      ...documento.items.map((i) => `• ${i.cantidad} × ${i.nombre.trim()}: ${crc(i.total)}`),
+      "──────────────", `💰 TOTAL: ${crc(documento.total)}`, "",
+      "¡Muchas gracias por su preferencia! Cualquier consulta nos puede responder por este chat.",
+    ].join("\n");
+  }
+  return [documento.empresa, `Tiquete de caja #${numero}`,
+    `Cliente: ${documento.cliente}`, `Fecha: ${documento.fecha}`,
     documento.estado ? `Estado: ${documento.estado}` : null, "──────────────",
     ...documento.items.map((i) => `${i.cantidad} × ${i.nombre}: ${crc(i.total)}`),
     documento.descuento ? `Descuento: ${crc(documento.descuento)}` : null,
     `TOTAL: ${crc(documento.total)}`, documento.metodo ? `Pago: ${documento.metodo === "credito" ? "Crédito" : "Contado"}` : null,
     "¡Gracias por su compra!",
   ].filter(Boolean).join("\n");
-}export function esComandoPedido(texto: string) {
+}
+export function esComandoPedido(texto: string) {
   return /^\/(pedido|catalogo|menu)(@\w+)?$/i.test(texto.trim()) || /^hacer pedido$/i.test(texto.trim());
 }
 export const pedidoTelegramSchema = z.object({

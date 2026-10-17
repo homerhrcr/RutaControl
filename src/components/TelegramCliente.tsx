@@ -1,3 +1,4 @@
+import { fechaLegible } from "@/lib/telegram";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -182,7 +183,10 @@ export function PedidoTelegram({ pedidoId, clienteId, nombre, rutaId, fechaEntre
           <p className="text-sm font-medium">Mensaje adicional sobre este pedido</p>
           <Textarea aria-label="Mensaje adicional" placeholder="Ej.: Pasaremos por su local alrededor de las 10:30 a. m." maxLength={3900} value={texto} onChange={(e) => setTexto(e.target.value)} />
           <Button className="w-full gap-2" variant="secondary" disabled={busy || !texto.trim()} onClick={() => correr(async () => {
-            const r = await enviar({ data: { clienteId, tipo: "mensaje", envioId, texto: `Sobre su pedido #${numero}:\n${texto.trim()}` } });
+            await guardarProgramacion();
+            const nombreRuta = (rutas ?? []).find((r) => r.id === ruta)?.nombre;
+            const cabecera = [`📦 Sobre su pedido #${numero}:`, `📅 Fecha estimada de entrega: ${fechaLegible(fechaE)}`, ...(nombreRuta ? [`🛣️ Ruta de entrega: ${nombreRuta}`] : [])].join("\n");
+            const r = await enviar({ data: { clienteId, tipo: "mensaje", envioId, texto: `${cabecera}\n\n${texto.trim()}` } });
             if (r.status === "enviado") { setTexto(""); setEnvioId(crypto.randomUUID()); }
             return r.status;
           })}><MessageCircle className="h-4 w-4" />Enviar mensaje</Button>

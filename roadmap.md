@@ -10,3 +10,4 @@
 - [x] Devoluciones y pedidos con cola sin conexión (prueba en dispositivo real pendiente)
 - [x] Fotos y descripción por producto devuelto, recomendación de IA y confirmación manual; análisis real verificado en navegador
 - [x] Mini App de Telegram: catálogo y pedidos de clientes vinculados (probar con un cliente real)
+- [x] Tarjetas de clientes en Iniciar Ruta compactas: una sola línea (45 px), dos columnas en computadora, acciones como iconos; verificado sin texto recortado en computadora y celular

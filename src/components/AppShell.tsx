@@ -113,8 +113,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="mx-3 mb-3 overflow-hidden rounded-xl border border-sidebar-border shadow-[var(--glow)]">
           <div className="relative">
-            <img src={truckImg} alt="Camión en ruta" loading="lazy" width={992} height={672} className="h-24 w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-sidebar to-transparent" />
+            <img src={truckImg} alt="Camión en ruta" loading="lazy" width={992} height={672} className="h-28 w-full object-cover" />
           </div>
         </div>
         <div className="border-t border-sidebar-border p-3">

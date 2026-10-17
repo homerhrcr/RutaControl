@@ -7,7 +7,6 @@ type Producto = { id: string; nombre: string; precio: number; categoria_id: stri
 type Datos = { empresa: string; cliente: string; productos: Producto[]; categorias: { id: string; nombre: string }[] };
 
 export const Route = createFileRoute("/telegram/catalogo")({
-  validateSearch: (s: Record<string, unknown>) => ({ c: String(s.c ?? ""), s: String(s.s ?? "") }),
   head: () => ({
     meta: [
       { title: "Catálogo y pedidos — Ruta Directo" },
@@ -27,7 +26,7 @@ const crc = (n: number) => new Intl.NumberFormat("es-CR", { style: "currency", c
 const manana = () => new Date(Date.now() - 6 * 3600000 + 86400000).toISOString().slice(0, 10);
 
 function Catalogo() {
-  const { c, s } = Route.useSearch();
+  const [{ c, s }, setAcceso] = useState({ c: "", s: "" });
   const [datos, setDatos] = useState<Datos | null>(null);
   const [error, setError] = useState("");
   const [cat, setCat] = useState("todas");
@@ -39,7 +38,9 @@ function Catalogo() {
   const [listo, setListo] = useState(false);
   const [pedidoId] = useState(() => crypto.randomUUID());
 
+  useEffect(() => { const q = new URLSearchParams(window.location.search); setAcceso({ c: q.get("c") ?? "", s: q.get("s") ?? "" }); }, []);
   useEffect(() => {
+    if (!c) return;
     const tg = (window as any).Telegram?.WebApp; tg?.ready?.(); tg?.expand?.();
     fetch(`/api/public/telegram/catalogo?c=${encodeURIComponent(c)}&s=${encodeURIComponent(s)}`)
       .then(async (r) => { const j = await r.json(); if (!r.ok) throw new Error(j.error); setDatos(j); })

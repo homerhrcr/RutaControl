@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Ubicación en clientes como HidroGest: coordenadas, ubicación actual y marcar en mapa.
 - [x] Fase 1: Devoluciones y merma (reingreso a bodega / merma, rebajo a deuda)
 - [x] Fase 2: Preventa (pedidos, carga del camión, entregar y facturar)
 - [x] Fase 3a: Datos fiscales (emisor, cédula/correo cliente, CABYS/IVA producto)

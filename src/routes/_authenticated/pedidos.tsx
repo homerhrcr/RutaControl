@@ -170,7 +170,7 @@ function PedidosPage() {
           </TabsContent>
         </Tabs>
       </div>
-      <NuevoPedido open={nuevo} onOpenChange={setNuevo} fecha={fecha} usuarioId={user?.id} />
+      <NuevoPedido open={nuevo} onOpenChange={setNuevo} fecha={fecha || hoy(1)} usuarioId={user?.id} />
       {entregar && <EntregarPedido pedido={entregar} onClose={() => setEntregar(null)} vendedorId={user?.id ?? ""} />}
     </div>
   );

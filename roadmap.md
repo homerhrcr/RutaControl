@@ -13,3 +13,4 @@
 - [x] Tarjetas de clientes en Iniciar Ruta compactas: una sola línea (45 px), dos columnas en computadora, acciones como iconos; verificado sin texto recortado en computadora y celular
 
 - [x] Telegram pedidos: confirmación explícita "en ruta", aviso de confirmación ya enviada, mensaje adicional del pedido y reenvío controlado
+- [x] Datos de empresa con logo en Administración; reportes gerenciales (resumen, rentabilidad por ruta, mermas, cartera, clientes, productos, ventas, gastos) con vista previa PDF y Excel con formato de moneda/números

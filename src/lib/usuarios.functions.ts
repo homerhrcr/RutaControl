@@ -119,6 +119,25 @@ export const updateUsuario = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateEmailUsuario = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ id: z.string().uuid(), email: z.string().trim().email().max(255) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const orgId = await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: m } = await supabaseAdmin
+      .from("organization_members").select("id").eq("organization_id", orgId).eq("user_id", data.id).maybeSingle();
+    if (!m) throw new Error("El usuario no pertenece a esta empresa");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.id, {
+      email: data.email,
+      email_confirm: true,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const resetPasswordUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>

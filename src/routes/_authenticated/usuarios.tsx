@@ -8,6 +8,7 @@ import {
   createUsuario,
   updateUsuario,
   deleteUsuario,
+  resetPasswordUsuario,
 } from "@/lib/usuarios.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, UserCog } from "lucide-react";
+import { Plus, Pencil, Trash2, UserCog, Eye, EyeOff, KeyRound } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
   head: () => ({
@@ -88,9 +89,15 @@ export function UsuariosPage() {
   const updateFn = useServerFn(updateUsuario);
   const deleteFn = useServerFn(deleteUsuario);
 
+  const resetFn = useServerFn(resetPasswordUsuario);
+
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [detail, setDetail] = useState<Usuario | null>(null);
+  const [passUser, setPassUser] = useState<Usuario | null>(null);
+  const [newPass, setNewPass] = useState("");
+  const [showNewPass, setShowNewPass] = useState(false);
 
   const { data: usuarios, isLoading } = useQuery({
     queryKey: ["usuarios"],
@@ -136,6 +143,19 @@ export function UsuariosPage() {
       qc.invalidateQueries({ queryKey: ["usuarios"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Error al eliminar"),
+  });
+
+  const resetMut = useMutation({
+    mutationFn: async () => {
+      if (!passUser) return;
+      await resetFn({ data: { id: passUser.id, password: newPass } });
+    },
+    onSuccess: () => {
+      toast.success("Contraseña actualizada");
+      setPassUser(null);
+      setNewPass("");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Error al cambiar la contraseña"),
   });
 
   function openNew() {

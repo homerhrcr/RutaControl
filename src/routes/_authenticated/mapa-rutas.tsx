@@ -125,6 +125,11 @@ function MapaRutasPage() {
   const marcandoRef = useRef<ClienteMapa | null>(null);
   marcandoRef.current = marcando;
 
+  // Recuperar el tipo de mapa elegido la última vez
+  useEffect(() => {
+    setTipoMapa(leerTipoMapa());
+  }, []);
+
   // Mapa de color por ruta
   const colorPorRuta = useMemo(() => {
     const m = new Map<string, string>();

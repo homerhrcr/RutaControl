@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { registrarVenta, registrarAbono } from "@/lib/data";
 import type { CartItem } from "@/lib/data";
+import { notificarDocumentoTelegram } from "@/lib/telegram-notificar";
 
 /* ---------------- Online status ---------------- */
 
@@ -432,6 +433,7 @@ export async function syncQueue(): Promise<number> {
           const p = op.payload as PedidoEstadoParams;
           const { error } = await supabase.from("pedidos").update({ estado: p.estado }).in("id", p.ids);
           if (error) throw error;
+          if (p.estado === "confirmado") for (const id of p.ids) await notificarDocumentoTelegram("pedido", id);
         } else if (op.entity === "entregas") await procesarEntrega(op.payload as EntregaParams);
         else if (op.entity === "devoluciones") {
           const { error } = await supabase.rpc("registrar_devolucion", { p: op.payload as never });

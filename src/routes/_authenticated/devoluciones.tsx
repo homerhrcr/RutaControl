@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useClientes, useRutas, useInvalidate } from "@/lib/data";
+import { useClientes, useRutas, useInvalidate, useProductos } from "@/lib/data";
+import { useSolicitudesDevolucion, type SolicitudDevolucion } from "@/lib/solicitudes-devolucion";
+import { MessageCircle } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { ItemsEditor, type LineaItem } from "@/components/ItemsEditor";
 import { Card } from "@/components/ui/card";
@@ -37,6 +39,8 @@ type Linea = LineaItem & InspeccionProducto & { motivo: string; destino: "reingr
 
 function DevolucionesPage() {
   const [open, setOpen] = useState(false);
+  const [solicitud, setSolicitud] = useState<SolicitudDevolucion | null>(null);
+  const { data: pendientes } = useSolicitudesDevolucion();
   const { data } = useQuery({
     queryKey: ["devoluciones"],
     queryFn: async () => {
@@ -61,6 +65,22 @@ function DevolucionesPage() {
           <Card className="p-3"><p className="text-xs text-muted-foreground">Merma (dañado/vencido)</p><p className="text-lg font-black text-destructive">{formatCRC(valor(merma))}</p></Card>
           <Card className="p-3"><p className="text-xs text-muted-foreground">Regresó a bodega</p><p className="text-lg font-black">{formatCRC(valor(reingreso))}</p></Card>
         </div>
+        {(pendientes ?? []).length > 0 && (
+          <Card className="space-y-2 border-warning/50 p-3">
+            <p className="flex items-center gap-2 text-sm font-bold"><MessageCircle className="h-4 w-4 text-warning" />Solicitudes pendientes por Telegram ({pendientes!.length})</p>
+            {pendientes!.map((s) => (
+              <div key={s.id} className="flex items-start justify-between gap-2 rounded-md border p-2">
+                <div className="min-w-0 text-sm">
+                  <p className="truncate font-semibold">{s.cliente}</p>
+                  <p className="text-xs text-muted-foreground">{formatDateTime(s.fecha)}</p>
+                  <ul className="text-xs">{s.items.map((i, k) => <li key={k}>{i.cantidad} × {i.nombre} <span className="text-muted-foreground">({i.motivo})</span></li>)}</ul>
+                  {s.notas && <p className="text-xs text-muted-foreground">📝 {s.notas}</p>}
+                </div>
+                <Button size="sm" onClick={() => { setSolicitud(s); setOpen(true); }}>Recibir</Button>
+              </div>
+            ))}
+          </Card>
+        )}
         {(data ?? []).length === 0 && <p className="text-sm text-muted-foreground">Aún no hay devoluciones.</p>}
         {(data ?? []).map((d) => (
           <Card key={d.id} className="space-y-2 p-3">
@@ -87,14 +107,24 @@ function DevolucionesPage() {
           </Card>
         ))}
       </div>
-      <NuevaDevolucion open={open} onOpenChange={setOpen} />
+      <NuevaDevolucion open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSolicitud(null); }} solicitud={solicitud} />
     </div>
   );
 }
 
-export function NuevaDevolucion({ open, onOpenChange, clienteId }: { open: boolean; onOpenChange: (v: boolean) => void; clienteId?: string }) {
+function motivoDe(m: string) {
+  const t = m.toLowerCase();
+  if (t.includes("venc")) return "Vencido";
+  if (t.includes("dañ") || t.includes("quebr") || t.includes("empaque")) return "Dañado / quebrado";
+  if (t.includes("estado") || t.includes("agri")) return "Mal estado";
+  if (t.includes("error") || t.includes("pedido")) return "Error de pedido";
+  return MOTIVOS.find((x) => x.toLowerCase() === t) ?? "Mal estado";
+}
+
+export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { open: boolean; onOpenChange: (v: boolean) => void; clienteId?: string; solicitud?: SolicitudDevolucion | null }) {
   const { data: clientes } = useClientes();
   const { data: rutas } = useRutas();
+  const { data: productos } = useProductos(true);
   const { user } = useAuth();
   const [devolucionId, setDevolucionId] = useState(() => crypto.randomUUID());
   const invalidate = useInvalidate();
@@ -105,6 +135,20 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId }: { open: boole
   const [notas, setNotas] = useState("");
   const [busy, setBusy] = useState(false);
   const total = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
+
+  useEffect(() => {
+    if (!open || !solicitud) return;
+    const c = (clientes ?? []).find((x) => x.id === solicitud.cliente_id);
+    setDevolucionId(solicitud.id);
+    setCliente(solicitud.cliente_id);
+    setRuta((c as any)?.ruta_id ?? "");
+    setNotas(["Solicitud por Telegram", solicitud.notas].filter(Boolean).join(" — "));
+    setItems(solicitud.items.flatMap((i) => {
+      const p = (productos ?? []).find((x) => x.nombre.trim().toLowerCase() === i.nombre.toLowerCase());
+      return p ? [{ producto_id: p.id, nombre: p.nombre, precio: Number(p.precio), cantidad: i.cantidad, motivo: motivoDe(i.motivo), destino: "merma" as const }] : [];
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, solicitud?.id, productos?.length, clientes?.length]);
 
   async function guardar() {
     if (!user) return toast.error("Inicie sesión para registrar la devolución");

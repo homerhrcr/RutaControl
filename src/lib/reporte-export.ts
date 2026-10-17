@@ -66,7 +66,7 @@ export async function verReportePdf(r: Reporte, emp: EmpresaDatos, ctx: Contexto
       const cx = M + (i % porFila) * (ancho + 3);
       const cy = y + Math.floor(i / porFila) * 17;
       doc.setFillColor(240, 246, 248).setDrawColor(205, 222, 228).roundedRect(cx, cy, ancho, 14, 1.5, 1.5, "FD");
-      doc.setTextColor(100).setFont("helvetica", "normal").setFontSize(7.5).text(ind.label, cx + 2.5, cy + 5);
+      doc.setTextColor(100).setFont("helvetica", "normal").setFontSize(7.5).text(ind.label.replace(/₡/g, "¢"), cx + 2.5, cy + 5);
       doc.setTextColor(...PRIMARIO).setFont("helvetica", "bold").setFontSize(11)
         .text(formatoValor(ind.valor, ind.tipo, ind.tipo !== "moneda" && tieneDecimales([ind.valor]), "¢"), cx + 2.5, cy + 11);
     });
@@ -84,7 +84,7 @@ export async function verReportePdf(r: Reporte, emp: EmpresaDatos, ctx: Contexto
     autoTable(doc, {
       startY: y + 5,
       margin: { left: M, right: M, bottom: 16 },
-      head: [s.columnas.map((c) => c.titulo)],
+      head: [s.columnas.map((c) => c.titulo.replace(/₡/g, "¢"))],
       body: s.filas.length ? s.filas.map(fmt) : [[{ content: "Sin datos para este período", colSpan: s.columnas.length, styles: { halign: "center", textColor: 120 } }]],
       foot: s.totales ? [fmt(s.totales)] : undefined,
       showFoot: "lastPage",

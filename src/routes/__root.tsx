@@ -16,6 +16,7 @@ import { ThemeProvider } from "../lib/theme";
 import { registerServiceWorker } from "../lib/sw-register";
 import { enableQueryPersistence } from "../lib/query-persist";
 import { Toaster } from "../components/ui/sonner";
+import { PdfPreviewHost } from "../components/PdfPreviewHost";
 
 function NotFoundComponent() {
   return (

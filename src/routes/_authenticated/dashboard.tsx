@@ -1,14 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth";
-import { formatCRC, formatDateTime } from "@/lib/format";
+import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   BarChart,
@@ -18,16 +13,22 @@ import {
   ResponsiveContainer,
   Tooltip,
   CartesianGrid,
+  Cell,
+  PieChart,
+  Pie,
+  Legend,
+  AreaChart,
+  Area,
 } from "recharts";
-import { TrendingUp, CreditCard, AlertTriangle, Wallet, Map, Receipt } from "lucide-react";
+import { TrendingUp, CreditCard, AlertTriangle, Wallet, Map, Receipt, ClipboardList, Undo2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard Gerencial — Ruta Directo" },
-      { name: "description", content: "Resumen de ventas, gastos y rutas de Ruta Directo." },
+      { name: "description", content: "Resumen de ventas, gastos, preventas, devoluciones y rutas de Ruta Directo." },
       { property: "og:title", content: "Dashboard Gerencial — Ruta Directo" },
-      { property: "og:description", content: "Resumen de ventas, gastos y rutas de Ruta Directo." },
+      { property: "og:description", content: "Resumen de ventas, gastos, preventas, devoluciones y rutas de Ruta Directo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -35,25 +36,48 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
+const PALETA = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--primary)",
+  "var(--destructive)",
+];
+
+const tooltipStyle = { background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 };
+
+function diasSerie(n: number) {
+  const out: { key: string; label: string }[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - i);
+    out.push({ key: d.toDateString(), label: `${d.getDate()}/${d.getMonth() + 1}` });
+  }
+  return out;
+}
+
 export function DashboardPage() {
-  const { isAdmin } = useAuth();
-  const qc = useQueryClient();
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
       const now = new Date();
       const startDay = new Date(now); startDay.setHours(0, 0, 0, 0);
       const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const hace14 = new Date(startDay); hace14.setDate(hace14.getDate() - 13);
 
-      const [ventas, creditos, detalle, rutas, ventasAll, clientes, ventasRecientes, gastosAll] = await Promise.all([
-        supabase.from("ventas").select("total, fecha, ruta_id").gte("fecha", startMonth.toISOString()),
+      const [ventas, creditos, detalle, rutas, clientes, clienteRutas, gastosAll, pedidos, devoluciones] = await Promise.all([
+        supabase.from("ventas").select("id, total, fecha, ruta_id, cliente_id").gte("fecha", startMonth.toISOString()),
         supabase.from("creditos").select("saldo, estado, fecha_limite").gt("saldo", 0),
-        supabase.from("detalle_ventas").select("nombre_producto, cantidad"),
-        supabase.from("rutas").select("id, nombre"),
-        supabase.from("ventas").select("ruta_id, total"),
-        supabase.from("clientes").select("ruta_id"),
-        supabase.from("ventas").select("*, clientes(nombre), rutas(nombre)").order("fecha", { ascending: false }).limit(100),
+        supabase.from("detalle_ventas").select("nombre_producto, cantidad, ventas!inner(fecha)").gte("ventas.fecha", startMonth.toISOString()),
+        supabase.from("rutas").select("id, nombre").order("nombre"),
+        supabase.from("clientes").select("id, ruta_id"),
+        supabase.from("cliente_rutas").select("cliente_id, ruta_id"),
         supabase.from("gastos").select("monto, fecha").gte("fecha", startMonth.toISOString()),
+        supabase.from("pedidos").select("estado, total, created_at, fecha_entrega").gte("created_at", hace14.toISOString()),
+        supabase.from("devoluciones").select("fecha, total, devoluciones_detalle(cantidad, precio_unitario, destino)").gte("fecha", hace14.toISOString()),
       ]);
 
       const v = ventas.data ?? [];
@@ -77,29 +101,58 @@ export function DashboardPage() {
         .sort((a, b) => b.cant - a.cant)
         .slice(0, 6);
 
-      const rutaMap: Record<string, number> = {};
-      for (const x of v) if (x.ruta_id) rutaMap[x.ruta_id] = (rutaMap[x.ruta_id] ?? 0) + Number(x.total);
-      const porRuta = (rutas.data ?? []).map((r) => ({ nombre: r.nombre.replace("Ruta ", ""), total: rutaMap[r.id] ?? 0 }));
+      // Ruta de la venta: la de la venta, o la ruta principal del cliente
+      const rutaCliente: Record<string, string> = {};
+      for (const c of clientes.data ?? []) if (c.ruta_id) rutaCliente[c.id] = c.ruta_id;
+      for (const cr of clienteRutas.data ?? []) if (!rutaCliente[cr.cliente_id]) rutaCliente[cr.cliente_id] = cr.ruta_id;
+      const rutaDe = (x: { ruta_id: string | null; cliente_id: string | null }) =>
+        x.ruta_id ?? (x.cliente_id ? rutaCliente[x.cliente_id] : undefined);
 
-      const ventaStats: Record<string, { total: number; n: number }> = {};
-      for (const x of ventasAll.data ?? []) {
-        if (!x.ruta_id) continue;
-        ventaStats[x.ruta_id] = {
-          total: (ventaStats[x.ruta_id]?.total ?? 0) + Number(x.total),
-          n: (ventaStats[x.ruta_id]?.n ?? 0) + 1,
-        };
+      const stats: Record<string, { total: number; n: number }> = {};
+      for (const x of v) {
+        const r = rutaDe(x);
+        if (!r) continue;
+        stats[r] = { total: (stats[r]?.total ?? 0) + Number(x.total), n: (stats[r]?.n ?? 0) + 1 };
       }
-      const clienteStats: Record<string, number> = {};
-      for (const x of clientes.data ?? []) if (x.ruta_id) clienteStats[x.ruta_id] = (clienteStats[x.ruta_id] ?? 0) + 1;
+      const clientesPorRuta: Record<string, Set<string>> = {};
+      for (const cr of clienteRutas.data ?? []) (clientesPorRuta[cr.ruta_id] ??= new Set()).add(cr.cliente_id);
+      for (const c of clientes.data ?? []) if (c.ruta_id) (clientesPorRuta[c.ruta_id] ??= new Set()).add(c.id);
+
       const rutasDetalle = (rutas.data ?? []).map((r) => ({
         id: r.id,
         nombre: r.nombre,
-        total: ventaStats[r.id]?.total ?? 0,
-        ventas: ventaStats[r.id]?.n ?? 0,
-        clientes: clienteStats[r.id] ?? 0,
+        total: stats[r.id]?.total ?? 0,
+        ventas: stats[r.id]?.n ?? 0,
+        clientes: clientesPorRuta[r.id]?.size ?? 0,
       }));
+      const porRuta = rutasDetalle.filter((r) => r.total > 0).map((r) => ({ nombre: r.nombre, total: r.total }));
 
-      return { hoy, mes, gastosHoy, gastosMes, creditoActivo, creditoVencido, topProductos, porRuta, rutasDetalle, ventasRecientes: ventasRecientes.data ?? [] };
+      // Tendencias 14 días
+      const dias = diasSerie(14);
+      const ped = pedidos.data ?? [];
+      const dev = devoluciones.data ?? [];
+      const tendPedidos = dias.map((d) => ({
+        label: d.label,
+        valor: ped.filter((p) => new Date(p.created_at).toDateString() === d.key && p.estado !== "anulado").reduce((s, p) => s + Number(p.total), 0),
+      }));
+      const tendDevol = dias.map((d) => ({
+        label: d.label,
+        valor: dev.filter((x) => new Date(x.fecha).toDateString() === d.key).reduce((s, x) => s + Number(x.total), 0),
+      }));
+      const pedidosAbiertos = ped.filter((p) => ["borrador", "confirmado", "cargado"].includes(p.estado));
+      const montoPreventa = pedidosAbiertos.reduce((s, p) => s + Number(p.total), 0);
+      const entregados = ped.filter((p) => p.estado === "entregado").length;
+      const lineas = dev.flatMap((d) => d.devoluciones_detalle ?? []);
+      const valorL = (ls: typeof lineas) => ls.reduce((s, l) => s + Number(l.cantidad) * Number(l.precio_unitario), 0);
+      const totalDev = valorL(lineas);
+      const merma = valorL(lineas.filter((l) => l.destino === "merma"));
+
+      return {
+        hoy, mes, gastosHoy, gastosMes, creditoActivo, creditoVencido, topProductos, porRuta, rutasDetalle,
+        tendPedidos, tendDevol,
+        pedidosAbiertos: pedidosAbiertos.length, montoPreventa, entregados,
+        totalDev, merma, nDev: dev.length,
+      };
     },
   });
 
@@ -119,45 +172,90 @@ export function DashboardPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           <Link to="/productos" className="block">
             <Card className="p-4 transition-shadow hover:shadow-md">
-              <h2 className="mb-3 font-bold">Productos más vendidos</h2>
-              <ResponsiveContainer width="100%" height={240}>
+              <h2 className="mb-3 font-bold">Productos más vendidos (mes)</h2>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={data?.topProductos ?? []} layout="vertical" margin={{ left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
                   <YAxis dataKey="nombre" type="category" width={90} tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                  <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }} />
-                  <Bar dataKey="cant" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="cant" radius={[0, 4, 4, 0]}>
+                    {(data?.topProductos ?? []).map((_, i) => (
+                      <Cell key={i} fill={PALETA[i % PALETA.length]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </Card>
           </Link>
 
           <Card className="p-4">
-            <h2 className="mb-3 font-bold">Ventas por ruta</h2>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={data?.porRuta ?? []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="nombre" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                <Tooltip
-                  formatter={(v: number) => formatCRC(v)}
-                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }}
-                />
-                <Bar dataKey="total" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <h2 className="mb-3 font-bold">Ventas por ruta (mes)</h2>
+            {(data?.porRuta.length ?? 0) === 0 ? (
+              <p className="py-20 text-center text-sm text-muted-foreground">Sin ventas este mes</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={data?.porRuta ?? []}
+                    dataKey="total"
+                    nameKey="nombre"
+                    innerRadius={55}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    label={({ percent }) => `${Math.round((percent ?? 0) * 100)}%`}
+                  >
+                    {(data?.porRuta ?? []).map((_, i) => (
+                      <Cell key={i} fill={PALETA[i % PALETA.length]} stroke="var(--card)" />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => formatCRC(v)} contentStyle={tooltipStyle} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </Card>
         </div>
 
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TrendCard
+            to="/pedidos"
+            icon={ClipboardList}
+            title="Preventas (14 días)"
+            color="var(--chart-1)"
+            id="tp"
+            serie={data?.tendPedidos ?? []}
+            kpis={[
+              { label: "Pedidos abiertos", value: String(data?.pedidosAbiertos ?? 0) },
+              { label: "Monto en preventa", value: formatCRC(data?.montoPreventa ?? 0) },
+              { label: "Entregados", value: String(data?.entregados ?? 0) },
+            ]}
+          />
+          <TrendCard
+            to="/devoluciones"
+            icon={Undo2}
+            title="Devoluciones (14 días)"
+            color="var(--chart-4)"
+            id="td"
+            serie={data?.tendDevol ?? []}
+            kpis={[
+              { label: "Devoluciones", value: String(data?.nDev ?? 0) },
+              { label: "Valor devuelto", value: formatCRC(data?.totalDev ?? 0) },
+              {
+                label: "Merma",
+                value: `${formatCRC(data?.merma ?? 0)} · ${data?.totalDev ? Math.round((data.merma / data.totalDev) * 100) : 0}%`,
+              },
+            ]}
+          />
+        </div>
+
         <div>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-bold">Rutas de Distribución</h2>
-          </div>
+          <h2 className="mb-3 font-bold">Rutas de Distribución (mes)</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            {(data?.rutasDetalle ?? []).map((r) => (
+            {(data?.rutasDetalle ?? []).map((r, i) => (
               <Card key={r.id} className="p-4">
                 <div className="mb-3 flex items-center gap-2">
-                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-muted" style={{ color: PALETA[i % PALETA.length] }}>
                     <Map className="h-5 w-5" />
                   </div>
                   <h3 className="font-bold">{r.nombre}</h3>
@@ -171,39 +269,54 @@ export function DashboardPage() {
             ))}
           </div>
         </div>
-
-        <div>
-          <h2 className="mb-3 font-bold">Ventas recientes</h2>
-          <Card className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Ruta</TableHead>
-                  <TableHead>Pago</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(data?.ventasRecientes ?? []).map((v: any) => (
-                  <TableRow key={v.id}>
-                    <TableCell className="whitespace-nowrap text-xs">{formatDateTime(v.fecha)}</TableCell>
-                    <TableCell className="font-medium">{v.clientes?.nombre ?? "—"}</TableCell>
-                    <TableCell className="text-xs">{v.rutas?.nombre ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={v.metodo_pago === "credito" ? "outline" : "secondary"}>{v.metodo_pago}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-bold">{formatCRC(v.total)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-        </div>
       </div>
-
     </div>
+  );
+}
+
+function TrendCard({
+  to, icon: Icon, title, color, id, serie, kpis,
+}: {
+  to: string;
+  icon: typeof Wallet;
+  title: string;
+  color: string;
+  id: string;
+  serie: { label: string; valor: number }[];
+  kpis: { label: string; value: string }[];
+}) {
+  return (
+    <Link to={to} className="block">
+      <Card className="p-4 transition-shadow hover:shadow-md">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="grid h-9 w-9 place-items-center rounded-lg bg-muted" style={{ color }}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <h2 className="font-bold">{title}</h2>
+        </div>
+        <div className="mb-2 grid grid-cols-3 gap-2">
+          {kpis.map((k) => (
+            <div key={k.label}>
+              <p className="text-xs text-muted-foreground">{k.label}</p>
+              <p className="truncate text-sm font-black">{k.value}</p>
+            </div>
+          ))}
+        </div>
+        <ResponsiveContainer width="100%" height={110}>
+          <AreaChart data={serie} margin={{ top: 6, right: 4, left: 4, bottom: 0 }}>
+            <defs>
+              <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.5} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="label" hide />
+            <Tooltip formatter={(v: number) => formatCRC(v)} contentStyle={tooltipStyle} />
+            <Area type="monotone" dataKey="valor" stroke={color} strokeWidth={2.5} fill={`url(#${id})`} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </Card>
+    </Link>
   );
 }
 

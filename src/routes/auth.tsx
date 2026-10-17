@@ -28,7 +28,11 @@ function AuthPage() {
   const { user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotBusy, setForgotBusy] = useState(false);
 
   useEffect(() => {
     if (!loading && user) navigate({ to: "/ruta" });
@@ -42,6 +46,18 @@ function AuthPage() {
     if (error) return toast.error(error.message);
     toast.success("Bienvenido");
     navigate({ to: "/ruta" });
+  }
+
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Te enviamos un correo con el enlace para restablecer tu contraseña");
+    setForgotOpen(false);
   }
 
   return (
@@ -62,11 +78,38 @@ function AuthPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pass">Contraseña</Label>
-              <Input id="pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <div className="relative">
+                <Input
+                  id="pass"
+                  type={showPass ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  aria-label={showPass ? "Ocultar contraseña" : "Ver contraseña"}
+                >
+                  {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <Button type="submit" className="w-full" size="lg" disabled={busy}>
               {busy ? "Ingresando…" : "Ingresar"}
             </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setForgotEmail(email);
+                setForgotOpen(true);
+              }}
+              className="w-full text-center text-xs font-medium text-primary hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
             <p className="text-center text-xs text-muted-foreground">
               Las cuentas son creadas por un administrador desde el panel de Usuarios.
             </p>

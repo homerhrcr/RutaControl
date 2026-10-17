@@ -46,7 +46,7 @@ const COLORS = [
 // Centro por defecto: Costa Rica
 const DEFAULT_CENTER = { lat: 9.9281, lng: -84.0907 };
 
-// Tipo de mapa: satelital por defecto, con opción de pasar al clásico
+// La vista híbrida muestra imágenes satelitales con calles y nombres.
 type TipoMapa = "satellite" | "roadmap";
 const TIPO_MAPA_KEY = "rutadirecto_mapa_tipo";
 const TIPO_MAPA_LABEL: Record<TipoMapa, string> = {
@@ -180,7 +180,7 @@ function MapaRutasPage() {
     mapInstance.current = new google.maps.Map(mapRef.current, {
       center: DEFAULT_CENTER,
       zoom: 9,
-      mapTypeId: tipoMapa,
+      mapTypeId: tipoMapa === "satellite" ? "hybrid" : "roadmap",
       mapTypeControl: false,
       streetViewControl: false,
       clickableIcons: false,
@@ -247,7 +247,7 @@ function MapaRutasPage() {
   // Cambiar entre satelital y clásico, y recordar la elección
   useEffect(() => {
     if (!ready || !mapInstance.current) return;
-    mapInstance.current.setMapTypeId(tipoMapa);
+    mapInstance.current.setMapTypeId(tipoMapa === "satellite" ? "hybrid" : "roadmap");
     try {
       localStorage.setItem(TIPO_MAPA_KEY, tipoMapa);
     } catch {

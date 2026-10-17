@@ -1,0 +1,1 @@
+ALTER TABLE public.config_fiscal ADD COLUMN IF NOT EXISTS logo_data text, ADD COLUMN IF NOT EXISTS sitio_web text, ADD COLUMN IF NOT EXISTS pie_reportes text;

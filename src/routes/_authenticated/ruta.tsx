@@ -296,7 +296,7 @@ export function RutaPage() {
 
         {/* modo ordenar */}
         {ordenMode && orderList && (
-          <div className="grid gap-1.5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-1.5 md:grid-cols-2">
             {orderList.map((c, idx) => (
               <Card key={c.id} className="flex items-center gap-1.5 p-1.5">
                 <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
@@ -327,7 +327,7 @@ export function RutaPage() {
         )}
 
         {!ordenMode && (
-          <div className="grid gap-1.5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-1.5 md:grid-cols-2">
             {filtered.map((c, idx) => {
               const saldo = saldos?.[c.id] ?? 0;
               const visitado = visitadosSet.has(c.id);

@@ -24,6 +24,8 @@ export const crearVinculoTelegram = createServerFn({ method: "POST" }).middlewar
     const { telegramApi, nuevoToken, hashToken } = await import("./telegram.server");
     const bot = await telegramApi("getMe");
     const token = nuevoToken();
+    const { error: expireError } = await admin.from("telegram_codigos").update({ consumed_at: new Date().toISOString() }).eq("organization_id", org).eq("cliente_id", data.clienteId).is("consumed_at", null);
+    if (expireError) throw expireError;
     const { error } = await admin.from("telegram_codigos").insert({ organization_id: org, cliente_id: data.clienteId, token_hash: hashToken(token), expires_at: new Date(Date.now() + 86400000).toISOString(), created_by: context.userId });
     if (error) throw error;
     return { url: `https://t.me/${bot.username}?start=${token}` };
@@ -89,6 +91,10 @@ export const configurarWebhookTelegram = createServerFn({ method: "POST" }).midd
     const url = "https://project--cc5f4a56-2277-4d48-8fd8-6bf13c336ce5-dev.lovable.app/api/public/telegram/webhook";
     const info = await telegramApi("getWebhookInfo");
     if (!webhookPermitido(info.url, url)) throw new Error("Este bot está vinculado a otra aplicación; usa un bot exclusivo para Ruta Directo");
+    const receptor = await fetch(url);
+    if (!receptor.ok) throw new Error("La recepción de Telegram aún no está disponible públicamente. Publica los cambios antes de activarla");
+    const estado = await receptor.json() as { service?: string; ok?: boolean };
+    if (estado.service !== "Ruta Directo Telegram" || !estado.ok) throw new Error("La recepción de Telegram aún no está disponible públicamente");
     await telegramApi("setWebhook", { url, secret_token: webhookSecret(), allowed_updates: ["message"], drop_pending_updates: false });
     const resultado = await telegramApi("getWebhookInfo");
     return { activo: resultado.url === url };

@@ -48,19 +48,21 @@ export const enviarTelegram = createServerFn({ method: "POST" }).middleware([req
     let dedupe = `mensaje:${org}:${data.envioId ?? crypto.randomUUID()}`;
     if (data.tipo !== "mensaje") {
       if (!data.documentoId) throw new Error("Documento requerido");
-      const tabla = data.tipo === "pedido" ? "pedidos" : "ventas";
-      const selector = data.tipo === "pedido" ? "*,pedidos_detalle(*)" : "*,detalle_ventas(*)";
-      const { data: doc, error } = await context.supabase.from(tabla).select(selector).eq("id", data.documentoId).eq("organization_id", org).single();
+      const result = data.tipo === "pedido"
+        ? await context.supabase.from("pedidos").select("*,pedidos_detalle(*)").eq("id", data.documentoId).eq("organization_id", org).single()
+        : await context.supabase.from("ventas").select("*,detalle_ventas(*)").eq("id", data.documentoId).eq("organization_id", org).single();
+      const doc = result.data;
+      const error = result.error;
       if (error || !doc?.cliente_id) throw new Error("Documento no disponible");
-      if (data.tipo === "pedido" && !["confirmado", "cargado", "entregado"].includes(doc.estado)) throw new Error("Confirme el pedido antes de notificar");
+      if ("estado" in doc && !["confirmado", "cargado", "entregado"].includes(doc.estado)) throw new Error("Confirme el pedido antes de notificar");
       clienteId = doc.cliente_id;
       const cliente = await comprobarCliente(context, org, doc.cliente_id);
       const { data: organizacion } = await context.supabase.from("organizations").select("nombre").eq("id", org).single();
-      const items = data.tipo === "pedido" ? doc.pedidos_detalle : doc.detalle_ventas;
+      const items = "pedidos_detalle" in doc ? doc.pedidos_detalle : doc.detalle_ventas;
       if (!items?.length) throw new Error("El documento todavía no tiene productos");
       texto = textoDocumento({ empresa: organizacion?.nombre ?? "Ruta Directo", tipo: data.tipo, id: doc.id, cliente: cliente.nombre,
-        fecha: data.tipo === "pedido" ? doc.fecha_entrega : new Date(doc.fecha).toLocaleString("es-CR", { timeZone: "America/Costa_Rica" }),
-        estado: data.tipo === "pedido" ? "Confirmado" : undefined, metodo: doc.metodo_pago, total: Number(doc.total), descuento: Number(doc.descuento ?? 0),
+        fecha: "fecha_entrega" in doc ? doc.fecha_entrega : new Date(doc.fecha).toLocaleString("es-CR", { timeZone: "America/Costa_Rica" }),
+        estado: data.tipo === "pedido" ? "Confirmado" : undefined, metodo: "metodo_pago" in doc ? doc.metodo_pago : undefined, total: Number(doc.total), descuento: "descuento" in doc ? Number(doc.descuento) : 0,
         items: items.map((i: any) => ({ nombre: i.nombre_producto, cantidad: Number(i.cantidad), total: Number(i.cantidad) * Number(i.precio_unitario) })),
       });
       dedupe = `${data.tipo}:${org}:${doc.id}`;

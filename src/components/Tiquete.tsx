@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { formatCRC, formatDateTime } from "@/lib/format";
 import { Printer, MessageCircle, X, Copy } from "lucide-react";
 import type { CartItem } from "@/lib/data";
+import { TelegramEnviar } from "@/components/TelegramCliente";
 
 export interface TiqueteData {
   venta_id: string;
+  cliente_id?: string;
   fecha: string;
   cliente_nombre: string;
   cliente_telefono?: string | null;
@@ -86,21 +88,10 @@ export function Tiquete({
     }, 250);
   }
 
-  function whatsapp() {
-    const texto = encodeURIComponent(buildTexto(data!));
-    const tel = (data!.cliente_telefono ?? "").replace(/[^\d]/g, "");
-    const numero = tel ? (tel.length === 8 ? `506${tel}` : tel) : "";
-    // wa.me redirige a api.whatsapp.com (bloqueado en algunas redes).
-    // web.whatsapp.com abre WhatsApp Web directamente sin ese redireccionamiento.
-    const url = numero
-      ? `https://web.whatsapp.com/send?phone=${numero}&text=${texto}`
-      : `https://web.whatsapp.com/send?text=${texto}`;
-    window.open(url, "_blank");
-  }
-
   async function copiar() {
+    if (!data) return;
     try {
-      await navigator.clipboard.writeText(buildTexto(data!));
+      await navigator.clipboard.writeText(buildTexto(data));
     } catch {
       alert("No se pudo copiar automáticamente.");
     }
@@ -183,9 +174,7 @@ export function Tiquete({
           <Button variant="outline" className="gap-2" onClick={copiar}>
             <Copy className="h-4 w-4" /> Copiar
           </Button>
-          <Button className="gap-2" style={{ backgroundColor: "#25D366", color: "#fff" }} onClick={whatsapp}>
-            <MessageCircle className="h-4 w-4" /> WhatsApp
-          </Button>
+          <TelegramEnviar tipo="tiquete" documentoId={data.venta_id} />
         </div>
       </DialogContent>
     </Dialog>

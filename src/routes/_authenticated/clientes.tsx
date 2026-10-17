@@ -33,6 +33,7 @@ import { ClienteUbicacion } from "@/components/ClienteUbicacion";
 import { leerCoordenadas } from "@/lib/coordenadas";
 import { DireccionCliente } from "@/components/DireccionCliente";
 import { normalizarDireccion, errorDireccion } from "@/lib/division-territorial";
+import { TelegramCliente } from "@/components/TelegramCliente";
 
 
 export const Route = createFileRoute("/_authenticated/clientes")({
@@ -210,16 +211,7 @@ function ClientesPage() {
                   >
                     <History className="h-4 w-4" />
                   </button>
-                  {c.telefono && (
-                    <a
-                      href={`https://wa.me/506${c.telefono.replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="grid h-8 w-8 place-items-center rounded-lg bg-accent/15 text-accent"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                    </a>
-                  )}
+                  <TelegramCliente clienteId={c.id} nombre={c.nombre} iconOnly />
                   {c.latitud != null && c.longitud != null && (
                     <a
                       href={`https://www.google.com/maps/search/?api=1&query=${c.latitud},${c.longitud}`}

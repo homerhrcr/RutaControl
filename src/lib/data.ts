@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { notificarDocumentoTelegram } from "./telegram-notificar";
 
 export function useProductos(soloActivos = false) {
   return useQuery({
@@ -291,6 +292,7 @@ export async function registrarVenta(params: {
     detalle: { venta_id: venta.id, total, metodo: params.metodo },
   });
 
+  await notificarDocumentoTelegram("tiquete", venta.id);
   return venta;
 }
 

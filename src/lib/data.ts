@@ -237,28 +237,33 @@ export async function registrarVenta(params: {
     if (dErr) throw dErr;
   }
 
+  // Una salida por producto suma todas sus líneas; el detalle conserva sus precios.
+  const cantidades = new Map<string, number>();
+  for (const item of params.items) {
+    cantidades.set(item.producto_id, (cantidades.get(item.producto_id) ?? 0) + item.cantidad);
+  }
   // Inventario: marcador por venta y producto para no descontar dos veces
   const motivo = `Venta ${venta.id}`;
-  for (const i of params.items) {
+  for (const [productoId, cantidad] of cantidades) {
     const { data: mov, error: mErr } = await supabase
       .from("movimientos_inventario")
       .select("id")
-      .eq("producto_id", i.producto_id)
+      .eq("producto_id", productoId)
       .eq("motivo", motivo)
       .maybeSingle();
     if (mErr) throw mErr;
     if (mov) continue;
-    const { data: prod, error: pErr } = await supabase.from("productos").select("existencia").eq("id", i.producto_id).single();
+    const { data: prod, error: pErr } = await supabase.from("productos").select("existencia").eq("id", productoId).single();
     if (pErr) throw pErr;
     const { error: uErr } = await supabase
       .from("productos")
-      .update({ existencia: Number(prod.existencia) - i.cantidad })
-      .eq("id", i.producto_id);
+      .update({ existencia: Number(prod.existencia) - cantidad })
+      .eq("id", productoId);
     if (uErr) throw uErr;
     const { error: iErr } = await supabase.from("movimientos_inventario").insert({
-      producto_id: i.producto_id,
+      producto_id: productoId,
       tipo: "salida",
-      cantidad: i.cantidad,
+      cantidad,
       motivo,
       usuario_id: params.vendedor_id,
     });

@@ -102,7 +102,7 @@ interface ClienteMapa {
   direccion: string | null;
   latitud: number | null;
   longitud: number | null;
-  rutas: { id: string; nombre: string }[];
+  rutas: { id: string; nombre: string; orden: number | null }[];
   rutaId: string | null;
   rutaNombre: string | null;
 }
@@ -121,6 +121,7 @@ function MapaRutasPage() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
   const markers = useRef<google.maps.Marker[]>([]);
+  const linea = useRef<google.maps.Polyline | null>(null);
   const infoWindow = useRef<google.maps.InfoWindow | null>(null);
   const marcandoRef = useRef<ClienteMapa | null>(null);
   marcandoRef.current = marcando;
@@ -147,8 +148,9 @@ function MapaRutasPage() {
             ((cr?.rutas as { nombre?: string } | undefined)?.nombre as
               | string
               | undefined) ?? null,
+          orden: cr?.orden != null ? Number(cr.orden) : null,
         }))
-        .filter((r): r is { id: string; nombre: string } => r.id != null);
+        .filter((r): r is { id: string; nombre: string; orden: number | null } => r.id != null);
       return {
         id: c.id as string,
         nombre: c.nombre as string,
@@ -200,11 +202,16 @@ function MapaRutasPage() {
     if (!ready || !mapInstance.current) return;
     markers.current.forEach((m) => m.setMap(null));
     markers.current = [];
+    linea.current?.setMap(null);
+    linea.current = null;
+    const ordenDe = (c: ClienteMapa) => c.rutas.find((r) => r.id === rutaFiltro)?.orden ?? 9999;
+    const enOrden = rutaFiltro !== "todas" ? [...conUbicacion].sort((a, b) => ordenDe(a) - ordenDe(b)) : conUbicacion;
 
     const bounds = new google.maps.LatLngBounds();
     let count = 0;
 
-    conUbicacion.forEach((c) => {
+    enOrden.forEach((c, idx) => {
+      const parada = rutaFiltro !== "todas" ? idx + 1 : null;
       const colorRutaId =
         rutaFiltro !== "todas" && c.rutas.some((r) => r.id === rutaFiltro)
           ? rutaFiltro
@@ -214,10 +221,12 @@ function MapaRutasPage() {
       const marker = new google.maps.Marker({
         position: pos,
         map: mapInstance.current!,
-        title: c.nombre,
+        title: parada ? `${parada}. ${c.nombre}` : c.nombre,
+        label: parada ? { text: String(parada), color: "#ffffff", fontSize: "11px", fontWeight: "700" } : undefined,
+        zIndex: parada ? 1000 - parada : undefined,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
+          scale: parada ? 12 : 8,
           fillColor: color,
           fillOpacity: 1,
           strokeColor: "#ffffff",
@@ -226,7 +235,7 @@ function MapaRutasPage() {
       });
       marker.addListener("click", () => {
         infoWindow.current?.setContent(
-          `<div style="font-size:13px"><strong>${c.nombre}</strong><br/>${
+          `<div style="font-size:13px"><strong>${parada ? `Parada ${parada}: ` : ""}${c.nombre}</strong><br/>${
             c.rutaNombre ?? "Sin ruta"
           }${c.direccion ? `<br/>${c.direccion}` : ""}</div>`,
         );
@@ -236,6 +245,18 @@ function MapaRutasPage() {
       bounds.extend(pos);
       count++;
     });
+
+    if (rutaFiltro !== "todas" && enOrden.length > 1) {
+      const color = colorPorRuta.get(rutaFiltro) ?? "#0891b2";
+      linea.current = new google.maps.Polyline({
+        map: mapInstance.current,
+        path: enOrden.map((c) => ({ lat: c.latitud!, lng: c.longitud! })),
+        strokeColor: color,
+        strokeOpacity: 0.9,
+        strokeWeight: 3,
+        icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3 }, offset: "50%", repeat: "120px" }],
+      });
+    }
 
     if (count > 0) {
       mapInstance.current.fitBounds(bounds, 60);
@@ -306,6 +327,11 @@ function MapaRutasPage() {
           </div>
           <div className="text-sm text-muted-foreground">
             {conUbicacion.length} ubicada(s) · {sinUbicacion.length} sin ubicación
+          </div>
+          <div className="w-full text-xs text-muted-foreground">
+            {rutaFiltro === "todas"
+              ? "Elige una ruta para ver las paradas numeradas y el recorrido en orden de entrega."
+              : "Los números indican el orden de visita (se cambia en Iniciar Ruta → Ordenar entrega)."}
           </div>
           {/* Leyenda de colores */}
           <div className="flex flex-wrap gap-3">

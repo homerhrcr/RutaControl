@@ -361,7 +361,7 @@ export function RutaPage() {
           </div>
         )}
 
-        {!ordenMode && (
+        {!ordenMode && vista === "lista" && (
           <div className="grid gap-1.5 md:grid-cols-2">
             {filtered.map((c, idx) => {
               const saldo = saldos?.[c.id] ?? 0;
@@ -454,6 +454,8 @@ export function RutaPage() {
           </div>
         )}
       </div>
+
+      {vista === "mapa" && <MapaRutas rutaInicial={rutaId === "all" ? "todas" : rutaId} />}
 
       <QuickSale cliente={saleClient} open={!!saleClient} onClose={() => setSaleClient(null)} onDone={onSaleDone} />
       <AbonoDialog cliente={abonoClient} open={!!abonoClient} onClose={() => setAbonoClient(null)} onDone={onSaleDone} />

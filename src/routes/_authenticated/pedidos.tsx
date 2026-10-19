@@ -103,7 +103,7 @@ function PedidosPage() {
     const { error } = await supabase.from("pedidos").update({ estado }).eq("id", id);
     if (error) return toast.error(error.message);
     if (estado === "confirmado") await notificarDocumentoTelegram("pedido", id);
-    invalidate(["pedidos"]);
+    invalidate(["pedidos", "pedidos-carga-consolidado"]);
   }
 
   return (

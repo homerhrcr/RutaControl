@@ -109,7 +109,7 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     try {
       const { data, error } = await supabase.rpc("abrir_carga_camion", { p: { id, ruta_id: ruta, fecha, vendedor_id: vendedor, vehiculo, notas, pedidos: seleccionados, extras: extras.map((e) => ({ producto_id: e.producto_id, cantidad: e.cantidad })) } });
       if (error) throw error;
-      await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+      await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga", "pedidos-carga-consolidado"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
       toast.success("Camión cargado · Inventario trasladado desde bodega");
       onDone(data);
     } catch (e) { toast.error(e instanceof Error ? e.message : String((e as { message?: string }).message ?? "No se pudo cargar")); } finally { setBusy(false); }
@@ -168,7 +168,7 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     try {
       const { error } = await supabase.rpc("cerrar_carga_camion", { p: { id: carga.id, notas, mermas: Object.entries(mermas).map(([producto_id, cantidad]) => ({ producto_id, cantidad })) } });
       if (error) throw error;
-      await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+      await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga", "pedidos-carga-consolidado"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
       setCerrar(false); toast.success("Carga cerrada · Sobrantes devueltos a bodega");
     } catch (e) { toast.error(String((e as { message?: string }).message ?? "No se pudo cerrar")); } finally { setBusy(false); }
   }

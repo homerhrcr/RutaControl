@@ -256,7 +256,7 @@ function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; onClose:
     const entregados = items.filter((i) => i.cantidad > 0);
     if (!entregados.length) return toast.error("No hay productos entregados");
     const carga = cargas?.find((c) => c.id === pedido.carga_id);
-    if (pedido.carga_id && (!carga || !validarVentaCamion(descontarPendientes(carga, pendientes), entregados))) return toast.error("Revise las existencias disponibles del camión");
+    if (pedido.carga_id && (!carga || !validarVentaCamion(descontarPendientes(carga, pendientes, pedido.id), entregados))) return toast.error("Revise las existencias disponibles del camión");
     setBusy(true);
     const ventaP = { id: pedido.venta_id ?? pedido.id, carga_id: pedido.carga_id ?? null, cliente_id: pedido.cliente_id, ruta_id: pedido.ruta_id, vendedor_id: vendedorId, items: entregados, descuento: 0, metodo };
     if (!navigator.onLine) {

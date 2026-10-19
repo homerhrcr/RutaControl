@@ -175,6 +175,7 @@ export interface CartItem {
 
 export async function registrarVenta(params: {
   id?: string;
+  carga_id?: string | null;
   cliente_id: string;
   ruta_id: string | null;
   vendedor_id: string;
@@ -185,6 +186,13 @@ export async function registrarVenta(params: {
   lat?: number | null;
   lng?: number | null;
 }) {
+  if (params.carga_id) {
+    const { data, error } = await supabase.rpc("vender_desde_camion", { p: { ...params, id: params.id ?? crypto.randomUUID() } as never });
+    if (error) throw error;
+    const venta = data as unknown as { id: string; fecha: string; total: number; carga_id: string };
+    await notificarDocumentoTelegram("tiquete", venta.id);
+    return venta;
+  }
   const subtotal = params.items.reduce((s, i) => s + i.precio * i.cantidad, 0);
   const total = Math.max(0, subtotal - params.descuento);
 
@@ -342,6 +350,13 @@ export async function registrarAbono(params: {
 
 // Eliminar una venta: restaura inventario y borra en cascada (detalle, créditos, abonos)
 export async function eliminarVenta(ventaId: string) {
+  const { data: venta, error: ventaError } = await supabase.from("ventas").select("carga_id").eq("id", ventaId).maybeSingle();
+  if (ventaError) throw ventaError;
+  if (venta?.carga_id) {
+    const { error } = await supabase.rpc("anular_venta_camion", { p_venta: ventaId });
+    if (error) throw error;
+    return;
+  }
   const { data: detalle } = await supabase
     .from("detalle_ventas")
     .select("producto_id, cantidad")

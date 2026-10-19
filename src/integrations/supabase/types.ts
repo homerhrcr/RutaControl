@@ -107,6 +107,124 @@ export type Database = {
           },
         ]
       }
+      cargas_camion: {
+        Row: {
+          cerrada_en: string | null
+          created_at: string
+          estado: string
+          fecha: string
+          id: string
+          notas: string | null
+          organization_id: string
+          ruta_id: string
+          updated_at: string
+          vehiculo: string
+          vendedor_id: string
+        }
+        Insert: {
+          cerrada_en?: string | null
+          created_at?: string
+          estado?: string
+          fecha?: string
+          id?: string
+          notas?: string | null
+          organization_id?: string
+          ruta_id: string
+          updated_at?: string
+          vehiculo?: string
+          vendedor_id: string
+        }
+        Update: {
+          cerrada_en?: string | null
+          created_at?: string
+          estado?: string
+          fecha?: string
+          id?: string
+          notas?: string | null
+          organization_id?: string
+          ruta_id?: string
+          updated_at?: string
+          vehiculo?: string
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cargas_camion_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargas_camion_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "rutas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cargas_camion_detalle: {
+        Row: {
+          carga_id: string
+          devuelto: number
+          extra: number
+          id: string
+          merma: number
+          nombre_producto: string
+          organization_id: string
+          preventa: number
+          producto_id: string
+          vendido: number
+        }
+        Insert: {
+          carga_id: string
+          devuelto?: number
+          extra?: number
+          id?: string
+          merma?: number
+          nombre_producto: string
+          organization_id?: string
+          preventa?: number
+          producto_id: string
+          vendido?: number
+        }
+        Update: {
+          carga_id?: string
+          devuelto?: number
+          extra?: number
+          id?: string
+          merma?: number
+          nombre_producto?: string
+          organization_id?: string
+          preventa?: number
+          producto_id?: string
+          vendido?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cargas_camion_detalle_carga_id_fkey"
+            columns: ["carga_id"]
+            isOneToOne: false
+            referencedRelation: "cargas_camion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargas_camion_detalle_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargas_camion_detalle_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categorias: {
         Row: {
           created_at: string
@@ -842,6 +960,7 @@ export type Database = {
       }
       pedidos: {
         Row: {
+          carga_id: string | null
           cliente_id: string
           created_at: string
           estado: string
@@ -856,6 +975,7 @@ export type Database = {
           venta_id: string | null
         }
         Insert: {
+          carga_id?: string | null
           cliente_id: string
           created_at?: string
           estado?: string
@@ -870,6 +990,7 @@ export type Database = {
           venta_id?: string | null
         }
         Update: {
+          carga_id?: string | null
           cliente_id?: string
           created_at?: string
           estado?: string
@@ -884,6 +1005,13 @@ export type Database = {
           venta_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pedidos_carga_id_fkey"
+            columns: ["carga_id"]
+            isOneToOne: false
+            referencedRelation: "cargas_camion"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["cliente_id"]
@@ -1362,6 +1490,7 @@ export type Database = {
       }
       ventas: {
         Row: {
+          carga_id: string | null
           cliente_id: string | null
           created_at: string
           descuento: number
@@ -1377,6 +1506,7 @@ export type Database = {
           vendedor_id: string | null
         }
         Insert: {
+          carga_id?: string | null
           cliente_id?: string | null
           created_at?: string
           descuento?: number
@@ -1392,6 +1522,7 @@ export type Database = {
           vendedor_id?: string | null
         }
         Update: {
+          carga_id?: string | null
           cliente_id?: string | null
           created_at?: string
           descuento?: number
@@ -1407,6 +1538,13 @@ export type Database = {
           vendedor_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "ventas_carga_id_fkey"
+            columns: ["carga_id"]
+            isOneToOne: false
+            referencedRelation: "cargas_camion"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ventas_cliente_id_fkey"
             columns: ["cliente_id"]
@@ -1435,6 +1573,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      abrir_carga_camion: { Args: { p: Json }; Returns: string }
+      anular_venta_camion: { Args: { p_venta: string }; Returns: undefined }
       cambios_desde: {
         Args: { p_desde: string }
         Returns: {
@@ -1443,6 +1583,7 @@ export type Database = {
           ultimo: string
         }[]
       }
+      cerrar_carga_camion: { Args: { p: Json }; Returns: string }
       current_organization_id: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -1466,6 +1607,7 @@ export type Database = {
         }
         Returns: Json
       }
+      vender_desde_camion: { Args: { p: Json }; Returns: Json }
     }
     Enums: {
       app_role: "administrador" | "vendedor" | "cobrador"

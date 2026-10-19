@@ -43,6 +43,13 @@
       "when": 1792221703041,
       "tag": "0005_empresa_perfil_reportes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792433721754,
+      "tag": "0006_carga_camion_subinventario",
+      "breakpoints": true
     }
   ]
 }

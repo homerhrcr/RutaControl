@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAdministracionRouteImport } from './routes/_authenticated/administracion'
 import { Route as AuthenticatedAuditoriaRouteImport } from './routes/_authenticated/auditoria'
+import { Route as AuthenticatedCargaCamionRouteImport } from './routes/_authenticated/carga-camion'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedCobradorRouteImport } from './routes/_authenticated/cobrador'
 import { Route as AuthenticatedCobranzaRouteImport } from './routes/_authenticated/cobranza'
@@ -69,6 +70,12 @@ const AuthenticatedAuditoriaRoute = AuthenticatedAuditoriaRouteImport.update({
   path: '/auditoria',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCargaCamionRoute =
+  AuthenticatedCargaCamionRouteImport.update({
+    id: '/carga-camion',
+    path: '/carga-camion',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -195,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/administracion': typeof AuthenticatedAdministracionRoute
   '/auditoria': typeof AuthenticatedAuditoriaRoute
+  '/carga-camion': typeof AuthenticatedCargaCamionRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/cobrador': typeof AuthenticatedCobradorRoute
   '/cobranza': typeof AuthenticatedCobranzaRoute
@@ -225,6 +233,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/administracion': typeof AuthenticatedAdministracionRoute
   '/auditoria': typeof AuthenticatedAuditoriaRoute
+  '/carga-camion': typeof AuthenticatedCargaCamionRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/cobrador': typeof AuthenticatedCobradorRoute
   '/cobranza': typeof AuthenticatedCobranzaRoute
@@ -257,6 +266,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/administracion': typeof AuthenticatedAdministracionRoute
   '/_authenticated/auditoria': typeof AuthenticatedAuditoriaRoute
+  '/_authenticated/carga-camion': typeof AuthenticatedCargaCamionRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/cobrador': typeof AuthenticatedCobradorRoute
   '/_authenticated/cobranza': typeof AuthenticatedCobranzaRoute
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/administracion'
     | '/auditoria'
+    | '/carga-camion'
     | '/clientes'
     | '/cobrador'
     | '/cobranza'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/administracion'
     | '/auditoria'
+    | '/carga-camion'
     | '/clientes'
     | '/cobrador'
     | '/cobranza'
@@ -350,6 +362,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/administracion'
     | '/_authenticated/auditoria'
+    | '/_authenticated/carga-camion'
     | '/_authenticated/clientes'
     | '/_authenticated/cobrador'
     | '/_authenticated/cobranza'
@@ -427,6 +440,13 @@ declare module '@tanstack/react-router' {
       path: '/auditoria'
       fullPath: '/auditoria'
       preLoaderRoute: typeof AuthenticatedAuditoriaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/carga-camion': {
+      id: '/_authenticated/carga-camion'
+      path: '/carga-camion'
+      fullPath: '/carga-camion'
+      preLoaderRoute: typeof AuthenticatedCargaCamionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clientes': {
@@ -596,6 +616,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministracionRoute: typeof AuthenticatedAdministracionRoute
   AuthenticatedAuditoriaRoute: typeof AuthenticatedAuditoriaRoute
+  AuthenticatedCargaCamionRoute: typeof AuthenticatedCargaCamionRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedCobradorRoute: typeof AuthenticatedCobradorRoute
   AuthenticatedCobranzaRoute: typeof AuthenticatedCobranzaRoute
@@ -621,6 +642,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministracionRoute: AuthenticatedAdministracionRoute,
   AuthenticatedAuditoriaRoute: AuthenticatedAuditoriaRoute,
+  AuthenticatedCargaCamionRoute: AuthenticatedCargaCamionRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedCobradorRoute: AuthenticatedCobradorRoute,
   AuthenticatedCobranzaRoute: AuthenticatedCobranzaRoute,

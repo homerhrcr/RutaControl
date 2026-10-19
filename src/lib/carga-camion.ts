@@ -22,6 +22,7 @@ export function usePendientesCamion() {
   const { user, organizacionActiva } = useAuth();
   return useQuery({
     queryKey: ["cargas_camion-pendientes", user?.id, organizacionActiva?.id, count],
+    networkMode: "always",
     queryFn: async () => (await allOps()).filter((o) => o.status !== "SYNCED").flatMap((o) => {
       const venta = o.entity === "ventas" ? o.payload as VentaParams : o.entity === "entregas" ? (o.payload as EntregaParams).venta : null;
       return venta?.carga_id ? [venta] : [];

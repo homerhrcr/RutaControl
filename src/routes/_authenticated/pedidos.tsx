@@ -157,6 +157,7 @@ function PedidosPage() {
             ))}
           </TabsContent>
           <TabsContent value="carga">
+            <p className="mb-2 text-xs text-muted-foreground">Consolida todos los pedidos confirmados y cargados de la ruta, sin importar la fecha de entrega.</p>
             <Card className="p-0">
               <table className="w-full text-sm">
                 <thead><tr className="border-b text-left text-muted-foreground"><th className="px-4 py-2">Producto</th><th className="px-4 py-2 text-right">Cargar</th></tr></thead>

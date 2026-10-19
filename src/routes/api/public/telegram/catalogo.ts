@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { pedidoTelegramSchema, devolucionTelegramSchema, textoSolicitudDevolucion } from "@/lib/telegram";
+import { precioCliente } from "@/lib/precios";
 
 const accesoSchema = z.object({ c: z.string().regex(/^-?\d{1,20}$/), s: z.string().regex(/^[A-Za-z0-9_-]{20,100}$/) });
 
@@ -12,17 +13,25 @@ async function resolverCliente(c: string, s: string) {
   if (!vinc) return null;
   const { data: org } = await supabaseAdmin.from("organizations").select("nombre,estado").eq("id", vinc.organization_id).maybeSingle();
   if (!org || org.estado !== "active") return null;
-  const { data: cliente } = await supabaseAdmin.from("clientes").select("id,nombre,ruta_id").eq("id", vinc.cliente_id).eq("organization_id", vinc.organization_id).maybeSingle();
+  const { data: cliente } = await supabaseAdmin.from("clientes").select("id,nombre,ruta_id,lista_precio_id").eq("id", vinc.cliente_id).eq("organization_id", vinc.organization_id).maybeSingle();
   if (!cliente) return null;
   return { admin: supabaseAdmin, org: vinc.organization_id, empresa: org.nombre, cliente };
 }
 
-async function catalogo(admin: any, org: string) {
+async function preciosLista(admin: any, org: string, listaId: string | null) {
+  if (!listaId) return [];
+  const { data, error } = await admin.from("precios_productos").select("lista_id,producto_id,precio").eq("organization_id", org).eq("lista_id", listaId);
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function catalogo(admin: any, org: string, listaId: string | null) {
   const [{ data: productos }, { data: categorias }] = await Promise.all([
     admin.from("productos").select("id,nombre,precio,categoria_id,existencia").eq("organization_id", org).eq("activo", true).order("nombre"),
     admin.from("categorias").select("id,nombre").eq("organization_id", org).order("nombre"),
   ]);
-  return { productos: productos ?? [], categorias: categorias ?? [] };
+  const precios = await preciosLista(admin, org, listaId);
+  return { productos: (productos ?? []).map((p: any) => ({ ...p, precio: precioCliente(p, listaId, precios) })), categorias: categorias ?? [] };
 }
 
 export const Route = createFileRoute("/api/public/telegram/catalogo")({
@@ -33,7 +42,7 @@ export const Route = createFileRoute("/api/public/telegram/catalogo")({
       if (!p.success) return Response.json({ error: "Enlace inválido" }, { status: 400 });
       const r = await resolverCliente(p.data.c, p.data.s);
       if (!r) return Response.json({ error: "Tu Telegram no está vinculado. Solicita el enlace a tu vendedor." }, { status: 403 });
-      const cat = await catalogo(r.admin, r.org);
+      const cat = await catalogo(r.admin, r.org, r.cliente.lista_precio_id);
       return Response.json({ empresa: r.empresa, cliente: r.cliente.nombre, ...cat, productos: cat.productos.map((x: any) => ({ id: x.id, nombre: x.nombre, precio: Number(x.precio), categoria_id: x.categoria_id, agotado: Number(x.existencia) <= 0 })) }, { headers: { "Cache-Control": "no-store" } });
     },
     POST: async ({ request }) => {
@@ -71,7 +80,8 @@ export const Route = createFileRoute("/api/public/telegram/catalogo")({
       const { data: prods } = await admin.from("productos").select("id,nombre,precio").eq("organization_id", org).eq("activo", true).in("id", ids);
       const mapa = new Map((prods ?? []).map((x: any) => [x.id, x]));
       if (mapa.size !== ids.length) return Response.json({ error: "Algún producto ya no está disponible" }, { status: 400 });
-      const detalle = d.items.map((i) => { const x: any = mapa.get(i.producto_id); return { organization_id: org, pedido_id: d.id, producto_id: x.id, nombre_producto: x.nombre, cantidad: i.cantidad, precio_unitario: Number(x.precio) }; });
+      const precios = await preciosLista(admin, org, cliente.lista_precio_id);
+      const detalle = d.items.map((i) => { const x: any = mapa.get(i.producto_id); return { organization_id: org, pedido_id: d.id, producto_id: x.id, nombre_producto: x.nombre, cantidad: i.cantidad, precio_unitario: precioCliente(x, cliente.lista_precio_id, precios) }; });
       const total = detalle.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
       const { error: e1 } = await admin.from("pedidos").insert({ id: d.id, organization_id: org, cliente_id: cliente.id, ruta_id: cliente.ruta_id, fecha_entrega: d.fecha_entrega, estado: "confirmado", total, notas: ["Pedido por Telegram", d.notas?.trim()].filter(Boolean).join(" — ") });
       if (e1) { console.error("Pedido Telegram", e1); return Response.json({ error: "No se pudo guardar el pedido" }, { status: 500 }); }

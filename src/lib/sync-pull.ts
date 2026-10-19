@@ -19,7 +19,7 @@ export function useIncrementalPull() {
         const tablas = await pullCambios(orgId);
         if (cancel || tablas.length === 0) return;
         const claves = tablas.flatMap((t) =>
-          t === "cliente_rutas" ? ["clientes"] : t === "abonos" ? ["abonos", "creditos"] : [t.replace(/s$/, ""), t],
+          t === "listas_precios" ? ["listas_precios", "precios_productos"] : t === "clientes" ? ["clientes", "cliente"] : t === "cliente_rutas" ? ["clientes"] : t === "abonos" ? ["abonos", "creditos"] : [t.replace(/s$/, ""), t],
         );
         qc.invalidateQueries({
           predicate: (q) => {

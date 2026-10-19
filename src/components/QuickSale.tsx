@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { useProductos, registrarVenta, type CartItem, useVentasCliente, useCliente } from "@/lib/data";
+import { registrarVenta, type CartItem, useVentasCliente, useCliente } from "@/lib/data";
+import { useProductosCliente } from "@/lib/listas-precios";
 import { queueVenta } from "@/lib/offline";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,7 +39,7 @@ export function QuickSale({
   const disponibles = (cargas ?? []).filter((c) => c.estado === "en_ruta" && (c.vendedor_id === user?.id || isAdmin));
   const carga = origen === "bodega" ? undefined : disponibles.find((c) => c.id === origen) ?? disponibles.find((c) => c.vendedor_id === user?.id && c.ruta_id === cliente?.ruta_id);
   const inventario = carga ? descontarPendientes(carga, pendientes) : [];
-  const { data: productos } = useProductos(true);
+  const { data: productos, listo: preciosListos, listaNombre, error: preciosError } = useProductosCliente(cliente?.id);
   const { data: ventasPrev } = useVentasCliente(cliente?.id, 1);
   const { data: clienteFull } = useCliente(cliente?.id);
   const [cart, setCart] = useState<Record<string, CartItem>>({});
@@ -61,6 +62,7 @@ export function QuickSale({
   const total = Math.max(0, subtotal - descuento);
 
   function add(p: { id: string; nombre: string; precio: number }, delta: number) {
+    if (!preciosListos) return toast.error("No se han cargado los precios del cliente");
     if (carga && delta > 0 && (cart[p.id]?.cantidad ?? 0) + delta > disponibleCamion(inventario.find((d) => d.producto_id === p.id) ?? { producto_id: p.id, preventa: 0, extra: 0, vendido: 0, devuelto: 0, merma: 0 })) {
       toast.error("No hay más unidades disponibles en este camión");
       return;
@@ -79,6 +81,7 @@ export function QuickSale({
   }
 
   function repeatLast() {
+    if (!preciosListos) return toast.error("No se han cargado los precios del cliente");
     const last = ventasPrev?.[0];
     if (!last?.detalle_ventas?.length) {
       toast.info("Este cliente no tiene compras anteriores");
@@ -86,12 +89,13 @@ export function QuickSale({
     }
     const next: Record<string, CartItem> = {};
     for (const d of last.detalle_ventas) {
-      if (!d.producto_id) continue;
+      const producto = productos?.find((p) => p.id === d.producto_id);
+      if (!d.producto_id || !producto) continue;
       next[d.producto_id] = {
         producto_id: d.producto_id,
         nombre: d.nombre_producto,
-        precio: Number(d.precio_unitario),
-        cantidad: Number(d.cantidad),
+        precio: Number(producto.precio),
+        cantidad: (next[d.producto_id]?.cantidad ?? 0) + Number(d.cantidad),
       };
     }
     setCart(next);
@@ -108,6 +112,7 @@ export function QuickSale({
 
   async function finalizar(metodo: "contado" | "credito") {
     if (!cliente || !user) return;
+    if (!preciosListos) return toast.error("No se han cargado los precios del cliente");
     if (items.length === 0) return toast.error("Agrega al menos un producto");
     if (carga && !validarVentaCamion(inventario, items)) return toast.error("La venta supera las existencias del camión");
     setBusy(true);
@@ -199,6 +204,7 @@ export function QuickSale({
           <div className="min-w-0">
             <DialogTitle className="truncate text-base">Venta rápida</DialogTitle>
             <p className="truncate text-xs text-muted-foreground">{cliente?.nombre}</p>
+            <p className="truncate text-xs text-primary">{listaNombre}</p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />
@@ -229,6 +235,7 @@ export function QuickSale({
         </div>
 
         <div className="grid flex-1 grid-cols-2 gap-2 overflow-y-auto p-3 sm:grid-cols-3">
+          {!preciosListos && <p className="col-span-full text-sm text-muted-foreground">{preciosError ? "No se pudieron cargar los precios del cliente." : "Cargando precios…"}</p>}
           {list.map((p) => {
             const qty = cart[p.id]?.cantidad ?? 0;
             return (
@@ -286,7 +293,7 @@ export function QuickSale({
           <Button
             size="lg"
             className="h-14 w-full gap-2 text-base"
-            disabled={busy || items.length === 0}
+            disabled={busy || !preciosListos || items.length === 0}
             onClick={() => setConfirmOpen(true)}
           >
             Confirmar venta · {formatCRC(total)}

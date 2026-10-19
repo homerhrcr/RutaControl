@@ -347,6 +347,7 @@ export type Database = {
           id: string
           identificacion: string | null
           latitud: number | null
+          lista_precio_id: string | null
           longitud: number | null
           nombre: string
           organization_id: string
@@ -368,6 +369,7 @@ export type Database = {
           id?: string
           identificacion?: string | null
           latitud?: number | null
+          lista_precio_id?: string | null
           longitud?: number | null
           nombre: string
           organization_id?: string
@@ -389,6 +391,7 @@ export type Database = {
           id?: string
           identificacion?: string | null
           latitud?: number | null
+          lista_precio_id?: string | null
           longitud?: number | null
           nombre?: string
           organization_id?: string
@@ -400,6 +403,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "clientes_lista_empresa_fk"
+            columns: ["organization_id", "lista_precio_id"]
+            isOneToOne: false
+            referencedRelation: "listas_precios"
+            referencedColumns: ["organization_id", "id"]
+          },
           {
             foreignKeyName: "clientes_organization_id_fkey"
             columns: ["organization_id"]
@@ -842,6 +852,38 @@ export type Database = {
           },
         ]
       }
+      listas_precios: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listas_precios_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimientos_inventario: {
         Row: {
           cantidad: number
@@ -1117,6 +1159,55 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      precios_productos: {
+        Row: {
+          id: string
+          lista_id: string
+          organization_id: string
+          precio: number
+          producto_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          lista_id: string
+          organization_id?: string
+          precio: number
+          producto_id: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          lista_id?: string
+          organization_id?: string
+          precio?: number
+          producto_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "precios_productos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "precios_productos_organization_id_lista_id_fkey"
+            columns: ["organization_id", "lista_id"]
+            isOneToOne: false
+            referencedRelation: "listas_precios"
+            referencedColumns: ["organization_id", "id"]
+          },
+          {
+            foreignKeyName: "precios_productos_organization_id_producto_id_fkey"
+            columns: ["organization_id", "producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["organization_id", "id"]
           },
         ]
       }

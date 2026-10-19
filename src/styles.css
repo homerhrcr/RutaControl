@@ -162,3 +162,9 @@
   }
   h1, h2 { text-shadow: var(--heading-glow); }
 }
+
+@keyframes pedido-parpadeo {
+  0%, 100% { border-color: hsl(28 95% 55%); box-shadow: 0 0 0 0 hsl(28 95% 55% / 0.6); }
+  50% { border-color: hsl(28 95% 55% / 0.3); box-shadow: 0 0 12px 2px hsl(28 95% 55% / 0.5); }
+}
+.pedido-parpadeo { animation: pedido-parpadeo 1.2s ease-in-out infinite; background-color: hsl(28 95% 55% / 0.08); }

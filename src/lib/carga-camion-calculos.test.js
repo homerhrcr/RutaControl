@@ -15,3 +15,11 @@ test("cierre con 6 vendidos y 2 dañados devuelve 7 a bodega y deja cero a bordo
   expect(disponibleCamion({ ...leche, vendido: 6, merma: 2 })).toBe(7);
   expect(disponibleCamion({ ...leche, vendido: 6, merma: 2, devuelto: 7 })).toBe(0);
 });
+import { reservasPedidos as rp, validarVentaCamion as vv } from "./carga-camion-calculos";
+test("producto reservado para pedido no se puede vender directo", () => {
+  const pedidos = [{ id: "p1", estado: "cargado", pedidos_detalle: [{ producto_id: "a", cantidad: 3 }] }];
+  const det = (exc) => [{ producto_id: "a", preventa: 3, extra: 2, vendido: 0, devuelto: 0, merma: 0, reservado: rp(pedidos, exc).get("a") ?? 0 }];
+  expect(vv(det(), [{ producto_id: "a", cantidad: 2 }])).toBe(true);
+  expect(vv(det(), [{ producto_id: "a", cantidad: 3 }])).toBe(false);
+  expect(vv(det(new Set(["p1"])), [{ producto_id: "a", cantidad: 5 }])).toBe(true);
+});

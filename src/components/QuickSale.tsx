@@ -246,7 +246,7 @@ export function QuickSale({
                   {isFavorite(p.nombre) && <Star className="mb-1 h-3.5 w-3.5 fill-warning text-warning" />}
                   <span className="line-clamp-2 text-sm font-semibold leading-tight">{p.nombre}</span>
                   <span className="mt-1 text-sm font-bold text-primary">{formatCRC(p.precio)}</span>
-                  {carga && <span className="text-xs text-muted-foreground">A bordo: {inventario.filter((d) => d.producto_id === p.id).reduce((s, d) => s + disponibleCamion(d), 0)}</span>}
+                  {carga && <span className="text-xs text-muted-foreground">Disponible: {inventario.filter((d) => d.producto_id === p.id).reduce((s, d) => s + disponibleCamion(d), 0)}</span>}
                 </button>
                 {qty > 0 ? (
                   <div className="mt-2 flex items-center justify-between">

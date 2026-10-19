@@ -74,10 +74,21 @@ function PedidosPage() {
     },
   });
 
+  // El consolidado del camión ignora el filtro de fecha: la ruta puede tardar varios días.
+  const { data: pedidosCarga } = useQuery({
+    queryKey: ["pedidos-carga-consolidado", ruta],
+    queryFn: async () => {
+      let q = supabase.from("pedidos").select("*, pedidos_detalle(*)").in("estado", ["confirmado", "cargado"]);
+      if (ruta !== "all") q = q.eq("ruta_id", ruta);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const carga = useMemo(() => {
     const m = new Map<string, { nombre: string; cantidad: number }>();
-    for (const p of pedidos ?? []) {
-      if (p.estado === "anulado" || p.estado === "entregado" || p.estado === "borrador") continue;
+    for (const p of pedidosCarga ?? []) {
       for (const l of p.pedidos_detalle) {
         const x = m.get(l.producto_id) ?? { nombre: l.nombre_producto, cantidad: 0 };
         x.cantidad += Number(l.cantidad);
@@ -85,7 +96,7 @@ function PedidosPage() {
       }
     }
     return [...m.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
-  }, [pedidos]);
+  }, [pedidosCarga]);
 
   async function cambiarEstado(id: string, estado: string) {
     if (!navigator.onLine) { await queuePedidoEstado([id], estado, user?.id ?? ""); return toast.info("Sin conexión: se actualizará al reconectar"); }

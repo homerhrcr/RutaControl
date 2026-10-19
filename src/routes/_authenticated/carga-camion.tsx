@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useOnline, allOps } from "@/lib/offline";
+import { fechaLegible } from "@/lib/telegram";
 
 export const Route = createFileRoute("/_authenticated/carga-camion")({
   head: () => ({ meta: [

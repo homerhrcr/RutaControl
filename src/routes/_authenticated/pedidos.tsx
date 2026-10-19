@@ -79,7 +79,7 @@ function PedidosPage() {
     queryKey: ["pedidos-carga-consolidado", ruta],
     queryFn: async () => {
       let q = supabase.from("pedidos").select("*, pedidos_detalle(*)").in("estado", ["confirmado", "cargado"]);
-      if (ruta !== "all") q = q.eq("ruta_id", ruta);
+      if (ruta !== "all") q = q.or(`ruta_id.eq.${ruta},ruta_id.is.null`);
       const { data, error } = await q;
       if (error) throw error;
       return data;

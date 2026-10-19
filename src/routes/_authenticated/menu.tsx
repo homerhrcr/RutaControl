@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
-  Map,
   Package,
   CreditCard,
   Wallet,
@@ -38,7 +37,6 @@ export const Route = createFileRoute("/_authenticated/menu")({
 const ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/carga-camion", label: "Carga de Camión", icon: Truck },
-  { to: "/mapa-rutas", label: "Mapa Rutas", icon: Map },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/cobranza", label: "Crédito y Cobros", icon: CreditCard },
   { to: "/gastos", label: "Gastos", icon: Wallet },

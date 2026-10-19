@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Ordenar clientes con arrastre compatible con tablet y posición escrita; conservar flechas y guardado persistente.
+- [x] Ordenar clientes con arrastre compatible con tablet y posición escrita; flechas y guardado persistente conservados. Tres pruebas aprobadas; arrastre de mouse/táctil y guardado/lectura comprobados con sesión real.
 - [x] Listas de precios fijos por clasificación de cliente: Administración → Precios, asignación en Clientes, venta rápida, preventa y catálogo Telegram; caché para uso offline y precios históricos conservados. Doce pruebas aprobadas; creación/asignación/pedido guardado y confirmación de venta verificados con sesión real. Prueba real en Telegram pendiente de publicar y contar con cliente vinculado.
 - [x] Carga de Camión: subinventario independiente, preventas más extras, ventas desde camión y cierre con sobrantes; carga, venta idempotente y retorno verificados con sesión real, seis pruebas aprobadas. Cargas y cierres requieren conexión; ventas usan la cola offline.
 - [x] Telegram: bot RutaDirectoBot conectado, vinculación voluntaria, confirmaciones y tiquetes, conversación y protecciones implementadas; enlace y controles verificados con sesión real.

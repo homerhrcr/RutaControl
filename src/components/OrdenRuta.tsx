@@ -32,7 +32,7 @@ export function OrdenRuta({ clientes, disabled, onMove }: {
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={clientes.map((c) => c.id)} strategy={rectSortingStrategy}>
-        <div className="grid gap-1.5 md:grid-cols-2">
+        <div className="grid gap-1.5 lg:grid-cols-2">
           {clientes.map((cliente, index) => (
             <ClienteSortable key={cliente.id} cliente={cliente} posicion={index + 1} total={clientes.length} disabled={disabled} onMove={onMove} />
           ))}

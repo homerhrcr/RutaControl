@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRutas, useClientes, useInvalidate, guardarOrdenRuta } from "@/lib/data";
 import { useSolicitudesDevolucion } from "@/lib/solicitudes-devolucion";
@@ -71,6 +71,7 @@ export function RutaPage() {
   const [orderList, setOrderList] = useState<any[] | null>(null);
   const [saving, setSaving] = useState(false);
   const invalidate = useInvalidate();
+  const queryClient = useQueryClient();
 
   const { data: clientes } = useClientes(rutaId === "all" ? undefined : rutaId);
 
@@ -205,6 +206,11 @@ export function RutaPage() {
         })
         .filter(Boolean) as { id: string; orden: number }[];
       await guardarOrdenRuta(items);
+      const posiciones = new Map(items.map((item) => [item.id, item.orden]));
+      queryClient.setQueriesData<any[]>({ queryKey: ["clientes"] }, (prev) => prev?.map((cliente) => ({
+        ...cliente,
+        cliente_rutas: (cliente.cliente_rutas ?? []).map((cr: any) => ({ ...cr, orden: posiciones.get(cr.id) ?? cr.orden })),
+      })));
       toast.success("Orden de entrega guardado");
       setOrdenMode(false);
       setOrderList(null);

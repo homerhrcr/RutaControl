@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -51,8 +51,11 @@ function ClienteSortable({ cliente, posicion, total, disabled, onMove }: {
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: cliente.id, disabled });
   const [numero, setNumero] = useState(String(posicion));
+  const editado = useRef(false);
   useEffect(() => setNumero(String(posicion)), [posicion]);
   function confirmar() {
+    if (!editado.current) return;
+    editado.current = false;
     const value = Number(numero);
     if (numero.trim() && Number.isInteger(value)) onMove(cliente.id, value);
     setNumero(String(posicion));
@@ -67,10 +70,10 @@ function ClienteSortable({ cliente, posicion, total, disabled, onMove }: {
         </Button>
         <Input type="number" inputMode="numeric" min={1} max={total} step={1} value={numero} disabled={disabled}
           aria-label={`Posición de ${cliente.nombre}`} className="h-8 w-14 shrink-0 px-1 text-center text-xs font-bold"
-          onChange={(e) => setNumero(e.target.value)} onBlur={confirmar}
+          onChange={(e) => { editado.current = true; setNumero(e.target.value); }} onBlur={confirmar}
           onKeyDown={(e) => {
             if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); }
-            if (e.key === "Escape") { setNumero(String(posicion)); }
+            if (e.key === "Escape") { editado.current = false; setNumero(String(posicion)); }
           }} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold leading-tight">{cliente.nombre}</p>

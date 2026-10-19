@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Carga de Camión: subinventario independiente, preventas más extras, ventas desde camión y cierre con sobrantes; validar flujo completo.
 - [x] Telegram: bot RutaDirectoBot conectado, vinculación voluntaria, confirmaciones y tiquetes, conversación y protecciones implementadas; enlace y controles verificados con sesión real.
 - [ ] Activar recepción y probar envío/recepción real de Telegram — bloqueado: receptor público devuelve 404 hasta desplegar los cambios; un cliente debe iniciar el bot mediante su enlace para la prueba real.
 - [x] Selección en cascada de provincia, cantón y distrito en clientes; catálogo local, siete pruebas y guardado/lectura verificados.

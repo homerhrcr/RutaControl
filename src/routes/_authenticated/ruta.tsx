@@ -10,6 +10,8 @@ import { QuickSale } from "@/components/QuickSale";
 import { AbonoDialog } from "@/components/AbonoDialog";
 import { HistorialCliente } from "@/components/HistorialCliente";
 import { MapaRutas } from "@/components/MapaRutas";
+import { OrdenRuta } from "@/components/OrdenRuta";
+import { moverAPosicion } from "@/lib/orden-ruta";
 import { EvidenciaButton } from "@/components/EvidenciaButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +29,6 @@ import {
   Wallet,
   Users,
   History,
-  ArrowUp,
-  ArrowDown,
   ListOrdered,
   Check,
   Navigation,
@@ -190,15 +190,8 @@ export function RutaPage() {
     setOrdenMode(true);
   }
 
-  function moveItem(idx: number, dir: -1 | 1) {
-    setOrderList((prev) => {
-      if (!prev) return prev;
-      const next = [...prev];
-      const j = idx + dir;
-      if (j < 0 || j >= next.length) return prev;
-      [next[idx], next[j]] = [next[j], next[idx]];
-      return next;
-    });
+  function moveItem(id: string, posicion: number) {
+    setOrderList((prev) => prev ? moverAPosicion(prev, id, posicion) : prev);
   }
 
   async function saveOrden() {
@@ -307,7 +300,6 @@ export function RutaPage() {
                 >
                   Cancelar
                 </Button>
-                <span className="text-xs text-muted-foreground">Usa las flechas para reordenar</span>
               </>
             )}
           </div>
@@ -331,34 +323,7 @@ export function RutaPage() {
 
         {/* modo ordenar */}
         {vista === "lista" && ordenMode && orderList && (
-          <div className="grid gap-1.5 md:grid-cols-2">
-            {orderList.map((c, idx) => (
-              <Card key={c.id} className="flex items-center gap-1.5 p-1.5">
-                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
-                  {idx + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold leading-tight">{c.nombre}</p>
-                  <p className="truncate text-[11px] leading-tight text-muted-foreground">{c.distrito || c.direccion || "Sin dirección"}</p>
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button variant="outline" size="icon" className="h-7 w-7" disabled={idx === 0} onClick={() => moveItem(idx, -1)} aria-label="Subir">
-                    <ArrowUp className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
-                    disabled={idx === orderList.length - 1}
-                    onClick={() => moveItem(idx, 1)}
-                    aria-label="Bajar"
-                  >
-                    <ArrowDown className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+          <OrdenRuta clientes={orderList} disabled={saving} onMove={moveItem} />
         )}
 
         {!ordenMode && vista === "lista" && (

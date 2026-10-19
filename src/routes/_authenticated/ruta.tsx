@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickSale } from "@/components/QuickSale";
 import { AbonoDialog } from "@/components/AbonoDialog";
-import { HistorialCliente } from "@/components/HistorialCliente";
+import { MapaRutas } from "@/components/MapaRutas";
 import { EvidenciaButton } from "@/components/EvidenciaButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

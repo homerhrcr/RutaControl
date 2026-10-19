@@ -167,7 +167,7 @@ function ClientesPage() {
 
     setBusy(false);
     toast.success(editId ? "Cliente actualizado" : "Cliente registrado");
-    invalidate(["clientes"]);
+    invalidate(["clientes", "cliente"]);
     setOpen(false);
   }
 

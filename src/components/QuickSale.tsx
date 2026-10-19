@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { registrarVenta, type CartItem, useVentasCliente, useCliente } from "@/lib/data";
 import { useProductosCliente } from "@/lib/listas-precios";
 import { queueVenta } from "@/lib/offline";
@@ -50,6 +50,15 @@ export function QuickSale({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [metodoSel, setMetodoSel] = useState<"contado" | "credito">("contado");
 
+  useEffect(() => {
+    setCart({});
+    setDescuento(0);
+    setSearch("");
+    setConfirmOpen(false);
+    setMetodoSel("contado");
+    setOrigen("");
+  }, [cliente?.id]);
+
   const list = useMemo(() => {
     const arr = (productos ?? []).filter((p) =>
       p.nombre.toLowerCase().includes(search.toLowerCase()),
@@ -74,7 +83,7 @@ export function QuickSale({
       if (next <= 0) {
         delete copy[p.id];
       } else {
-        copy[p.id] = { producto_id: p.id, nombre: p.nombre, precio: Number(p.precio), cantidad: next };
+        copy[p.id] = { producto_id: p.id, nombre: p.nombre, precio: prev[p.id]?.precio ?? Number(p.precio), cantidad: next };
       }
       return copy;
     });

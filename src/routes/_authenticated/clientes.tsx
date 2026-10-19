@@ -34,6 +34,7 @@ import { leerCoordenadas } from "@/lib/coordenadas";
 import { DireccionCliente } from "@/components/DireccionCliente";
 import { normalizarDireccion, errorDireccion } from "@/lib/division-territorial";
 import { TelegramCliente } from "@/components/TelegramCliente";
+import { useListasPrecios } from "@/lib/listas-precios";
 
 
 export const Route = createFileRoute("/_authenticated/clientes")({
@@ -61,6 +62,7 @@ const empty = {
   tipo_identificacion: "",
   identificacion: "",
   correo_fe: "",
+  lista_precio_id: "",
   ruta_ids: [] as string[],
   latitud: "",
   longitud: "",
@@ -70,6 +72,7 @@ function ClientesPage() {
   const { isAdmin } = useAuth();
   const { data: clientes } = useClientes();
   const { data: rutas } = useRutas();
+  const { data: listas = [] } = useListasPrecios();
   const invalidate = useInvalidate();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -113,6 +116,7 @@ function ClientesPage() {
       tipo_identificacion: c.tipo_identificacion ?? "",
       identificacion: c.identificacion ?? "",
       correo_fe: c.correo_fe ?? "",
+      lista_precio_id: c.lista_precio_id ?? "",
       ruta_ids: (c.cliente_rutas ?? []).map((cr: any) => cr.ruta_id),
       latitud: c.latitud != null ? String(c.latitud) : "",
       longitud: c.longitud != null ? String(c.longitud) : "",
@@ -130,7 +134,7 @@ function ClientesPage() {
     catch (e) { return toast.error(e instanceof Error ? e.message : "Coordenadas inválidas"); }
     setBusy(true);
     const { ruta_ids, ...rest } = form;
-    const payload = { ...rest, latitud: ubicacion?.lat ?? null, longitud: ubicacion?.lng ?? null, ruta_id: ruta_ids[0] ?? null, tipo_identificacion: rest.tipo_identificacion || null, identificacion: rest.identificacion || null, correo_fe: rest.correo_fe || null };
+    const payload = { ...rest, lista_precio_id: rest.lista_precio_id || null, latitud: ubicacion?.lat ?? null, longitud: ubicacion?.lng ?? null, ruta_id: ruta_ids[0] ?? null, tipo_identificacion: rest.tipo_identificacion || null, identificacion: rest.identificacion || null, correo_fe: rest.correo_fe || null };
 
     let clienteId = editId;
     if (editId) {
@@ -163,7 +167,7 @@ function ClientesPage() {
 
     setBusy(false);
     toast.success(editId ? "Cliente actualizado" : "Cliente registrado");
-    invalidate(["clientes"]);
+    invalidate(["clientes", "cliente"]);
     setOpen(false);
   }
 
@@ -193,6 +197,7 @@ function ClientesPage() {
                   <p className="flex items-center gap-1 truncate text-[11px] leading-tight text-muted-foreground">
                     <MapPin className="h-3 w-3 shrink-0" />
                     <span className="truncate">{c.distrito || c.direccion || "—"}</span>
+                    {c.lista_precio_id && <span className="truncate text-primary">· {listas.find((l) => l.id === c.lista_precio_id)?.nombre}</span>}
                     {((c as any).cliente_rutas ?? []).map((cr: any) => (
                       <Badge key={cr.ruta_id} variant="secondary" className="h-4 shrink-0 px-1 text-[9px]">
                         {cr.rutas?.nombre}
@@ -248,6 +253,12 @@ function ClientesPage() {
             </Field>
             <Field label="Teléfono">
               <Input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+            </Field>
+            <Field label="Clasificación / lista de precios">
+              <select aria-label="Clasificación / lista de precios" className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.lista_precio_id} onChange={(e) => setForm({ ...form, lista_precio_id: e.target.value })}>
+                <option value="">Precio base</option>
+                {listas.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+              </select>
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Tipo de cédula">

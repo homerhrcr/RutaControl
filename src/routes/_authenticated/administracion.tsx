@@ -13,6 +13,7 @@ import { AuditoriaPage } from "./auditoria";
 import { Map } from "lucide-react";
 import { EmpresasAdmin } from "@/components/EmpresasAdmin";
 import { EmpresaPerfil } from "@/components/EmpresaPerfil";
+import { ListasPrecios } from "@/components/ListasPrecios";
 
 export const Route = createFileRoute("/_authenticated/administracion")({
   head: () => ({
@@ -38,10 +39,11 @@ function AdministracionPage() {
       <PageHeader title="Administración" subtitle="Empresa, usuarios, auditoría y rutas" />
       <div className="p-4 md:p-6">
         <Tabs defaultValue="empresa">
-          <TabsList>
+          <TabsList className="h-auto w-full flex-wrap justify-start gap-1">
             <TabsTrigger value="empresa">Empresa</TabsTrigger>
             <TabsTrigger value="usuarios">Usuarios</TabsTrigger>
             <TabsTrigger value="rutas">Rutas</TabsTrigger>
+            <TabsTrigger value="precios">Precios</TabsTrigger>
             <TabsTrigger value="auditoria">Auditoría</TabsTrigger>
             <TabsTrigger value="fiscal">Facturación</TabsTrigger>
             {esSuperadmin && <TabsTrigger value="empresas">Empresas</TabsTrigger>}
@@ -49,6 +51,7 @@ function AdministracionPage() {
           <TabsContent value="empresa"><EmpresaPerfil /></TabsContent>
           <TabsContent value="usuarios" className="-mx-4 md:-mx-6"><UsuariosPage /></TabsContent>
           <TabsContent value="rutas"><RutasAdmin /></TabsContent>
+          <TabsContent value="precios"><ListasPrecios /></TabsContent>
           <TabsContent value="auditoria" className="-mx-4 md:-mx-6"><AuditoriaPage /></TabsContent>
           <TabsContent value="fiscal"><ConfigFiscal /></TabsContent>
           {esSuperadmin && <TabsContent value="empresas"><EmpresasAdmin /></TabsContent>}

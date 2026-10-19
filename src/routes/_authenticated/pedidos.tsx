@@ -225,14 +225,14 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId }: { open: boolean; 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Cliente</Label>
-              <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={cliente} onChange={(e) => setCliente(e.target.value)}>
+              <select aria-label="Cliente del pedido" className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={cliente} onChange={(e) => { setCliente(e.target.value); setItems([]); }}>
                 <option value="">Seleccionar…</option>
                 {(clientes ?? []).map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
               </select>
             </div>
             <div className="space-y-1"><Label className="text-xs">Entrega</Label><Input type="date" value={f} onChange={(e) => setF(e.target.value)} /></div>
           </div>
-          <ItemsEditor items={items} onChange={setItems} nuevo={(b) => b} />
+          <ItemsEditor clienteId={cliente} items={items} onChange={setItems} nuevo={(b) => b} />
           <Textarea placeholder="Notas" value={notas} onChange={(e) => setNotas(e.target.value)} />
           <Button className="w-full" size="lg" disabled={busy} onClick={guardar}>{busy ? "Guardando…" : `Guardar · ${formatCRC(total)}`}</Button>
         </div>
@@ -295,7 +295,7 @@ function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; onClose:
         <DialogHeader><DialogTitle>Entregar a {pedido.clientes?.nombre}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">Ajuste las cantidades si se entregó menos o más de lo pedido.</p>
-          <ItemsEditor items={items} onChange={setItems} nuevo={(b) => b} />
+          <ItemsEditor clienteId={pedido.cliente_id} items={items} onChange={setItems} nuevo={(b) => b} />
           <div className="grid grid-cols-2 gap-2">
             <Button variant={metodo === "contado" ? "default" : "outline"} onClick={() => setMetodo("contado")}>Contado</Button>
             <Button variant={metodo === "credito" ? "default" : "outline"} onClick={() => setMetodo("credito")}>Crédito</Button>

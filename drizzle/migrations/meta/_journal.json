@@ -57,6 +57,13 @@
       "when": 1792437862879,
       "tag": "0007_reservar_preventa_camion",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792441494142,
+      "tag": "0008_listas_precios_clientes",
+      "breakpoints": true
     }
   ]
 }

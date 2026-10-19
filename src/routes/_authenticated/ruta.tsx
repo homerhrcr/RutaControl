@@ -73,6 +73,16 @@ export function RutaPage() {
   // saldos por cliente
   const { data: solicitudesDev } = useSolicitudesDevolucion();
   const conDevolucion = useMemo(() => new Set((solicitudesDev ?? []).map((s) => s.cliente_id)), [solicitudesDev]);
+  // clientes con pedidos por entregar (cualquier fecha)
+  const { data: pedidosPend } = useQuery({
+    queryKey: ["pedidos", "pendientes-ruta"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("pedidos").select("cliente_id").not("estado", "in", "(entregado,anulado)");
+      if (error) throw error;
+      return (data ?? []).map((p) => p.cliente_id).filter(Boolean) as string[];
+    },
+  });
+  const conPedido = useMemo(() => new Set(pedidosPend ?? []), [pedidosPend]);
   const { data: saldos } = useQuery({
     queryKey: ["saldos-map"],
     queryFn: async () => {
@@ -348,7 +358,8 @@ export function RutaPage() {
                   className={cn(
                     "p-1.5",
                     esSiguiente && "border-primary ring-1 ring-primary",
-                    visitado && "opacity-60",
+                    visitado && !conPedido.has(c.id) && "opacity-60",
+                    conPedido.has(c.id) && "pedido-parpadeo border-2",
                   )}
                 >
                   <div className="flex items-center gap-1.5">
@@ -362,6 +373,9 @@ export function RutaPage() {
                         {esSiguiente && <Navigation className="h-3 w-3 shrink-0 text-primary" />}
                         <span className="truncate">{c.nombre}</span>
                         {visitado && <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-accent" />}
+                        {conPedido.has(c.id) && (
+                          <span className="shrink-0 rounded bg-[hsl(28_95%_55%)]/20 px-1 text-[10px] font-bold text-[hsl(28_95%_55%)]">📦 Pedido</span>
+                        )}
                         {conDevolucion.has(c.id) && (
                           <span title="Tiene solicitud de devolución pendiente" className="shrink-0 rounded bg-warning/20 px-1 text-[10px] font-bold text-warning">↩️ Devolución</span>
                         )}

@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCargasCamion, usePendientesCamion, descontarPendientes } from "@/lib/carga-camion";
+import { validarVentaCamion } from "@/lib/carga-camion-calculos";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,13 +96,7 @@ function PedidosPage() {
   }
 
   async function marcarCargados() {
-    const ids = (pedidos ?? []).filter((p) => p.estado === "confirmado").map((p) => p.id);
-    if (!ids.length) return;
-    if (!navigator.onLine) { await queuePedidoEstado(ids, "cargado", user?.id ?? ""); return toast.info("Sin conexión: se actualizará al reconectar"); }
-    const { error } = await supabase.from("pedidos").update({ estado: "cargado" }).in("id", ids);
-    if (error) return toast.error(error.message);
-    toast.success(`${ids.length} pedidos marcados como cargados`);
-    invalidate(["pedidos"]);
+    return toast.info("Registre la salida en Carga de Camión para trasladar inventario");
   }
 
   return (
@@ -147,7 +143,7 @@ function PedidosPage() {
                   <div className="flex flex-wrap gap-2">
                     {p.estado === "borrador" && <Button size="sm" variant="secondary" onClick={() => cambiarEstado(p.id, "confirmado")}>Confirmar</Button>}
                     <Button size="sm" onClick={() => setEntregar(p)}><CheckCircle2 className="mr-1 h-4 w-4" />Entregar y facturar</Button>
-                    <Button size="sm" variant="ghost" onClick={() => cambiarEstado(p.id, "anulado")}><XCircle className="mr-1 h-4 w-4" />Anular</Button>
+                    <Button size="sm" variant="ghost" disabled={!!p.carga_id} onClick={() => cambiarEstado(p.id, "anulado")}><XCircle className="mr-1 h-4 w-4" />Anular</Button>
                   </div>
                 )}
               </Card>
@@ -165,7 +161,7 @@ function PedidosPage() {
             </Card>
             <div className="mt-3 flex gap-2">
               <Button variant="secondary" onClick={() => window.print()}>Imprimir</Button>
-              <Button onClick={marcarCargados}><Truck className="mr-1 h-4 w-4" />Marcar todo como cargado</Button>
+              <Button asChild><Link to="/carga-camion"><Truck className="mr-1 h-4 w-4" />Carga de Camión</Link></Button>
             </div>
           </TabsContent>
         </Tabs>
@@ -238,6 +234,8 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId }: { open: boolean; 
 }
 
 function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; onClose: () => void; vendedorId: string }) {
+  const { data: cargas } = useCargasCamion();
+  const { data: pendientes = [] } = usePendientesCamion();
   const invalidate = useInvalidate();
   const [items, setItems] = useState<LineaItem[]>(
     pedido.pedidos_detalle.map((l: any) => ({ producto_id: l.producto_id, nombre: l.nombre_producto, precio: Number(l.precio_unitario), cantidad: Number(l.cantidad) })),
@@ -249,8 +247,10 @@ function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; onClose:
   async function confirmar() {
     const entregados = items.filter((i) => i.cantidad > 0);
     if (!entregados.length) return toast.error("No hay productos entregados");
+    const carga = cargas?.find((c) => c.id === pedido.carga_id);
+    if (pedido.carga_id && (!carga || !validarVentaCamion(descontarPendientes(carga, pendientes), entregados))) return toast.error("Revise las existencias disponibles del camión");
     setBusy(true);
-    const ventaP = { id: pedido.venta_id ?? pedido.id, cliente_id: pedido.cliente_id, ruta_id: pedido.ruta_id, vendedor_id: vendedorId, items: entregados, descuento: 0, metodo };
+    const ventaP = { id: pedido.venta_id ?? pedido.id, carga_id: pedido.carga_id ?? null, cliente_id: pedido.cliente_id, ruta_id: pedido.ruta_id, vendedor_id: vendedorId, items: entregados, descuento: 0, metodo };
     if (!navigator.onLine) {
       await queueEntrega(pedido.id, ventaP);
       setBusy(false);
@@ -261,6 +261,7 @@ function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; onClose:
       // El id de la venta es estable por pedido: si se reintenta, no se duplica.
       const venta = await registrarVenta({
         id: pedido.venta_id ?? pedido.id,
+        carga_id: pedido.carga_id ?? null,
         cliente_id: pedido.cliente_id,
         ruta_id: pedido.ruta_id,
         vendedor_id: vendedorId,
@@ -271,7 +272,7 @@ function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; onClose:
       const { error } = await supabase.from("pedidos").update({ estado: "entregado", venta_id: venta.id }).eq("id", pedido.id);
       if (error) throw error;
       toast.success("Pedido entregado y facturado");
-      invalidate(["pedidos", "ventas", "productos", "creditos", "creditos-pendientes"]);
+      invalidate(["pedidos", "ventas", "productos", "creditos", "creditos-pendientes", "cargas_camion", "ventas-camion"]);
       onClose();
     } catch (e: any) {
       toast.error(e.message ?? "No se pudo entregar");

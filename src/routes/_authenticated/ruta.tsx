@@ -168,7 +168,7 @@ export function RutaPage() {
   }, [ordenados, visitadosSet, rutaId]);
 
   function onSaleDone() {
-    invalidate(["saldos-map", "resumen-dia", "visitados-hoy", "ventas-cliente", "creditos-pendientes"]);
+    invalidate(["saldos-map", "resumen-dia", "visitados-hoy", "ventas-cliente", "creditos-pendientes", "cargas_camion", "ventas-camion", "productos"]);
   }
 
   function startOrden() {
@@ -382,7 +382,7 @@ export function RutaPage() {
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
-                      <Button size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => setSaleClient(c)} title="Vender">
+                      <Button size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => setSaleClient({ ...c, ruta_id: rutaId === "all" ? c.ruta_id : rutaId })} title="Vender">
                         <Zap className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Vender</span>
                       </Button>
                       <Button

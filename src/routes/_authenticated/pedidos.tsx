@@ -95,10 +95,6 @@ function PedidosPage() {
     invalidate(["pedidos"]);
   }
 
-  async function marcarCargados() {
-    return toast.info("Registre la salida en Carga de Camión para trasladar inventario");
-  }
-
   return (
     <div>
       <PageHeader title="Preventa" subtitle="Pedidos previos a la entrega" action={<Button onClick={() => setNuevo(true)}><Plus className="mr-1 h-4 w-4" />Pedido</Button>} />

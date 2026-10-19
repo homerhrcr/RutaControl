@@ -264,10 +264,28 @@ export function RutaPage() {
               {r.nombre}
             </Button>
           ))}
+          <div className="ml-auto flex items-center gap-1 rounded-lg border p-1">
+            <Button
+              size="sm"
+              variant={vista === "lista" ? "default" : "ghost"}
+              className="h-7 px-2.5 text-xs"
+              onClick={() => setVista("lista")}
+            >
+              <List className="mr-1 h-3.5 w-3.5" /> Lista
+            </Button>
+            <Button
+              size="sm"
+              variant={vista === "mapa" ? "default" : "ghost"}
+              className="h-7 px-2.5 text-xs"
+              onClick={() => setVista("mapa")}
+            >
+              <Map className="mr-1 h-3.5 w-3.5" /> Mapa
+            </Button>
+          </div>
         </div>
 
         {/* control de orden de entrega (solo en una ruta) */}
-        {rutaId !== "all" && (
+        {vista === "lista" && rutaId !== "all" && (
           <div className="flex flex-wrap items-center gap-2">
             {!ordenMode ? (
               <Button variant="outline" size="sm" className="gap-1.5" onClick={startOrden}>

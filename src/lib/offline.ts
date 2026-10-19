@@ -23,6 +23,7 @@ export function useOnline(): boolean {
 
 export interface VentaParams {
   id?: string;
+  carga_id?: string | null;
   cliente_id: string;
   cliente_nombre?: string;
   ruta_id: string | null;

@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickSale } from "@/components/QuickSale";
 import { AbonoDialog } from "@/components/AbonoDialog";
+import { HistorialCliente } from "@/components/HistorialCliente";
 import { MapaRutas } from "@/components/MapaRutas";
 import { EvidenciaButton } from "@/components/EvidenciaButton";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,8 @@ import {
   ListOrdered,
   Check,
   Navigation,
+  List,
+  Map,
   CheckCircle2,
 } from "lucide-react";
 
@@ -64,6 +67,7 @@ export function RutaPage() {
   const [abonoClient, setAbonoClient] = useState<any | null>(null);
   const [histClient, setHistClient] = useState<any | null>(null);
   const [ordenMode, setOrdenMode] = useState(false);
+  const [vista, setVista] = useState<"lista" | "mapa">("lista");
   const [orderList, setOrderList] = useState<any[] | null>(null);
   const [saving, setSaving] = useState(false);
   const invalidate = useInvalidate();

@@ -206,7 +206,7 @@ export function RutaPage() {
         })
         .filter(Boolean) as { id: string; orden: number }[];
       await guardarOrdenRuta(items);
-      const posiciones = new Map(items.map((item) => [item.id, item.orden]));
+      const posiciones = new globalThis.Map(items.map((item) => [item.id, item.orden]));
       queryClient.setQueriesData<any[]>({ queryKey: ["clientes"] }, (prev) => prev?.map((cliente) => ({
         ...cliente,
         cliente_rutas: (cliente.cliente_rutas ?? []).map((cr: any) => ({ ...cr, orden: posiciones.get(cr.id) ?? cr.orden })),

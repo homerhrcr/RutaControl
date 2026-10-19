@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { QuickSale } from "@/components/QuickSale";
 import { AbonoDialog } from "@/components/AbonoDialog";
 import { HistorialCliente } from "@/components/HistorialCliente";
+import { MapaRutas } from "@/components/MapaRutas";
 import { EvidenciaButton } from "@/components/EvidenciaButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,8 @@ import {
   ListOrdered,
   Check,
   Navigation,
+  List,
+  Map,
   CheckCircle2,
 } from "lucide-react";
 
@@ -64,6 +67,7 @@ export function RutaPage() {
   const [abonoClient, setAbonoClient] = useState<any | null>(null);
   const [histClient, setHistClient] = useState<any | null>(null);
   const [ordenMode, setOrdenMode] = useState(false);
+  const [vista, setVista] = useState<"lista" | "mapa">("lista");
   const [orderList, setOrderList] = useState<any[] | null>(null);
   const [saving, setSaving] = useState(false);
   const invalidate = useInvalidate();
@@ -260,10 +264,28 @@ export function RutaPage() {
               {r.nombre}
             </Button>
           ))}
+          <div className="ml-auto flex items-center gap-1 rounded-lg border p-1">
+            <Button
+              size="sm"
+              variant={vista === "lista" ? "default" : "ghost"}
+              className="h-7 px-2.5 text-xs"
+              onClick={() => setVista("lista")}
+            >
+              <List className="mr-1 h-3.5 w-3.5" /> Lista
+            </Button>
+            <Button
+              size="sm"
+              variant={vista === "mapa" ? "default" : "ghost"}
+              className="h-7 px-2.5 text-xs"
+              onClick={() => setVista("mapa")}
+            >
+              <Map className="mr-1 h-3.5 w-3.5" /> Mapa
+            </Button>
+          </div>
         </div>
 
         {/* control de orden de entrega (solo en una ruta) */}
-        {rutaId !== "all" && (
+        {vista === "lista" && rutaId !== "all" && (
           <div className="flex flex-wrap items-center gap-2">
             {!ordenMode ? (
               <Button variant="outline" size="sm" className="gap-1.5" onClick={startOrden}>
@@ -292,7 +314,7 @@ export function RutaPage() {
         )}
 
         {/* siguiente cliente sugerido */}
-        {!ordenMode && rutaId !== "all" && siguienteId && (
+        {vista === "lista" && !ordenMode && rutaId !== "all" && siguienteId && (
           <div className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-2 py-1 text-xs">
             <Navigation className="h-3 w-3 shrink-0 text-primary" />
             <span className="shrink-0 font-medium">Siguiente:</span>
@@ -300,7 +322,7 @@ export function RutaPage() {
           </div>
         )}
 
-        {!ordenMode && (
+        {vista === "lista" && !ordenMode && (
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder="Buscar cliente…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -308,7 +330,7 @@ export function RutaPage() {
         )}
 
         {/* modo ordenar */}
-        {ordenMode && orderList && (
+        {vista === "lista" && ordenMode && orderList && (
           <div className="grid gap-1.5 md:grid-cols-2">
             {orderList.map((c, idx) => (
               <Card key={c.id} className="flex items-center gap-1.5 p-1.5">
@@ -339,7 +361,7 @@ export function RutaPage() {
           </div>
         )}
 
-        {!ordenMode && (
+        {!ordenMode && vista === "lista" && (
           <div className="grid gap-1.5 md:grid-cols-2">
             {filtered.map((c, idx) => {
               const saldo = saldos?.[c.id] ?? 0;
@@ -432,6 +454,8 @@ export function RutaPage() {
           </div>
         )}
       </div>
+
+      {vista === "mapa" && <MapaRutas rutaInicial={rutaId === "all" ? "todas" : rutaId} />}
 
       <QuickSale cliente={saleClient} open={!!saleClient} onClose={() => setSaleClient(null)} onDone={onSaleDone} />
       <AbonoDialog cliente={abonoClient} open={!!abonoClient} onClose={() => setAbonoClient(null)} onDone={onSaleDone} />

@@ -12,7 +12,6 @@ import truckImg from "@/assets/sidebar-truck.jpg";
 import logo from "@/assets/logo-ruta-directo.jpg.asset.json";
 import {
   LayoutDashboard,
-  Map as MapIcon,
   Truck,
   Users,
   Package,
@@ -48,7 +47,6 @@ const NAV: NavItem[] = [
   { to: "/carga-camion", label: "Carga de Camión", icon: Truck },
   { to: "/devoluciones", label: "Devoluciones", icon: Undo2 },
   { to: "/clientes", label: "Clientes", icon: Users, mobile: true },
-  { to: "/mapa-rutas", label: "Mapa Rutas", icon: MapIcon },
   { to: "/cobranza", label: "Crédito y Cobros", icon: HandCoins, mobile: true },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/gastos", label: "Gastos", icon: Wallet },

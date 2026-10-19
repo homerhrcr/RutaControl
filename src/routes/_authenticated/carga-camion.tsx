@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useOnline, allOps } from "@/lib/offline";
+import { fechaLegible } from "@/lib/telegram";
 
 export const Route = createFileRoute("/_authenticated/carga-camion")({
   head: () => ({ meta: [
@@ -87,8 +88,9 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     if (e) throw e;
     return perfiles ?? [];
   } });
-  const { data: pedidos, isFetching } = useQuery({ queryKey: ["pedidos-carga", ruta, fecha], enabled: !!ruta && !!fecha, queryFn: async () => {
-    const { data, error } = await supabase.from("pedidos").select("*, clientes(nombre), pedidos_detalle(*)").eq("ruta_id", ruta).eq("fecha_entrega", fecha).in("estado", ["confirmado", "cargado"]).is("carga_id", null).order("created_at");
+  const { data: pedidos, isFetching } = useQuery({ queryKey: ["pedidos-carga", ruta], enabled: !!ruta, queryFn: async () => {
+    // Todos los pedidos pendientes de la ruta, sin importar la fecha: la ruta puede tardar varios días.
+    const { data, error } = await supabase.from("pedidos").select("*, clientes(nombre), pedidos_detalle(*)").eq("ruta_id", ruta).in("estado", ["confirmado", "cargado"]).is("carga_id", null).order("fecha_entrega").order("created_at");
     if (error) throw error;
     return data;
   } });
@@ -107,7 +109,7 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     try {
       const { data, error } = await supabase.rpc("abrir_carga_camion", { p: { id, ruta_id: ruta, fecha, vendedor_id: vendedor, vehiculo, notas, pedidos: seleccionados, extras: extras.map((e) => ({ producto_id: e.producto_id, cantidad: e.cantidad })) } });
       if (error) throw error;
-      await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+      await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga", "pedidos-carga-consolidado"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
       toast.success("Camión cargado · Inventario trasladado desde bodega");
       onDone(data);
     } catch (e) { toast.error(e instanceof Error ? e.message : String((e as { message?: string }).message ?? "No se pudo cargar")); } finally { setBusy(false); }
@@ -117,7 +119,7 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
       <div className="space-y-1"><Label htmlFor="carga-vehiculo">Vehículo / placa</Label><Input id="carga-vehiculo" value={vehiculo} onChange={(e) => setVehiculo(e.target.value)} /></div>
       {isAdmin && <div className="space-y-1"><Label htmlFor="carga-vendedor">Vendedor responsable</Label><select id="carga-vendedor" className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={vendedor} onChange={(e) => setVendedor(e.target.value)}><option value={user?.id}>Yo</option>{miembros?.filter((m) => m.id !== user?.id).map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}</select></div>}
     </div>
-    <section className="space-y-2 border-t pt-3"><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">Pedidos de preventa</h3><Button size="sm" variant="ghost" onClick={() => setSeleccionados((pedidos ?? []).map((p) => p.id))}>Seleccionar todos</Button></div>{isFetching && <p className="text-sm text-muted-foreground">Cargando pedidos…</p>}{ruta && !isFetching && !pedidos?.length && <p className="text-sm text-muted-foreground">No hay pedidos pendientes para esta ruta y fecha.</p>}{pedidos?.map((p) => <label key={p.id} className="flex items-center gap-3 border-b py-2 text-sm"><input type="checkbox" checked={seleccionados.includes(p.id)} onChange={(e) => setSeleccionados((s) => e.target.checked ? [...s, p.id] : s.filter((x) => x !== p.id))} /><span className="min-w-0 flex-1">{p.clientes?.nombre}</span><span className="text-muted-foreground">{numero(p.pedidos_detalle.reduce((s, d) => s + Number(d.cantidad), 0))} unidades</span></label>)}</section>
+    <section className="space-y-2 border-t pt-3"><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">Pedidos de preventa</h3><Button size="sm" variant="ghost" onClick={() => setSeleccionados((pedidos ?? []).map((p) => p.id))}>Seleccionar todos</Button></div>{isFetching && <p className="text-sm text-muted-foreground">Cargando pedidos…</p>}{ruta && !isFetching && !pedidos?.length && <p className="text-sm text-muted-foreground">No hay pedidos pendientes para esta ruta.</p>}{pedidos?.map((p) => <label key={p.id} className="flex items-center gap-3 border-b py-2 text-sm"><input type="checkbox" checked={seleccionados.includes(p.id)} onChange={(e) => setSeleccionados((s) => e.target.checked ? [...s, p.id] : s.filter((x) => x !== p.id))} /><span className="min-w-0 flex-1">{p.clientes?.nombre}<span className="ml-2 text-xs text-muted-foreground">📅 {fechaLegible(p.fecha_entrega)}</span></span><span className="text-muted-foreground">{numero(p.pedidos_detalle.reduce((s, d) => s + Number(d.cantidad), 0))} unidades</span></label>)}</section>
     <section className="space-y-2 border-t pt-3"><h3 className="font-semibold">Producto extra para venta en ruta</h3><ItemsEditor items={extras} onChange={setExtras} nuevo={(b) => b} /></section>
     {!!resumen.length && <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-2 text-left">Producto</th><th>Preventa</th><th>Extra</th><th>Total</th><th>Bodega</th></tr></thead><tbody>{resumen.map((r) => <tr key={r.id} className="border-b"><td className="py-2">{r.nombre}</td><td className="text-center">{numero(r.preventa)}</td><td className="text-center">{numero(r.extra)}</td><td className="text-center font-bold">{numero(r.preventa + r.extra)}</td><td className={`text-center ${r.bodega < r.preventa + r.extra ? "text-destructive" : "text-muted-foreground"}`}>{numero(r.bodega)}</td></tr>)}</tbody></table></div>}
     <Textarea aria-label="Notas de carga" placeholder="Notas de carga" value={notas} onChange={(e) => setNotas(e.target.value)} />
@@ -166,7 +168,7 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     try {
       const { error } = await supabase.rpc("cerrar_carga_camion", { p: { id: carga.id, notas, mermas: Object.entries(mermas).map(([producto_id, cantidad]) => ({ producto_id, cantidad })) } });
       if (error) throw error;
-      await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+      await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga", "pedidos-carga-consolidado"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
       setCerrar(false); toast.success("Carga cerrada · Sobrantes devueltos a bodega");
     } catch (e) { toast.error(String((e as { message?: string }).message ?? "No se pudo cerrar")); } finally { setBusy(false); }
   }

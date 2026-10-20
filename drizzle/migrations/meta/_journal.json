@@ -71,6 +71,13 @@
       "when": 1792460099249,
       "tag": "0009_carga_camion_total_fisico",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792467680761,
+      "tag": "0010_precios_ruta_cliente",
+      "breakpoints": true
     }
   ]
 }

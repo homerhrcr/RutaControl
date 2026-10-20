@@ -854,21 +854,33 @@ export type Database = {
       }
       listas_precios: {
         Row: {
+          activo: boolean
           created_at: string
+          descripcion: string | null
+          fecha_fin: string | null
+          fecha_inicio: string | null
           id: string
           nombre: string
           organization_id: string
           updated_at: string
         }
         Insert: {
+          activo?: boolean
           created_at?: string
+          descripcion?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
           id?: string
           nombre: string
           organization_id?: string
           updated_at?: string
         }
         Update: {
+          activo?: boolean
           created_at?: string
+          descripcion?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
           id?: string
           nombre?: string
           organization_id?: string
@@ -1162,6 +1174,83 @@ export type Database = {
           },
         ]
       }
+      precios_especiales: {
+        Row: {
+          activo: boolean
+          cliente_id: string
+          creado_por: string | null
+          created_at: string
+          fecha_fin: string | null
+          fecha_inicio: string
+          id: string
+          modificado_por: string | null
+          organization_id: string
+          precio: number
+          producto_id: string
+          ruta_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          cliente_id: string
+          creado_por?: string | null
+          created_at?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id?: string
+          modificado_por?: string | null
+          organization_id?: string
+          precio: number
+          producto_id: string
+          ruta_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          cliente_id?: string
+          creado_por?: string | null
+          created_at?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id?: string
+          modificado_por?: string | null
+          organization_id?: string
+          precio?: number
+          producto_id?: string
+          ruta_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "precios_especiales_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "precios_especiales_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "precios_especiales_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "precios_especiales_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "rutas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       precios_productos: {
         Row: {
           id: string
@@ -1309,24 +1398,37 @@ export type Database = {
           created_at: string
           dia: string | null
           id: string
+          lista_precio_id: string | null
           nombre: string
           organization_id: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
           dia?: string | null
           id?: string
+          lista_precio_id?: string | null
           nombre: string
           organization_id?: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
           dia?: string | null
           id?: string
+          lista_precio_id?: string | null
           nombre?: string
           organization_id?: string
+          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "rutas_lista_precio_id_fkey"
+            columns: ["lista_precio_id"]
+            isOneToOne: false
+            referencedRelation: "listas_precios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rutas_organization_id_fkey"
             columns: ["organization_id"]

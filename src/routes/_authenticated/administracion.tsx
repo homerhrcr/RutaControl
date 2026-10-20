@@ -14,6 +14,11 @@ import { Map } from "lucide-react";
 import { EmpresasAdmin } from "@/components/EmpresasAdmin";
 import { EmpresaPerfil } from "@/components/EmpresaPerfil";
 import { ListasPrecios } from "@/components/ListasPrecios";
+import { useListasPrecios } from "@/lib/listas-precios";
+import { useRutas } from "@/lib/data";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/administracion")({
   head: () => ({
@@ -61,6 +66,36 @@ function AdministracionPage() {
   );
 }
 
+function RutaListaCard({ id, nombre }: { id: string; nombre: string }) {
+  const qc = useQueryClient();
+  const { data: rutas = [] } = useRutas();
+  const { data: listas = [] } = useListasPrecios();
+  const ruta = rutas.find((r) => r.id === id);
+  const { data: clientes = 0 } = useQuery({ queryKey: ["cliente_rutas", "count", id], queryFn: async () => {
+    const { count, error } = await supabase.from("cliente_rutas").select("id", { count: "exact", head: true }).eq("ruta_id", id);
+    if (error) throw error; return count ?? 0;
+  } });
+  async function asignar(lista: string) {
+    const { error } = await supabase.from("rutas").update({ lista_precio_id: lista || null }).eq("id", id);
+    if (error) return toast.error(error.message);
+    await qc.invalidateQueries({ queryKey: ["rutas"] });
+    toast.success(lista ? "Lista de precios asignada a la ruta" : "Ruta sin lista: usará el precio general");
+  }
+  return (
+    <Card className="space-y-2 p-4">
+      <div className="flex items-center gap-3">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary"><Map className="h-5 w-5" /></div>
+        <div className="min-w-0"><p className="font-semibold">{nombre}</p><p className="text-xs text-muted-foreground">{ruta?.dia ? `Día: ${ruta.dia} · ` : ""}{clientes} cliente(s)</p></div>
+      </div>
+      <label className="block text-xs text-muted-foreground" htmlFor={`lista-ruta-${id}`}>Lista de precios de la ruta</label>
+      <select id={`lista-ruta-${id}`} className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={ruta?.lista_precio_id ?? ""} onChange={(e) => asignar(e.target.value)}>
+        <option value="">Sin lista (precio general)</option>
+        {listas.map((l) => <option key={l.id} value={l.id}>{l.nombre}{l.activo ? "" : " (inactiva)"}</option>)}
+      </select>
+    </Card>
+  );
+}
+
 function RutasAdmin() {
   const [abierto, setAbierto] = useState(false);
   const qc = useQueryClient();
@@ -72,12 +107,7 @@ function RutasAdmin() {
         <Button size="sm" onClick={() => setAbierto(true)}>Agregar / editar rutas</Button>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        {rutas.map((r) => (
-          <Card key={r.id} className="flex items-center gap-3 p-4">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary"><Map className="h-5 w-5" /></div>
-            <span className="font-semibold">{r.nombre}</span>
-          </Card>
-        ))}
+        {rutas.map((r) => <RutaListaCard key={r.id} id={r.id} nombre={r.nombre} />)}
         {rutas.length === 0 && <p className="text-sm text-muted-foreground">No hay rutas registradas.</p>}
       </div>
       <CatalogoDialog
@@ -87,6 +117,7 @@ function RutasAdmin() {
           setAbierto(false);
           qc.invalidateQueries({ queryKey: ["dashboard"] });
           qc.invalidateQueries({ queryKey: ["catalogo", "rutas"] });
+          qc.invalidateQueries({ queryKey: ["rutas"] });
         }}
       />
     </div>

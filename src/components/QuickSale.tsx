@@ -39,7 +39,7 @@ export function QuickSale({
   const disponibles = (cargas ?? []).filter((c) => c.estado === "en_ruta" && (c.vendedor_id === user?.id || isAdmin));
   const carga = origen === "bodega" ? undefined : disponibles.find((c) => c.id === origen) ?? disponibles.find((c) => c.vendedor_id === user?.id && c.ruta_id === cliente?.ruta_id);
   const inventario = carga ? descontarPendientes(carga, pendientes) : [];
-  const { data: productos, listo: preciosListos, listaNombre, error: preciosError } = useProductosCliente(cliente?.id);
+  const { data: productos, listo: preciosListos, listaNombre, error: preciosError } = useProductosCliente(cliente?.id, carga?.ruta_id ?? cliente?.ruta_id ?? null);
   const { data: ventasPrev } = useVentasCliente(cliente?.id, 1);
   const { data: clienteFull } = useCliente(cliente?.id);
   const [cart, setCart] = useState<Record<string, CartItem>>({});
@@ -59,6 +59,23 @@ export function QuickSale({
     setOrigen("");
   }, [cliente?.id]);
 
+  // Recalcula los precios del carrito si cambian cliente, ruta o condiciones; avisa si cambia el importe.
+  useEffect(() => {
+    if (!preciosListos || !productos) return;
+    setCart((prev) => {
+      let cambio = false;
+      const next: Record<string, CartItem> = {};
+      for (const [id, it] of Object.entries(prev)) {
+        const p = productos.find((x) => x.id === id);
+        if (!p || !p.precioInfo.valido) { cambio = true; continue; }
+        if (Number(p.precio) !== it.precio) cambio = true;
+        next[id] = { ...it, precio: Number(p.precio) };
+      }
+      if (cambio) toast.warning("Los precios se recalcularon según el cliente y la ruta; revise el total");
+      return cambio ? next : prev;
+    });
+  }, [productos, preciosListos]);
+
   const list = useMemo(() => {
     const arr = (productos ?? []).filter((p) =>
       p.nombre.toLowerCase().includes(search.toLowerCase()),
@@ -70,9 +87,9 @@ export function QuickSale({
   const subtotal = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
   const total = Math.max(0, subtotal - descuento);
 
-  function add(p: { id: string; nombre: string; precio: number }, delta: number) {
+  function add(p: { id: string; nombre: string; precio: number; precioInfo?: { valido: boolean; mensaje: string } }, delta: number) {
     if (!preciosListos) return toast.error("No se han cargado los precios del cliente");
-    if (delta > 0 && !(Number(p.precio) > 0)) return toast.error(`${p.nombre} no tiene precio para la clasificación de este cliente`);
+    if (delta > 0 && p.precioInfo && !p.precioInfo.valido) return toast.error(`${p.nombre}: ${p.precioInfo.mensaje}`);
     if (carga && delta > 0 && (cart[p.id]?.cantidad ?? 0) + delta > disponibleCamion(inventario.find((d) => d.producto_id === p.id) ?? { producto_id: p.id, preventa: 0, extra: 0, vendido: 0, devuelto: 0, merma: 0 })) {
       toast.error("No hay más unidades disponibles en este camión");
       return;
@@ -100,7 +117,7 @@ export function QuickSale({
     const next: Record<string, CartItem> = {};
     for (const d of last.detalle_ventas) {
       const producto = productos?.find((p) => p.id === d.producto_id);
-      if (!d.producto_id || !producto) continue;
+      if (!d.producto_id || !producto || !producto.precioInfo.valido) continue;
       next[d.producto_id] = {
         producto_id: d.producto_id,
         nombre: d.nombre_producto,
@@ -262,7 +279,8 @@ export function QuickSale({
                 >
                   {isFavorite(p.nombre) && <Star className="mb-1 h-3.5 w-3.5 fill-warning text-warning" />}
                   <span className="line-clamp-2 text-sm font-semibold leading-tight">{p.nombre}</span>
-                  <span className="mt-1 text-sm font-bold text-primary">{formatCRC(p.precio)}</span>
+                  <span className="mt-1 text-sm font-bold text-primary">{p.precioInfo.valido ? formatCRC(p.precio) : "Sin precio"}</span>
+                  <span className="text-[10px] leading-tight text-muted-foreground" title={p.precioInfo.mensaje}>{p.precioInfo.mensaje}</span>
                   {carga && <span className="text-xs text-muted-foreground">Disponible: {inventario.filter((d) => d.producto_id === p.id).reduce((s, d) => s + disponibleCamion(d), 0)}</span>}
                 </button>
                 {qty > 0 ? (

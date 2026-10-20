@@ -1,3 +1,4 @@
+import { PreciosEspecialesCliente } from "@/components/PreciosEspecialesCliente";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -254,12 +255,13 @@ function ClientesPage() {
             <Field label="Teléfono">
               <Input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
             </Field>
-            <Field label="Clasificación / lista de precios">
+            <Field label="Lista de respaldo (si la ruta no tiene lista)">
               <select aria-label="Clasificación / lista de precios" className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.lista_precio_id} onChange={(e) => setForm({ ...form, lista_precio_id: e.target.value })}>
-                <option value="">Precio base</option>
+                <option value="">Sin lista propia (usa la de la ruta)</option>
                 {listas.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
               </select>
             </Field>
+            {editId ? <PreciosEspecialesCliente clienteId={editId} /> : <p className="text-xs text-muted-foreground">Guarde el cliente para registrar precios especiales.</p>}
             <div className="grid grid-cols-2 gap-3">
               <Field label="Tipo de cédula">
                 <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.tipo_identificacion} onChange={(e) => setForm({ ...form, tipo_identificacion: e.target.value })}>

@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { toast } from "sonner";
-import { Plus, Search, AlertTriangle } from "lucide-react";
+import { Plus, Search, AlertTriangle, Trash2 } from "lucide-react";
 import { useListasPrecios, usePreciosProductos } from "@/lib/listas-precios";
 
 export const Route = createFileRoute("/_authenticated/productos")({
@@ -196,6 +196,11 @@ export function ProductosPage() {
               <Switch checked={form.activo} onCheckedChange={(v) => setForm({ ...form, activo: v })} />
             </div>
             <Button className="w-full" size="lg" disabled={busy} onClick={save}>{busy ? "Guardando…" : "Guardar"}</Button>
+            {isAdmin && editId && (
+              <Button variant="destructive" className="w-full gap-1.5" disabled={busy} onClick={remove}>
+                <Trash2 className="h-4 w-4" /> Eliminar producto
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>

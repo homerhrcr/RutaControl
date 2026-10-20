@@ -79,7 +79,7 @@ function RutaListaCard({ id, nombre }: { id: string; nombre: string }) {
     const { error } = await supabase.from("rutas").update({ lista_precio_id: lista || null }).eq("id", id);
     if (error) return toast.error(error.message);
     await qc.invalidateQueries({ queryKey: ["rutas"] });
-    toast.success(lista ? "Lista de precios asignada a la ruta" : "Ruta sin lista: usará el precio general");
+    toast.success(lista ? "Lista de precios asignada a la ruta" : "Ruta sin lista: productos sin precio especial quedan bloqueados");
   }
   return (
     <Card className="space-y-2 p-4">
@@ -89,7 +89,7 @@ function RutaListaCard({ id, nombre }: { id: string; nombre: string }) {
       </div>
       <label className="block text-xs text-muted-foreground" htmlFor={`lista-ruta-${id}`}>Lista de precios de la ruta</label>
       <select id={`lista-ruta-${id}`} className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={ruta?.lista_precio_id ?? ""} onChange={(e) => asignar(e.target.value)}>
-        <option value="">Sin lista (precio general)</option>
+        <option value="">Sin lista asignada</option>
         {listas.map((l) => <option key={l.id} value={l.id}>{l.nombre}{l.activo ? "" : " (inactiva)"}</option>)}
       </select>
     </Card>

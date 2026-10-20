@@ -23,8 +23,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Trash2 } from "lucide-react";
+import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { editarPrecioLineaVenta } from "@/lib/precios.functions";
 import { TelegramEnviar } from "@/components/TelegramCliente";
 
 type Evento =
@@ -52,6 +54,60 @@ export function HistorialCliente({
   const [borrar, setBorrar] = useState<
     { tipo: "venta" | "abono"; id: string } | null
   >(null);
+  const editarPrecio = useServerFn(editarPrecioLineaVenta);
+  const [editLinea, setEditLinea] = useState<{ id: string; nombre: string; precio: number } | null>(null);
+  const [nuevoPrecio, setNuevoPrecio] = useState("");
+  const [motivoPrecio, setMotivoPrecio] = useState("");
+  const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+
+  async function confirmarPrecio() {
+    if (!editLinea) return;
+    setGuardandoPrecio(true);
+    try {
+      await editarPrecio({
+        data: { detalleId: editLinea.id, precioNuevo: Number(nuevoPrecio), motivo: motivoPrecio },
+      });
+      toast.success("Precio modificado y registrado en auditoría");
+      setEditLinea(null);
+      invalidate(["ventas-cliente", "creditos-cliente-detalle", "creditos-cliente", "creditos-pendientes"]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo modificar el precio");
+    } finally {
+      setGuardandoPrecio(false);
+    }
+  }
+
+  /** Línea de detalle con marca de precio modificado y edición solo para administradores. */
+  const LineaDetalle = ({ d, bloqueada }: { d: any; bloqueada?: boolean }) => (
+    <div className="flex items-start justify-between gap-2 text-sm">
+      <span className="flex-1">
+        <span className="font-medium">{Number(d.cantidad)}×</span> {d.nombre_producto}
+        {d.precio_modificado && (
+          <span
+            className="ml-1 rounded bg-warning/20 px-1 text-[10px] font-semibold text-warning"
+            title={`Precio original ${formatCRC(Number(d.precio_original))} · ${d.motivo_modificacion ?? ""}`}
+          >
+            Modificado
+          </span>
+        )}
+      </span>
+      <span>{formatCRC(Number(d.total_linea))}</span>
+      {isAdmin && !bloqueada && (
+        <button
+          type="button"
+          className="mt-0.5 text-muted-foreground hover:text-foreground"
+          title="Modificar precio (solo administradores)"
+          onClick={() => {
+            setEditLinea({ id: d.id, nombre: d.nombre_producto, precio: Number(d.precio_unitario) });
+            setNuevoPrecio(String(d.precio_unitario));
+            setMotivoPrecio("");
+          }}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
 
   async function confirmarBorrar() {
     if (!borrar) return;
@@ -202,12 +258,7 @@ export function HistorialCliente({
                     </div>
                     <div className="space-y-1">
                       {(c.ventas?.detalle_ventas ?? []).map((d: any) => (
-                        <div key={d.id} className="flex items-start justify-between gap-2 text-sm">
-                          <span className="flex-1">
-                            <span className="font-medium">{Number(d.cantidad)}×</span> {d.nombre_producto}
-                          </span>
-                          <span>{formatCRC(Number(d.total_linea))}</span>
-                        </div>
+                        <LineaDetalle key={d.id} d={d} bloqueada={!!c.ventas?.carga_id} />
                       ))}
                     </div>
                     <div className="mt-1.5 border-t pt-1.5 text-xs">
@@ -298,12 +349,7 @@ export function HistorialCliente({
                   </div>
                   <div className="space-y-1">
                     {(v.detalle_ventas ?? []).map((d: any) => (
-                      <div key={d.id} className="flex items-start justify-between gap-2 text-sm">
-                        <span className="flex-1">
-                          <span className="font-medium">{Number(d.cantidad)}×</span> {d.nombre_producto}
-                        </span>
-                        <span>{formatCRC(Number(d.total_linea))}</span>
-                      </div>
+                      <LineaDetalle key={d.id} d={d} bloqueada={!!v.carga_id} />
                     ))}
                   </div>
                   <div className="mt-2 flex items-center justify-between border-t pt-2">
@@ -343,6 +389,33 @@ export function HistorialCliente({
           </span>
         </div>)}
       </DialogContent>
+
+      <Dialog open={!!editLinea} onOpenChange={(o) => !o && setEditLinea(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Modificar precio (administrador)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm">
+              {editLinea?.nombre} · precio actual {formatCRC(editLinea?.precio ?? 0)}
+            </p>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Precio unitario nuevo</label>
+              <Input type="number" min={0} step="0.01" value={nuevoPrecio} onChange={(e) => setNuevoPrecio(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Motivo de la modificación</label>
+              <Input value={motivoPrecio} onChange={(e) => setMotivoPrecio(e.target.value)} placeholder="Ej.: autorizado por gerencia" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Se recalcula el total de la venta y el saldo del crédito pendiente; el cambio queda en auditoría. El precio del catálogo y de las listas no cambia.
+            </p>
+            <Button className="w-full" disabled={guardandoPrecio} onClick={confirmarPrecio}>
+              Confirmar cambio
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!borrar} onOpenChange={(o) => !o && setBorrar(null)}>
         <AlertDialogContent>

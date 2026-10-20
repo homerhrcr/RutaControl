@@ -571,8 +571,13 @@ export type Database = {
         Row: {
           cantidad: number
           id: string
+          modificado_en: string | null
+          modificado_por: string | null
+          motivo_modificacion: string | null
           nombre_producto: string
           organization_id: string
+          precio_modificado: boolean
+          precio_original: number | null
           precio_unitario: number
           producto_id: string | null
           total_linea: number
@@ -581,8 +586,13 @@ export type Database = {
         Insert: {
           cantidad?: number
           id?: string
+          modificado_en?: string | null
+          modificado_por?: string | null
+          motivo_modificacion?: string | null
           nombre_producto: string
           organization_id?: string
+          precio_modificado?: boolean
+          precio_original?: number | null
           precio_unitario?: number
           producto_id?: string | null
           total_linea?: number
@@ -591,8 +601,13 @@ export type Database = {
         Update: {
           cantidad?: number
           id?: string
+          modificado_en?: string | null
+          modificado_por?: string | null
+          motivo_modificacion?: string | null
           nombre_producto?: string
           organization_id?: string
+          precio_modificado?: boolean
+          precio_original?: number | null
           precio_unitario?: number
           producto_id?: string | null
           total_linea?: number

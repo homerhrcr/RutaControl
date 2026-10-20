@@ -100,7 +100,7 @@ export function useCreditosClienteDetalle(clienteId?: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("creditos")
-        .select("*, ventas(id, fecha, detalle_ventas(*)), abonos(id, fecha, monto)")
+        .select("*, ventas(id, fecha, carga_id, detalle_ventas(*)), abonos(id, fecha, monto)")
         .eq("cliente_id", clienteId!)
         .gt("saldo", 0)
         .order("fecha");
@@ -171,6 +171,10 @@ export interface CartItem {
   nombre: string;
   precio: number;
   cantidad: number;
+  /** Cambio manual de precio (solo administradores); se audita en detalle_ventas. */
+  precioOriginal?: number;
+  precioModificado?: boolean;
+  motivoModificacion?: string;
 }
 
 export async function registrarVenta(params: {
@@ -240,6 +244,11 @@ export async function registrarVenta(params: {
       cantidad: i.cantidad,
       precio_unitario: i.precio,
       total_linea: i.precio * i.cantidad,
+      precio_original: i.precioModificado ? (i.precioOriginal ?? null) : null,
+      precio_modificado: i.precioModificado ?? false,
+      motivo_modificacion: i.motivoModificacion ?? null,
+      modificado_por: i.precioModificado ? params.vendedor_id : null,
+      modificado_en: i.precioModificado ? new Date().toISOString() : null,
     }));
     const { error: dErr } = await supabase.from("detalle_ventas").insert(detalle);
     if (dErr) throw dErr;

@@ -106,3 +106,35 @@ export function validarPrecio(valor: string): number | null {
   }
   return numero;
 }
+
+export interface LineaPrecioManual {
+  precio: number;
+  precioOriginal?: number;
+  precioModificado?: boolean;
+  motivoModificacion?: string;
+}
+
+/**
+ * Cambio manual de precio de una línea de venta, exclusivo de administradores.
+ * Exige motivo y un precio válido; conserva el precio original de la primera
+ * modificación y nunca altera el catálogo, las listas ni los precios especiales.
+ */
+export function aplicarPrecioManual<T extends LineaPrecioManual>(
+  linea: T,
+  precioNuevo: number,
+  motivo: string,
+  esAdmin: boolean,
+): T {
+  if (!esAdmin) throw new Error("Solo un administrador puede modificar manualmente el precio");
+  if (!motivo.trim()) throw new Error("Debe indicar el motivo de la modificación");
+  if (!Number.isFinite(precioNuevo) || precioNuevo < 0 || Math.abs(precioNuevo * 100 - Math.round(precioNuevo * 100)) > 0.000001) {
+    throw new Error("El precio debe ser positivo o cero y tener como máximo dos decimales");
+  }
+  return {
+    ...linea,
+    precio: precioNuevo,
+    precioOriginal: linea.precioOriginal ?? linea.precio,
+    precioModificado: true,
+    motivoModificacion: motivo.trim(),
+  };
+}

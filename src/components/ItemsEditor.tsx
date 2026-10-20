@@ -20,20 +20,22 @@ export function ItemsEditor<T extends LineaItem>({
   nuevo,
   extra,
   clienteId,
+  rutaId,
 }: {
   items: T[];
   onChange: (items: T[]) => void;
   nuevo: (base: LineaItem) => T;
   extra?: (item: T, set: (patch: Partial<T>) => void) => React.ReactNode;
   clienteId?: string;
+  rutaId?: string | null;
 }) {
-  const { data: productos, listo, listaNombre } = useProductosCliente(clienteId);
+  const { data: productos, listo, listaNombre } = useProductosCliente(clienteId, rutaId);
   const [sel, setSel] = useState("");
 
   function agregar() {
     const p = productos?.find((x) => x.id === sel);
     if (!p || !listo) return;
-    if (!(Number(p.precio) > 0)) return toast.error(`${p.nombre} no tiene precio para la clasificación de este cliente`);
+    if (!p.precioInfo.valido) return toast.error(`${p.nombre}: ${p.precioInfo.mensaje}`);
     onChange([...items, nuevo({ producto_id: p.id, nombre: p.nombre, precio: Number(p.precio), cantidad: 1 })]);
     setSel("");
   }
@@ -45,7 +47,7 @@ export function ItemsEditor<T extends LineaItem>({
         <select className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm" value={sel} onChange={(e) => setSel(e.target.value)}>
           <option value="">Seleccionar producto…</option>
           {(productos ?? []).map((p) => (
-            <option key={p.id} value={p.id}>{p.nombre} — {Number(p.precio) > 0 ? formatCRC(Number(p.precio)) : "sin precio"}</option>
+            <option key={p.id} value={p.id}>{p.nombre} — {p.precioInfo.valido ? `${formatCRC(Number(p.precio))} · ${p.precioInfo.mensaje}` : "sin precio"}</option>
           ))}
         </select>
         <Button type="button" size="icon" onClick={agregar} disabled={!sel || !listo} aria-label="Agregar producto"><Plus className="h-4 w-4" /></Button>

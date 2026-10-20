@@ -117,6 +117,7 @@ function RutasAdmin() {
           setAbierto(false);
           qc.invalidateQueries({ queryKey: ["dashboard"] });
           qc.invalidateQueries({ queryKey: ["catalogo", "rutas"] });
+          qc.invalidateQueries({ queryKey: ["rutas"] });
         }}
       />
     </div>

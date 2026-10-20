@@ -35,10 +35,12 @@ export function HistorialCliente({
   cliente,
   open,
   onClose,
+  soloDeuda = false,
 }: {
   cliente: { id: string; nombre: string } | null;
   open: boolean;
   onClose: () => void;
+  soloDeuda?: boolean;
 }) {
   const { isAdmin } = useAuth();
   const invalidate = useInvalidate();

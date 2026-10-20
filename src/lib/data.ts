@@ -265,7 +265,7 @@ export async function registrarVenta(params: {
     if (pErr) throw pErr;
     const { error: uErr } = await supabase
       .from("productos")
-      .update({ existencia: Number(prod.existencia) - cantidad })
+      .update({ existencia: Math.max(0, Number(prod.existencia) - cantidad) })
       .eq("id", productoId);
     if (uErr) throw uErr;
     const { error: iErr } = await supabase.from("movimientos_inventario").insert({

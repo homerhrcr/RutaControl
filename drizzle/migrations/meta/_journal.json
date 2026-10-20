@@ -64,6 +64,13 @@
       "when": 1792441494142,
       "tag": "0008_listas_precios_clientes",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792460099249,
+      "tag": "0009_carga_camion_total_fisico",
+      "breakpoints": true
     }
   ]
 }

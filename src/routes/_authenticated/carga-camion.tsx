@@ -10,7 +10,6 @@ import { useCargasCamion, usePendientesCamion, descontarPendientes, enCamion, ty
 import { useEmpresa } from "@/lib/empresa";
 import { descargarReporteExcel, verReportePdf, type Reporte } from "@/lib/reporte-export";
 import { PageHeader } from "@/components/PageHeader";
-import { ItemsEditor, type LineaItem } from "@/components/ItemsEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,7 +75,8 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
   const [vendedor, setVendedor] = useState(user?.id ?? "");
   const [vehiculo, setVehiculo] = useState("");
   const [notas, setNotas] = useState("");
-  const [extras, setExtras] = useState<LineaItem[]>([]);
+  const [totales, setTotales] = useState<Record<string, number>>({});
+  const [adicionales, setAdicionales] = useState<string[]>([]);
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const { data: miembros } = useQuery({ queryKey: ["cargas_camion-vendedores"], enabled: isAdmin, queryFn: async () => {
@@ -95,35 +95,43 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     return data;
   } });
   const resumen = useMemo(() => {
-    const m = new Map<string, { id: string; nombre: string; preventa: number; extra: number; bodega: number }>();
-    const get = (pid: string, nombre: string) => { const d = m.get(pid) ?? { id: pid, nombre, preventa: 0, extra: 0, bodega: Number(productos?.find((p) => p.id === pid)?.existencia ?? 0) }; m.set(pid, d); return d; };
+    const m = new Map<string, { id: string; nombre: string; preventa: number }>();
+    const get = (pid: string, nombre: string) => { const d = m.get(pid) ?? { id: pid, nombre, preventa: 0 }; m.set(pid, d); return d; };
     for (const p of pedidos ?? []) if (seleccionados.includes(p.id)) for (const d of p.pedidos_detalle) get(d.producto_id, d.nombre_producto).preventa += Number(d.cantidad);
-    for (const x of extras) get(x.producto_id, x.nombre).extra += x.cantidad;
-    return [...m.values()];
-  }, [pedidos, seleccionados, extras, productos]);
+    for (const pid of adicionales) get(pid, productos?.find((p) => p.id === pid)?.nombre ?? "Producto");
+    return [...m.values()].map((r) => { const total = totales[r.id] ?? r.preventa; return { ...r, total, libre: total - r.preventa }; });
+  }, [pedidos, seleccionados, adicionales, totales, productos]);
   async function guardar() {
-    if (!navigator.onLine) return toast.error("Se necesita conexión para retirar inventario de bodega");
-    if (!ruta || !fecha || !vendedor || !resumen.length) return toast.error("Seleccione ruta, fecha, vendedor y productos");
-    if (resumen.some((r) => r.preventa + r.extra > r.bodega) || extras.some((x) => !Number.isFinite(x.cantidad) || x.cantidad <= 0)) return toast.error("Revise cantidades y existencias de bodega");
+    if (!navigator.onLine) return toast.error("Se necesita conexión para registrar la carga");
+    if (!ruta || !fecha || !vendedor || !resumen.some((r) => r.total > 0)) return toast.error("Seleccione ruta, fecha, vendedor y productos");
+    if (resumen.some((r) => !Number.isFinite(r.total) || r.total < 0)) return toast.error("Las cantidades no pueden ser negativas");
+    const faltan = resumen.find((r) => r.total < r.preventa);
+    if (faltan) return toast.error(`Faltan ${numero(faltan.preventa - faltan.total)} de ${faltan.nombre} para cubrir los pedidos`);
     setBusy(true);
     try {
-      const { data, error } = await supabase.rpc("abrir_carga_camion", { p: { id, ruta_id: ruta, fecha, vendedor_id: vendedor, vehiculo, notas, pedidos: seleccionados, extras: extras.map((e) => ({ producto_id: e.producto_id, cantidad: e.cantidad })) } });
+      const { data, error } = await supabase.rpc("abrir_carga_camion", { p: { id, ruta_id: ruta, fecha, vendedor_id: vendedor, vehiculo, notas, pedidos: seleccionados, totales: resumen.map((r) => ({ producto_id: r.id, cantidad: r.total })) } });
       if (error) throw error;
       await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga", "pedidos-carga-consolidado"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
-      toast.success("Camión cargado · Inventario trasladado desde bodega");
+      toast.success("Camión cargado");
       onDone(data);
     } catch (e) { toast.error(e instanceof Error ? e.message : String((e as { message?: string }).message ?? "No se pudo cargar")); } finally { setBusy(false); }
   }
-  return <Dialog open onOpenChange={(o) => !o && !busy && onClose()}><DialogContent className="max-h-[92dvh] max-w-3xl overflow-y-auto"><DialogHeader><DialogTitle>Nueva carga de camión</DialogTitle><DialogDescription>Salida de bodega</DialogDescription></DialogHeader>
+
+  return <Dialog open onOpenChange={(o) => !o && !busy && onClose()}><DialogContent className="max-h-[92dvh] max-w-3xl overflow-y-auto"><DialogHeader><DialogTitle>Nueva carga de camión</DialogTitle><DialogDescription>Cantidades a bordo</DialogDescription></DialogHeader>
     <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1"><Label htmlFor="carga-ruta">Ruta</Label><select id="carga-ruta" className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={ruta} onChange={(e) => { setRuta(e.target.value); setSeleccionados([]); }}><option value="">Seleccionar ruta…</option>{rutas?.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}</select></div><div className="space-y-1"><Label htmlFor="carga-fecha">Fecha de salida</Label><Input id="carga-fecha" type="date" value={fecha} onChange={(e) => { setFecha(e.target.value); setSeleccionados([]); }} /></div>
       <div className="space-y-1"><Label htmlFor="carga-vehiculo">Vehículo / placa</Label><Input id="carga-vehiculo" value={vehiculo} onChange={(e) => setVehiculo(e.target.value)} /></div>
       {isAdmin && <div className="space-y-1"><Label htmlFor="carga-vendedor">Vendedor responsable</Label><select id="carga-vendedor" className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={vendedor} onChange={(e) => setVendedor(e.target.value)}><option value={user?.id}>Yo</option>{miembros?.filter((m) => m.id !== user?.id).map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}</select></div>}
     </div>
     <section className="space-y-2 border-t pt-3"><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">Pedidos de preventa</h3><Button size="sm" variant="ghost" onClick={() => setSeleccionados((pedidos ?? []).map((p) => p.id))}>Seleccionar todos</Button></div>{isFetching && <p className="text-sm text-muted-foreground">Cargando pedidos…</p>}{!isFetching && !pedidos?.length && <p className="text-sm text-muted-foreground">No hay pedidos pendientes para esta ruta.</p>}{pedidos?.map((p) => <label key={p.id} className="flex items-center gap-3 border-b py-2 text-sm"><input type="checkbox" checked={seleccionados.includes(p.id)} onChange={(e) => setSeleccionados((s) => e.target.checked ? [...s, p.id] : s.filter((x) => x !== p.id))} /><span className="min-w-0 flex-1">{p.clientes?.nombre}{!p.ruta_id && <Badge variant="outline" className="ml-2">Sin ruta</Badge>}<span className="ml-2 text-xs text-muted-foreground">📅 {fechaLegible(p.fecha_entrega)}</span></span><span className="text-muted-foreground">{numero(p.pedidos_detalle.reduce((s, d) => s + Number(d.cantidad), 0))} unidades</span></label>)}</section>
-    <section className="space-y-2 border-t pt-3"><h3 className="font-semibold">Producto extra para venta en ruta</h3><ItemsEditor items={extras} onChange={setExtras} nuevo={(b) => b} /></section>
-    {!!resumen.length && <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-2 text-left">Producto</th><th>Preventa</th><th>Extra</th><th>Total</th><th>Bodega</th></tr></thead><tbody>{resumen.map((r) => <tr key={r.id} className="border-b"><td className="py-2">{r.nombre}</td><td className="text-center">{numero(r.preventa)}</td><td className="text-center">{numero(r.extra)}</td><td className="text-center font-bold">{numero(r.preventa + r.extra)}</td><td className={`text-center ${r.bodega < r.preventa + r.extra ? "text-destructive" : "text-muted-foreground"}`}>{numero(r.bodega)}</td></tr>)}</tbody></table></div>}
+    <section className="space-y-2 border-t pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">Total que sube al camión</h3>
+        <select aria-label="Agregar producto" className="h-9 rounded-md border bg-background px-2 text-sm" value="" onChange={(e) => e.target.value && setAdicionales((s) => s.includes(e.target.value) ? s : [...s, e.target.value])}><option value="">+ Agregar producto…</option>{productos?.filter((p) => !resumen.some((r) => r.id === p.id)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select>
+      </div>
+      <p className="text-xs text-muted-foreground">Digite la cantidad completa que se carga. Lo de los pedidos queda reservado y el resto queda libre para venta.</p>
+      {!!resumen.length && <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-2 text-left">Producto</th><th>Pedidos</th><th>Total a cargar</th><th>Libre venta</th></tr></thead><tbody>{resumen.map((r) => <tr key={r.id} className="border-b"><td className="py-2">{r.nombre}</td><td className="text-center">{numero(r.preventa)}</td><td className="p-1 text-center"><Input aria-label={`Total ${r.nombre}`} type="number" min={0} step="1" inputMode="numeric" className={`mx-auto w-24 text-center ${r.total < r.preventa ? "border-destructive" : ""}`} value={Number.isFinite(r.total) ? r.total : ""} onChange={(e) => setTotales((s) => ({ ...s, [r.id]: e.target.value === "" ? NaN : Math.max(0, Number(e.target.value)) }))} /></td><td className={`text-center font-bold ${r.libre < 0 ? "text-destructive" : "text-primary"}`}>{r.libre < 0 ? `Faltan ${numero(-r.libre)}` : numero(r.libre)}</td></tr>)}</tbody></table></div>}
+    </section>
     <Textarea aria-label="Notas de carga" placeholder="Notas de carga" value={notas} onChange={(e) => setNotas(e.target.value)} />
-    <Button disabled={busy || isFetching || !resumen.length} onClick={guardar}><Truck className="mr-2 h-4 w-4" />{busy ? "Cargando…" : "Confirmar salida de bodega"}</Button>
+    <Button disabled={busy || isFetching || !resumen.length} onClick={guardar}><Truck className="mr-2 h-4 w-4" />{busy ? "Cargando…" : "Confirmar carga del camión"}</Button>
   </DialogContent></Dialog>;
 }
 
@@ -177,7 +185,7 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     {locales.length > 0 && <p className="text-sm text-warning">{locales.length} venta(s) pendientes de sincronizar · Descontadas del disponible local</p>}
     <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-3 text-left">Producto</th><th>Preventa</th><th>Extra</th><th>Vendido</th><th>A bordo</th><th>Reservado</th><th>Libre venta</th><th>Devuelto</th><th>Merma</th></tr></thead><tbody>{detalle.map((d) => <tr key={d.id} className="border-b"><td className="py-3 font-medium">{d.nombre_producto}</td>{[d.preventa, d.extra, d.vendido, enCamion(d), d.reservado, Math.max(0, enCamion(d) - d.reservado), d.devuelto, d.merma].map((n, i) => <td key={i} className={`text-center ${i === 3 ? "font-bold text-primary" : ""}`}>{numero(Number(n))}</td>)}</tr>)}</tbody></table></div>
     {carga.notas && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{carga.notas}</p>}
-    {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y devolver sobrantes</Button>}</div>}
+    {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y registrar sobrantes</Button>}</div>}
     <Dialog open={cerrar} onOpenChange={(o) => !busy && setCerrar(o)}><DialogContent className="max-h-[90dvh] max-w-xl overflow-y-auto"><DialogHeader><DialogTitle>Liquidar carga de camión</DialogTitle><DialogDescription>Sobrantes y productos dañados</DialogDescription></DialogHeader>
       <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b"><th className="py-2 text-left">Producto</th><th>Sobrante</th><th>Daños / merma</th><th>Regresa</th></tr></thead><tbody>{detalle.filter((d) => enCamion(d) > 0).map((d) => <tr key={d.id} className="border-b"><td className="py-2">{d.nombre_producto}</td><td className="text-center">{numero(enCamion(d))}</td><td className="p-2"><Input aria-label={`Merma ${d.nombre_producto}`} type="number" min={0} max={enCamion(d)} step="0.01" value={mermas[d.producto_id] ?? 0} onChange={(e) => setMermas((s) => ({ ...s, [d.producto_id]: Number(e.target.value) }))} className="w-20" /></td><td className="text-center font-bold">{numero(enCamion(d) - (mermas[d.producto_id] ?? 0))}</td></tr>)}</tbody></table></div>
       <Textarea aria-label="Observaciones de liquidación" placeholder="Observaciones / motivo de la merma" value={notas} onChange={(e) => setNotas(e.target.value)} />

@@ -309,7 +309,7 @@ export function QuickSale({
                     </Button>
                   </div>
                 ) : (
-                  <Button size="sm" variant="outline" className="mt-2 gap-1" onClick={() => add(p, 1)}>
+                  <Button size="sm" variant="outline" className="mt-2 gap-1" disabled={!preciosListos || !p.precioInfo.valido} onClick={() => add(p, 1)}>
                     <Plus className="h-4 w-4" /> Agregar
                   </Button>
                 )}

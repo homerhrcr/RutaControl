@@ -76,7 +76,8 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
   const [vehiculo, setVehiculo] = useState("");
   const [notas, setNotas] = useState("");
   const [totales, setTotales] = useState<Record<string, number>>({});
-  const [adicionales, setAdicionales] = useState<string[]>([]);
+  const [adicionales] = useState<string[]>([]);
+  const [busca, setBusca] = useState("");
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const { data: miembros } = useQuery({ queryKey: ["cargas_camion-vendedores"], enabled: isAdmin, queryFn: async () => {
@@ -98,7 +99,8 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     const m = new Map<string, { id: string; nombre: string; preventa: number }>();
     const get = (pid: string, nombre: string) => { const d = m.get(pid) ?? { id: pid, nombre, preventa: 0 }; m.set(pid, d); return d; };
     for (const p of pedidos ?? []) if (seleccionados.includes(p.id)) for (const d of p.pedidos_detalle) get(d.producto_id, d.nombre_producto).preventa += Number(d.cantidad);
-    for (const pid of adicionales) get(pid, productos?.find((p) => p.id === pid)?.nombre ?? "Producto");
+    for (const p of productos ?? []) get(p.id, p.nombre);
+    for (const pid of adicionales) get(pid, "Producto");
     return [...m.values()].map((r) => { const total = totales[r.id] ?? r.preventa; return { ...r, total, libre: total - r.preventa }; });
   }, [pedidos, seleccionados, adicionales, totales, productos]);
   async function guardar() {
@@ -109,7 +111,7 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     if (faltan) return toast.error(`Faltan ${numero(faltan.preventa - faltan.total)} de ${faltan.nombre} para cubrir los pedidos`);
     setBusy(true);
     try {
-      const { data, error } = await supabase.rpc("abrir_carga_camion", { p: { id, ruta_id: ruta, fecha, vendedor_id: vendedor, vehiculo, notas, pedidos: seleccionados, totales: resumen.map((r) => ({ producto_id: r.id, cantidad: r.total })) } });
+      const { data, error } = await supabase.rpc("abrir_carga_camion", { p: { id, ruta_id: ruta, fecha, vendedor_id: vendedor, vehiculo, notas, pedidos: seleccionados, totales: resumen.filter((r) => r.total > 0).map((r) => ({ producto_id: r.id, cantidad: r.total })) } });
       if (error) throw error;
       await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga", "pedidos-carga-consolidado"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
       toast.success("Camión cargado");
@@ -125,10 +127,10 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     <section className="space-y-2 border-t pt-3"><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">Pedidos de preventa</h3><Button size="sm" variant="ghost" onClick={() => setSeleccionados((pedidos ?? []).map((p) => p.id))}>Seleccionar todos</Button></div>{isFetching && <p className="text-sm text-muted-foreground">Cargando pedidos…</p>}{!isFetching && !pedidos?.length && <p className="text-sm text-muted-foreground">No hay pedidos pendientes para esta ruta.</p>}{pedidos?.map((p) => <label key={p.id} className="flex items-center gap-3 border-b py-2 text-sm"><input type="checkbox" checked={seleccionados.includes(p.id)} onChange={(e) => setSeleccionados((s) => e.target.checked ? [...s, p.id] : s.filter((x) => x !== p.id))} /><span className="min-w-0 flex-1">{p.clientes?.nombre}{!p.ruta_id && <Badge variant="outline" className="ml-2">Sin ruta</Badge>}<span className="ml-2 text-xs text-muted-foreground">📅 {fechaLegible(p.fecha_entrega)}</span></span><span className="text-muted-foreground">{numero(p.pedidos_detalle.reduce((s, d) => s + Number(d.cantidad), 0))} unidades</span></label>)}</section>
     <section className="space-y-2 border-t pt-3">
       <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">Total que sube al camión</h3>
-        <select aria-label="Agregar producto" className="h-9 rounded-md border bg-background px-2 text-sm" value="" onChange={(e) => e.target.value && setAdicionales((s) => s.includes(e.target.value) ? s : [...s, e.target.value])}><option value="">+ Agregar producto…</option>{productos?.filter((p) => !resumen.some((r) => r.id === p.id)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select>
+        <Input aria-label="Buscar producto" placeholder="Buscar producto…" className="h-9 w-56" value={busca} onChange={(e) => setBusca(e.target.value)} />
       </div>
       <p className="text-xs text-muted-foreground">Digite la cantidad completa que se carga. Lo de los pedidos queda reservado y el resto queda libre para venta.</p>
-      {!!resumen.length && <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-2 text-left">Producto</th><th>Pedidos</th><th>Total a cargar</th><th>Libre venta</th></tr></thead><tbody>{resumen.map((r) => <tr key={r.id} className="border-b"><td className="py-2">{r.nombre}</td><td className="text-center">{numero(r.preventa)}</td><td className="p-1 text-center"><Input aria-label={`Total ${r.nombre}`} type="number" min={0} step="1" inputMode="numeric" className={`mx-auto w-24 text-center ${r.total < r.preventa ? "border-destructive" : ""}`} value={Number.isFinite(r.total) ? r.total : ""} onChange={(e) => setTotales((s) => ({ ...s, [r.id]: e.target.value === "" ? NaN : Math.max(0, Number(e.target.value)) }))} /></td><td className={`text-center font-bold ${r.libre < 0 ? "text-destructive" : "text-primary"}`}>{r.libre < 0 ? `Faltan ${numero(-r.libre)}` : numero(r.libre)}</td></tr>)}</tbody></table></div>}
+      {!!resumen.length && <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-2 text-left">Producto</th><th>Pedidos</th><th>Total a cargar</th><th>Libre venta</th></tr></thead><tbody>{resumen.filter((r) => r.preventa > 0 || r.total > 0 || r.nombre.toLowerCase().includes(busca.trim().toLowerCase())).sort((a, b) => b.preventa - a.preventa || a.nombre.localeCompare(b.nombre)).map((r) => <tr key={r.id} className="border-b"><td className="py-2">{r.nombre}</td><td className="text-center">{numero(r.preventa)}</td><td className="p-1 text-center"><Input aria-label={`Total ${r.nombre}`} type="number" min={0} step="1" inputMode="numeric" className={`mx-auto w-24 text-center ${r.total < r.preventa ? "border-destructive" : ""}`} value={Number.isFinite(r.total) ? r.total : ""} onChange={(e) => setTotales((s) => ({ ...s, [r.id]: e.target.value === "" ? NaN : Math.max(0, Number(e.target.value)) }))} /></td><td className={`text-center font-bold ${r.libre < 0 ? "text-destructive" : "text-primary"}`}>{r.libre < 0 ? `Faltan ${numero(-r.libre)}` : numero(r.libre)}</td></tr>)}</tbody></table></div>}
     </section>
     <Textarea aria-label="Notas de carga" placeholder="Notas de carga" value={notas} onChange={(e) => setNotas(e.target.value)} />
     <Button disabled={busy || isFetching || !resumen.length} onClick={guardar}><Truck className="mr-2 h-4 w-4" />{busy ? "Cargando…" : "Confirmar carga del camión"}</Button>

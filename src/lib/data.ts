@@ -100,7 +100,7 @@ export function useCreditosClienteDetalle(clienteId?: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("creditos")
-        .select("*, ventas(id, fecha, detalle_ventas(*))")
+        .select("*, ventas(id, fecha, detalle_ventas(*)), abonos(id, fecha, monto)")
         .eq("cliente_id", clienteId!)
         .gt("saldo", 0)
         .order("fecha");

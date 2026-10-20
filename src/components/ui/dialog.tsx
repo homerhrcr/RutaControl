@@ -56,7 +56,7 @@ const DialogContent = React.forwardRef<
         )}
         onInput={(e) => {
           const t = e.target as HTMLElement;
-          if (t.matches?.("input:not([type=search]):not([type=file]), textarea, select")) dirty.current = true;
+          if (t.matches?.("input:not([type=search]):not([type=file]), textarea, select") && !/buscar/i.test(t.getAttribute("placeholder") ?? "")) dirty.current = true;
           onInput?.(e);
         }}
         onInteractOutside={(e) => {

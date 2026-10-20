@@ -19,6 +19,9 @@ import { queueDevolucion } from "@/lib/offline";
 import { useAuth } from "@/lib/auth";
 import { Plus, Undo2 } from "lucide-react";
 import { DevolucionInspeccion, FotoDevolucion, type InspeccionProducto } from "@/components/DevolucionInspeccion";
+import { TiqueteDevolucion } from "@/components/TiqueteDevolucion";
+import type { DevolucionTiquete } from "@/lib/tiquete-devolucion";
+import { ReceiptText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/devoluciones")({
   head: () => ({
@@ -39,6 +42,7 @@ type Linea = LineaItem & InspeccionProducto & { motivo: string; destino: "reingr
 
 function DevolucionesPage() {
   const [open, setOpen] = useState(false);
+  const [tiquete, setTiquete] = useState<DevolucionTiquete | null>(null);
   const [solicitud, setSolicitud] = useState<SolicitudDevolucion | null>(null);
   const { data: pendientes } = useSolicitudesDevolucion();
   const { data } = useQuery({
@@ -104,10 +108,12 @@ function DevolucionesPage() {
             </ul>
             {d.notas && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{d.notas}</p>}
             {Array.from((d.notas ?? "").matchAll(/Foto: ([0-9a-f-]{36})/g)).map((m) => <FotoDevolucion key={m[1]} id={m[1]} nombre="producto devuelto" />)}
+            <Button variant="outline" size="sm" onClick={() => setTiquete(d)}><ReceiptText className="mr-2 h-4 w-4" />Tiquete</Button>
           </Card>
         ))}
       </div>
       <NuevaDevolucion open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSolicitud(null); }} solicitud={solicitud} />
+      <TiqueteDevolucion data={tiquete} onClose={() => setTiquete(null)} />
     </div>
   );
 }

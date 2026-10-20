@@ -64,14 +64,24 @@ export async function procesarUpdate(input: unknown, admin: any, origin = "") {
     p_texto: texto, p_token_hash: token ? hashToken(token) : null,
   });
   if (error) throw error;
+  const nombreEmpresa = async (): Promise<string> => {
+    try {
+      const { data: vinculo } = await admin.from("telegram_clientes").select("organizations(nombre)").eq("chat_id", message.chat.id).eq("activo", true).maybeSingle();
+      return (vinculo as any)?.organizations?.nombre ?? "";
+    } catch { return ""; }
+  };
   const respuestas: Record<string, string> = {
-    vinculado: "Tu Telegram quedó vinculado a Ruta Directo. Recibirás confirmaciones y tiquetes aquí. Puedes escribirnos o enviar /stop para dejar de recibir notificaciones.",
+    vinculado: "Tu Telegram quedó vinculado. Recibirás confirmaciones y tiquetes aquí. Puedes escribirnos o enviar /stop para dejar de recibir notificaciones.",
     codigo_invalido: "El enlace venció o ya se utilizó. Solicita uno nuevo a tu vendedor.",
     chat_ocupado: "Este Telegram ya está vinculado a otro cliente. Solicita al vendedor revisar la vinculación.",
     cliente_ocupado: "El cliente ya tiene otro Telegram vinculado. Solicita al vendedor revisar la vinculación.",
-    sin_vinculo: "Para vincularte solicita el enlace de Telegram a tu vendedor de Ruta Directo.",
+    sin_vinculo: "Para vincularte solicita el enlace de Telegram a tu vendedor.",
     desvinculado: "Tu Telegram quedó desvinculado. No recibirás más notificaciones.",
   };
+  if (data?.status === "vinculado") {
+    const empresa = await nombreEmpresa();
+    if (empresa) respuestas.vinculado = `Tu Telegram quedó vinculado a ${empresa}. Recibirás confirmaciones y tiquetes aquí. Puedes escribirnos o enviar /stop para dejar de recibir notificaciones.`;
+  }
   if (origin && (data?.status === "vinculado" || (data?.status === "recibido" && esComandoPedido(texto)))) {
     try { await ofrecerCatalogo(message.chat.id, origin, data?.status === "vinculado" ? `${respuestas.vinculado}\n\nTambién puedes hacer pedidos desde el botón «🛒 Hacer pedido».` : undefined); return { ok: true }; }
     catch (e) { console.error("Telegram catálogo", e); }

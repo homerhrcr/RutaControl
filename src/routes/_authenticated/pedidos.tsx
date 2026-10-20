@@ -88,6 +88,11 @@ function PedidosPage() {
     },
   });
 
+  const filtrados = useMemo(() => {
+    const q = norm(busqueda.trim());
+    return (pedidos ?? []).filter((p: any) => !q || norm(p.clientes?.nombre).includes(q) || norm(p.rutas?.nombre).includes(q) || norm(p.notas).includes(q));
+  }, [pedidos, busqueda]);
+
   const carga = useMemo(() => {
     const m = new Map<string, { nombre: string; cantidad: number }>();
     for (const p of pedidosCarga ?? []) {

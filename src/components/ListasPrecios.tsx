@@ -93,3 +93,19 @@ function PrecioFila({ listaId, producto, precio }: { listaId: string; producto: 
     <td><Button size="icon" variant="ghost" aria-label={`Guardar precio de ${producto.nombre}`} title="Guardar precio" disabled={busy || valor === (precio === undefined ? "" : String(precio))} onClick={guardar}><Save className="h-4 w-4" /></Button></td>
   </tr>;
 }
+/** Precio general: fallback para clientes sin clasificación o sin precio en su lista. */
+function PrecioGeneral({ producto }: { producto: { id: string; nombre: string; precio: number } }) {
+  const [valor, setValor] = useState(String(producto.precio ?? 0));
+  const qc = useQueryClient();
+  async function guardar() {
+    try {
+      const n = validarPrecio(valor) ?? 0;
+      if (n === Number(producto.precio)) return;
+      const { error } = await supabase.from("productos").update({ precio: n }).eq("id", producto.id);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ["productos"] });
+      toast.success(`Precio general de ${producto.nombre}: ${formatCRC(n)}`);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "No se pudo guardar"); setValor(String(producto.precio ?? 0)); }
+  }
+  return <Input type="number" min="0" step="0.01" className="ml-auto w-28 text-right" aria-label={`Precio general de ${producto.nombre}`} value={valor} onChange={(e) => setValor(e.target.value)} onBlur={guardar} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />;
+}

@@ -73,26 +73,39 @@ export function HistorialCliente({
   }
 
   const totalPendiente = (pendientes ?? []).reduce((s, c) => s + Number(c.saldo ?? 0), 0);
+  const totalOriginal = (pendientes ?? []).reduce((s, c) => s + Number(c.monto ?? 0), 0);
+  const abonosDe = (c: any) =>
+    [...((c.abonos ?? []) as any[])].sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
+  const totalAbonado = (pendientes ?? []).reduce(
+    (s, c: any) => s + abonosDe(c).reduce((x, a) => x + Number(a.monto ?? 0), 0),
+    0,
+  );
+  const fmtF = (f?: string) =>
+    f
+      ? new Date(f).toLocaleDateString("es-CR", { day: "2-digit", month: "short", year: "numeric" })
+      : "—";
 
   function buildMensaje() {
     const lineas: string[] = [];
     lineas.push(`Hola ${cliente?.nombre ?? ""}, este es tu estado de cuenta:`);
     lineas.push("");
     lineas.push("*Pendiente de pago*");
-    for (const c of pendientes ?? []) {
-      const fecha = c.ventas?.fecha
-        ? new Date(c.ventas.fecha).toLocaleDateString("es-CR", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-        : "—";
-      lineas.push(`${fecha} — Saldo ${formatCRC(Number(c.saldo))}`);
+    for (const c of (pendientes ?? []) as any[]) {
+      lineas.push("");
+      lineas.push(`*Compra ${fmtF(c.ventas?.fecha ?? c.fecha)}* — Total ${formatCRC(Number(c.monto))}`);
       for (const d of c.ventas?.detalle_ventas ?? []) {
         lineas.push(`  • ${Number(d.cantidad)}× ${d.nombre_producto}: ${formatCRC(Number(d.total_linea))}`);
       }
+      const ab = abonosDe(c);
+      if (ab.length) {
+        lineas.push("  Abonos:");
+        for (const a of ab) lineas.push(`  − ${fmtF(a.fecha)}: ${formatCRC(Number(a.monto))}`);
+      }
+      lineas.push(`  Saldo: ${formatCRC(Number(c.saldo))}`);
     }
     lineas.push("");
+    lineas.push(`Total compras: ${formatCRC(totalOriginal)}`);
+    lineas.push(`Total abonos: −${formatCRC(totalAbonado)}`);
     lineas.push(`*Total pendiente: ${formatCRC(totalPendiente)}*`);
     return lineas.join("\n");
   }

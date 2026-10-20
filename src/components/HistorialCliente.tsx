@@ -35,10 +35,12 @@ export function HistorialCliente({
   cliente,
   open,
   onClose,
+  soloDeuda = false,
 }: {
   cliente: { id: string; nombre: string } | null;
   open: boolean;
   onClose: () => void;
+  soloDeuda?: boolean;
 }) {
   const { isAdmin } = useAuth();
   const invalidate = useInvalidate();
@@ -159,11 +161,11 @@ export function HistorialCliente({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="flex h-[100dvh] max-w-lg flex-col gap-0 p-0 sm:h-[88vh]">
         <DialogHeader className="border-b px-4 py-3">
-          <DialogTitle className="text-base">Historial del cliente</DialogTitle>
+          <DialogTitle className="text-base">{soloDeuda ? "Detalle de deuda" : "Historial del cliente"}</DialogTitle>
           <p className="truncate text-xs text-muted-foreground">{cliente?.nombre}</p>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-2 border-b p-3">
+        {!soloDeuda && (<div className="grid grid-cols-2 gap-2 border-b p-3">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Desde</label>
             <Input type="date" className="h-9" value={desde} onChange={(e) => setDesde(e.target.value)} />
@@ -172,7 +174,7 @@ export function HistorialCliente({
             <label className="text-xs text-muted-foreground">Hasta</label>
             <Input type="date" className="h-9" value={hasta} onChange={(e) => setHasta(e.target.value)} />
           </div>
-        </div>
+        </div>)}
 
         <div className="flex-1 overflow-y-auto p-3">
           {(pendientes ?? []).length > 0 && (
@@ -241,6 +243,10 @@ export function HistorialCliente({
             </div>
           )}
 
+          {soloDeuda && (pendientes ?? []).length === 0 && (
+            <p className="py-10 text-center text-sm text-muted-foreground">Sin deudas pendientes.</p>
+          )}
+          {!soloDeuda && (<>
           {isLoading && <p className="py-10 text-center text-sm text-muted-foreground">Cargando…</p>}
           {!isLoading && eventos.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">Sin movimientos en este periodo.</p>
@@ -325,16 +331,17 @@ export function HistorialCliente({
               );
             })}
           </div>
+          </>)}
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t bg-card p-3 text-sm">
+        {!soloDeuda && (<div className="flex items-center justify-between gap-3 border-t bg-card p-3 text-sm">
           <span className="text-muted-foreground">
             Compras <span className="font-black text-foreground">{formatCRC(totalVentas)}</span>
           </span>
           <span className="text-muted-foreground">
             Abonos <span className="font-black text-accent">{formatCRC(totalAbonos)}</span>
           </span>
-        </div>
+        </div>)}
       </DialogContent>
 
       <AlertDialog open={!!borrar} onOpenChange={(o) => !o && setBorrar(null)}>

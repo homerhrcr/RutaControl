@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
 import { useCreditosPendientes, useInvalidate } from "@/lib/data";
 import { PageHeader } from "@/components/PageHeader";
 import { AbonoDialog } from "@/components/AbonoDialog";
@@ -8,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCRC, formatDate, daysBetween, agingBucket } from "@/lib/format";
-import { HandCoins, Phone, AlertTriangle, Receipt } from "lucide-react";
+import { Search, HandCoins, Phone, AlertTriangle, Receipt } from "lucide-react";
 import { TelegramEnviar } from "@/components/TelegramCliente";
 
 export const Route = createFileRoute("/_authenticated/cobranza")({
@@ -43,8 +44,13 @@ export function CobranzaPage() {
       vence: c.fecha_limite ?? prev?.vence ?? null,
     });
   }
-  const rows = [...map.values()].sort((a, b) => b.saldo - a.saldo);
-  const total = rows.reduce((s, r) => s + r.saldo, 0);
+  const [q, setQ] = useState("");
+  const norm = (t: string) => (t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const allRows = [...map.values()].sort((a, b) => b.saldo - a.saldo);
+  const rows = q.trim()
+    ? allRows.filter((r) => norm(`${r.cliente.nombre} ${r.cliente.telefono ?? ""}`).includes(norm(q.trim())))
+    : allRows;
+  const total = allRows.reduce((s, r) => s + r.saldo, 0);
 
   // antigüedad de saldos (cartera de crédito)
   const buckets: Record<string, number> = { "0-30 días": 0, "31-60 días": 0, "61-90 días": 0, "+90 días": 0 };
@@ -63,6 +69,11 @@ export function CobranzaPage() {
           ))}
         </div>
 
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-11 pl-9" placeholder="Buscar cliente o teléfono…" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+        {q && <p className="text-xs text-muted-foreground">{rows.length} resultado(s)</p>}
         <div className="space-y-2.5">
           {rows.map((r) => {
             const venc = r.vence ? daysBetween(r.vence, new Date()) > 0 : false;
@@ -96,7 +107,7 @@ export function CobranzaPage() {
               </Card>
             );
           })}
-          {rows.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">Sin saldos pendientes 🎉</p>}
+          {rows.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">{q ? "Ningún cliente coincide" : "Sin saldos pendientes 🎉"}</p>}
         </div>
       </div>
       <AbonoDialog
@@ -108,6 +119,7 @@ export function CobranzaPage() {
       <HistorialCliente
         cliente={historialClient}
         open={!!historialClient}
+        soloDeuda
         onClose={() => setHistorialClient(null)}
       />
     </div>

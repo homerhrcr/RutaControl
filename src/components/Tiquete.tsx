@@ -60,6 +60,10 @@ export function Tiquete({
   onClose: () => void;
 }) {
   const printRef = useRef<HTMLDivElement>(null);
+  const { data: empresa } = useEmpresa();
+  const { organizacionActiva } = useAuth();
+  const nombreEmpresa = empresa?.nombre ?? organizacionActiva?.nombre ?? "Su empresa";
+  const telefonoEmpresa = empresa?.telefono ?? "";
 
   if (!data) return null;
 

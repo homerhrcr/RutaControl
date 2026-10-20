@@ -208,8 +208,29 @@ export function HistorialCliente({
                         </div>
                       ))}
                     </div>
+                    <div className="mt-1.5 border-t pt-1.5 text-xs">
+                      <div className="flex justify-between font-semibold">
+                        <span>Total compra</span>
+                        <span>{formatCRC(Number(c.monto))}</span>
+                      </div>
+                      {abonosDe(c).map((a: any) => (
+                        <div key={a.id} className="flex justify-between text-accent">
+                          <span>Abono {fmtF(a.fecha)}</span>
+                          <span>−{formatCRC(Number(a.monto))}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between font-bold text-destructive">
+                        <span>Saldo</span>
+                        <span>{formatCRC(Number(c.saldo))}</span>
+                      </div>
+                    </div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-3 space-y-0.5 rounded-lg bg-card p-2.5 text-sm">
+                <div className="flex justify-between"><span>Total compras</span><span>{formatCRC(totalOriginal)}</span></div>
+                <div className="flex justify-between text-accent"><span>Total abonos</span><span>−{formatCRC(totalAbonado)}</span></div>
+                <div className="flex justify-between font-black text-destructive"><span>Saldo pendiente</span><span>{formatCRC(totalPendiente)}</span></div>
               </div>
               <div className="mt-3 flex gap-2">
                 <TelegramEnviar clienteId={cliente?.id} texto={buildMensaje()} />

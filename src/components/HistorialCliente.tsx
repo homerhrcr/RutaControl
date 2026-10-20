@@ -144,10 +144,8 @@ export function HistorialCliente({
       ? new Date(f).toLocaleDateString("es-CR", { day: "2-digit", month: "short", year: "numeric" })
       : "—";
 
-  function buildMensaje() {
+  function lineasEstado(): string[] {
     const lineas: string[] = [];
-    lineas.push(`Hola ${cliente?.nombre ?? ""}, este es tu estado de cuenta:`);
-    lineas.push("");
     lineas.push("*Pendiente de pago*");
     for (const c of (pendientes ?? []) as any[]) {
       lineas.push("");
@@ -166,7 +164,40 @@ export function HistorialCliente({
     lineas.push(`Total compras: ${formatCRC(totalOriginal)}`);
     lineas.push(`Total abonos: −${formatCRC(totalAbonado)}`);
     lineas.push(`*Total pendiente: ${formatCRC(totalPendiente)}*`);
-    return lineas.join("\n");
+    return lineas;
+  }
+
+  function buildMensaje() {
+    return [`Hola ${cliente?.nombre ?? ""}, este es tu estado de cuenta:`, "", ...lineasEstado()].join("\n");
+  }
+
+  function textoImprimir() {
+    const hoy = new Date().toLocaleDateString("es-CR", { day: "2-digit", month: "short", year: "numeric" });
+    return [
+      empresa?.nombre ?? "Ruta Directo",
+      empresa?.telefono ? `Tel. ${empresa.telefono}` : "",
+      empresa?.cedula ? `Cédula: ${empresa.cedula}` : "",
+      `Estado de cuenta — ${hoy}`,
+      `Cliente: ${cliente?.nombre ?? ""}`,
+      "--------------------------------",
+      ...lineasEstado().map((l) => l.replace(/\*/g, "")),
+      "--------------------------------",
+      ...(empresa?.direccion ? [empresa.direccion] : []),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  function imprimir() {
+    const win = window.open("", "_blank", "width=420,height=720");
+    if (!win) return toast.error("No se abrió la impresión. Use Copiar para compartir el estado de cuenta.");
+    win.document.write('<!doctype html><html><head><title>Estado de cuenta</title><style>@page{size:80mm auto;margin:4mm}body{width:72mm;margin:0;font:12px monospace;color:#000}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style></head><body><pre></pre></body></html>');
+    const pre = win.document.querySelector("pre");
+    if (pre) pre.textContent = textoImprimir();
+    win.document.close();
+    win.focus();
+    win.onafterprint = () => win.close();
+    setTimeout(() => win.print(), 300);
   }
 
   async function copiarMensaje() {

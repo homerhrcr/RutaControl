@@ -76,7 +76,8 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
   const [vendedor, setVendedor] = useState(user?.id ?? "");
   const [vehiculo, setVehiculo] = useState("");
   const [notas, setNotas] = useState("");
-  const [extras, setExtras] = useState<LineaItem[]>([]);
+  const [totales, setTotales] = useState<Record<string, number>>({});
+  const [adicionales, setAdicionales] = useState<string[]>([]);
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const { data: miembros } = useQuery({ queryKey: ["cargas_camion-vendedores"], enabled: isAdmin, queryFn: async () => {

@@ -85,6 +85,23 @@ export function ProductosPage() {
     setEditId(p.id); setOpen(true);
   }
 
+  async function remove() {
+    if (!editId) return;
+    if (!confirm("¿Eliminar este producto? Esta acción no se puede deshacer.")) return;
+    setBusy(true);
+    const { error } = await supabase.from("productos").delete().eq("id", editId);
+    setBusy(false);
+    if (error) {
+      if (error.message.includes("foreign key") || error.code === "23503") {
+        return toast.error("No se puede eliminar: el producto tiene ventas, pedidos o precios registrados. Mejor desactívalo.");
+      }
+      return toast.error(error.message);
+    }
+    toast.success("Producto eliminado");
+    invalidate(["productos"]);
+    setOpen(false);
+  }
+
   async function save() {
     if (!form.codigo.trim() || !form.nombre.trim()) return toast.error("Código y nombre son obligatorios");
     setBusy(true);

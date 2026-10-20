@@ -8,6 +8,7 @@ import {
   eliminarAbono,
 } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
+import { useEmpresa } from "@/lib/empresa";
 import { formatCRC } from "@/lib/format";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -23,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Trash2, Pencil } from "lucide-react";
+import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Trash2, Pencil, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { editarPrecioLineaVenta } from "@/lib/precios.functions";
@@ -45,6 +46,7 @@ export function HistorialCliente({
   soloDeuda?: boolean;
 }) {
   const { isAdmin } = useAuth();
+  const { data: empresa } = useEmpresa();
   const invalidate = useInvalidate();
   const { data: ventas, isLoading: lv } = useVentasCliente(cliente?.id, 100);
   const { data: abonos, isLoading: la } = useAbonosCliente(cliente?.id, 100);
@@ -143,10 +145,8 @@ export function HistorialCliente({
       ? new Date(f).toLocaleDateString("es-CR", { day: "2-digit", month: "short", year: "numeric" })
       : "—";
 
-  function buildMensaje() {
+  function lineasEstado(): string[] {
     const lineas: string[] = [];
-    lineas.push(`Hola ${cliente?.nombre ?? ""}, este es tu estado de cuenta:`);
-    lineas.push("");
     lineas.push("*Pendiente de pago*");
     for (const c of (pendientes ?? []) as any[]) {
       lineas.push("");
@@ -165,7 +165,40 @@ export function HistorialCliente({
     lineas.push(`Total compras: ${formatCRC(totalOriginal)}`);
     lineas.push(`Total abonos: −${formatCRC(totalAbonado)}`);
     lineas.push(`*Total pendiente: ${formatCRC(totalPendiente)}*`);
-    return lineas.join("\n");
+    return lineas;
+  }
+
+  function buildMensaje() {
+    return [`Hola ${cliente?.nombre ?? ""}, este es tu estado de cuenta:`, "", ...lineasEstado()].join("\n");
+  }
+
+  function textoImprimir() {
+    const hoy = new Date().toLocaleDateString("es-CR", { day: "2-digit", month: "short", year: "numeric" });
+    return [
+      empresa?.nombre ?? "Ruta Directo",
+      empresa?.telefono ? `Tel. ${empresa.telefono}` : "",
+      empresa?.cedula ? `Cédula: ${empresa.cedula}` : "",
+      `Estado de cuenta — ${hoy}`,
+      `Cliente: ${cliente?.nombre ?? ""}`,
+      "--------------------------------",
+      ...lineasEstado().map((l) => l.replace(/\*/g, "")),
+      "--------------------------------",
+      ...(empresa?.direccion ? [empresa.direccion] : []),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  function imprimir() {
+    const win = window.open("", "_blank", "width=420,height=720");
+    if (!win) return toast.error("No se abrió la impresión. Use Copiar para compartir el estado de cuenta.");
+    win.document.write('<!doctype html><html><head><title>Estado de cuenta</title><style>@page{size:80mm auto;margin:4mm}body{width:72mm;margin:0;font:12px monospace;color:#000}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style></head><body><pre></pre></body></html>');
+    const pre = win.document.querySelector("pre");
+    if (pre) pre.textContent = textoImprimir();
+    win.document.close();
+    win.focus();
+    win.onafterprint = () => win.close();
+    setTimeout(() => win.print(), 300);
   }
 
   async function copiarMensaje() {
@@ -287,6 +320,9 @@ export function HistorialCliente({
               </div>
               <div className="mt-3 flex gap-2">
                 <TelegramEnviar clienteId={cliente?.id} texto={buildMensaje()} />
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={imprimir}>
+                  <Printer className="h-4 w-4" /> Imprimir
+                </Button>
                 <Button size="sm" variant="outline" className="gap-1.5" onClick={copiarMensaje}>
                   <Copy className="h-4 w-4" /> Copiar
                 </Button>

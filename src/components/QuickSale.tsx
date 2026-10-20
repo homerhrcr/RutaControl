@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Plus, Minus, Search, Repeat, X, Banknote, CreditCard, Star, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCargasCamion, usePendientesCamion, descontarPendientes, disponibleCamion } from "@/lib/carga-camion";
-import { validarVentaCamion } from "@/lib/carga-camion-calculos";
+import { validarVentaRuta } from "@/lib/carga-camion-calculos";
 
 const FAVORITOS = ["Queso Semiduro", "Queso Ratón", "Leche Fresca", "Yogurt", "Natilla", "Cuajada"];
 
@@ -36,12 +36,10 @@ export function QuickSale({
   const { user, isAdmin } = useAuth();
   const { data: cargas } = useCargasCamion();
   const { data: pendientes = [] } = usePendientesCamion();
-  const [origen, setOrigen] = useState("");
   const disponibles = (cargas ?? []).filter((c) => c.estado === "en_ruta" && (c.vendedor_id === user?.id || isAdmin));
   // El inventario queda fijado al camión en ruta de la ruta del cliente: lo que no va a bordo no se puede entregar.
   const deRuta = disponibles.filter((c) => c.ruta_id === cliente?.ruta_id);
   const carga = deRuta.find((c) => c.vendedor_id === user?.id) ?? deRuta[0];
-  void origen;
   const inventario = carga ? descontarPendientes(carga, pendientes) : [];
   const { data: productos, listo: preciosListos, listaNombre, error: preciosError } = useProductosCliente(cliente?.id, carga?.ruta_id ?? cliente?.ruta_id ?? null);
   const { data: ventasPrev } = useVentasCliente(cliente?.id, 1);
@@ -63,7 +61,6 @@ export function QuickSale({
     setSearch("");
     setConfirmOpen(false);
     setMetodoSel("contado");
-    setOrigen("");
   }, [cliente?.id]);
 
   // Recalcula los precios del carrito si cambian cliente, ruta o condiciones; avisa si cambia el importe.
@@ -95,8 +92,11 @@ export function QuickSale({
   const items = Object.values(cart);
   const subtotal = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
   const total = Math.max(0, subtotal - descuento);
+  const ventaValida = validarVentaRuta(carga, cliente?.ruta_id, inventario, items);
+  const sinCamion = "No hay camión en ruta cargado para esta ruta. Realice la carga del camión antes de vender";
 
   function add(p: { id: string; nombre: string; precio: number; precioInfo?: { valido: boolean; mensaje: string } }, delta: number) {
+    if (!carga) return toast.error(sinCamion);
     if (!preciosListos) return toast.error("No se han cargado los precios del cliente");
     if (delta > 0 && p.precioInfo && !p.precioInfo.valido) return toast.error(`${p.nombre}: ${p.precioInfo.mensaje}`);
     if (carga && delta > 0 && (cart[p.id]?.cantidad ?? 0) + delta > disponibleCamion(inventario.find((d) => d.producto_id === p.id) ?? { producto_id: p.id, preventa: 0, extra: 0, vendido: 0, devuelto: 0, merma: 0 })) {
@@ -117,6 +117,7 @@ export function QuickSale({
   }
 
   function repeatLast() {
+    if (!carga) return toast.error(sinCamion);
     if (!preciosListos) return toast.error("No se han cargado los precios del cliente");
     const last = ventasPrev?.[0];
     if (!last?.detalle_ventas?.length) {
@@ -134,6 +135,9 @@ export function QuickSale({
         cantidad: (next[d.producto_id]?.cantidad ?? 0) + Number(d.cantidad),
       };
     }
+    if (!validarVentaRuta(carga, cliente?.ruta_id, inventario, Object.values(next))) {
+      return toast.error("El último pedido supera las existencias disponibles del camión");
+    }
     setCart(next);
     toast.success("Último pedido cargado");
   }
@@ -148,9 +152,10 @@ export function QuickSale({
 
   async function finalizar(metodo: "contado" | "credito") {
     if (!cliente || !user) return;
+    if (!carga) return toast.error(sinCamion);
     if (!preciosListos) return toast.error("No se han cargado los precios del cliente");
     if (items.length === 0) return toast.error("Agrega al menos un producto");
-    if (carga && !validarVentaCamion(inventario, items)) return toast.error("La venta supera las existencias del camión");
+    if (!ventaValida) return toast.error("La venta supera las existencias disponibles del camión de esta ruta");
     setBusy(true);
     let lat: number | null = null;
     let lng: number | null = null;
@@ -167,8 +172,8 @@ export function QuickSale({
       cliente_id: cliente.id,
       cliente_nombre: cliente.nombre,
       id: crypto.randomUUID(),
-      ruta_id: carga?.ruta_id ?? cliente.ruta_id,
-      carga_id: carga?.id ?? null,
+      ruta_id: carga.ruta_id,
+      carga_id: carga.id,
       vendedor_id: user.id,
       items,
       descuento,
@@ -249,7 +254,11 @@ export function QuickSale({
 
         <div className="border-b px-3 py-2">
           <p className="mb-1 text-xs text-muted-foreground">Inventario de venta</p>
-          <p className="flex h-9 items-center rounded-md border bg-muted/40 px-2 text-sm font-medium">{carga ? `Camión · ${carga.rutas?.nombre} · ${carga.vehiculo || carga.fecha}` : "Bodega (no hay camión en ruta para esta ruta)"}</p>
+          {carga ? (
+            <p className="rounded-md border bg-muted/40 px-2 py-2 text-sm font-medium">{`Camión · ${carga.rutas?.nombre} · ${carga.vehiculo || carga.fecha}`}</p>
+          ) : (
+            <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-2 py-2 text-sm text-destructive">{sinCamion}</p>
+          )}
         </div>
 
         <div className="flex items-center gap-2 border-b p-3">
@@ -262,14 +271,14 @@ export function QuickSale({
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Button variant="secondary" onClick={repeatLast} className="shrink-0 gap-1.5">
+          <Button variant="secondary" disabled={!carga} onClick={repeatLast} className="shrink-0 gap-1.5">
             <Repeat className="h-4 w-4" /> Repetir
           </Button>
         </div>
 
         <div className="grid flex-1 grid-cols-2 gap-2 overflow-y-auto p-3 sm:grid-cols-3">
           {!preciosListos && <p className="col-span-full text-sm text-muted-foreground">{preciosError ? "No se pudieron cargar los precios del cliente." : "Cargando precios…"}</p>}
-          {list.map((p) => {
+          {(carga ? list : []).map((p) => {
             const qty = cart[p.id]?.cantidad ?? 0;
             return (
               <div
@@ -327,7 +336,7 @@ export function QuickSale({
           <Button
             size="lg"
             className="h-14 w-full gap-2 text-base"
-            disabled={busy || !preciosListos || items.length === 0}
+            disabled={busy || !preciosListos || !ventaValida}
             onClick={() => setConfirmOpen(true)}
           >
             Confirmar venta · {formatCRC(total)}
@@ -417,7 +426,7 @@ export function QuickSale({
           <Button
             size="lg"
             className="h-12 flex-1 gap-2 text-base"
-            disabled={busy}
+            disabled={busy || !preciosListos || !ventaValida}
             onClick={() => finalizar(metodoSel)}
           >
             Enviar venta

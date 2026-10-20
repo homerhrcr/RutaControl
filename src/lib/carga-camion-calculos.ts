@@ -28,3 +28,14 @@ export function validarVentaCamion(detalle: ExistenciaCamion[], items: { product
   }
   return items.length > 0;
 }
+
+/** Una venta de ruta nunca puede caer al inventario de bodega. */
+export function validarVentaRuta(
+  carga: { id: string; ruta_id: string | null; estado: string } | null | undefined,
+  rutaId: string | null | undefined,
+  detalle: ExistenciaCamion[],
+  items: { producto_id: string; cantidad: number }[],
+) {
+  return !!(carga?.id && rutaId && carga.ruta_id === rutaId && carga.estado === "en_ruta")
+    && validarVentaCamion(detalle, items);
+}

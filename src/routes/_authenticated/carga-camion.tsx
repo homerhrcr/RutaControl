@@ -95,25 +95,28 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     return data;
   } });
   const resumen = useMemo(() => {
-    const m = new Map<string, { id: string; nombre: string; preventa: number; extra: number; bodega: number }>();
-    const get = (pid: string, nombre: string) => { const d = m.get(pid) ?? { id: pid, nombre, preventa: 0, extra: 0, bodega: Number(productos?.find((p) => p.id === pid)?.existencia ?? 0) }; m.set(pid, d); return d; };
+    const m = new Map<string, { id: string; nombre: string; preventa: number }>();
+    const get = (pid: string, nombre: string) => { const d = m.get(pid) ?? { id: pid, nombre, preventa: 0 }; m.set(pid, d); return d; };
     for (const p of pedidos ?? []) if (seleccionados.includes(p.id)) for (const d of p.pedidos_detalle) get(d.producto_id, d.nombre_producto).preventa += Number(d.cantidad);
-    for (const x of extras) get(x.producto_id, x.nombre).extra += x.cantidad;
-    return [...m.values()];
-  }, [pedidos, seleccionados, extras, productos]);
+    for (const pid of adicionales) get(pid, productos?.find((p) => p.id === pid)?.nombre ?? "Producto");
+    return [...m.values()].map((r) => { const total = totales[r.id] ?? r.preventa; return { ...r, total, libre: total - r.preventa }; });
+  }, [pedidos, seleccionados, adicionales, totales, productos]);
   async function guardar() {
-    if (!navigator.onLine) return toast.error("Se necesita conexión para retirar inventario de bodega");
-    if (!ruta || !fecha || !vendedor || !resumen.length) return toast.error("Seleccione ruta, fecha, vendedor y productos");
-    if (resumen.some((r) => r.preventa + r.extra > r.bodega) || extras.some((x) => !Number.isFinite(x.cantidad) || x.cantidad <= 0)) return toast.error("Revise cantidades y existencias de bodega");
+    if (!navigator.onLine) return toast.error("Se necesita conexión para registrar la carga");
+    if (!ruta || !fecha || !vendedor || !resumen.some((r) => r.total > 0)) return toast.error("Seleccione ruta, fecha, vendedor y productos");
+    if (resumen.some((r) => !Number.isFinite(r.total) || r.total < 0)) return toast.error("Las cantidades no pueden ser negativas");
+    const faltan = resumen.find((r) => r.total < r.preventa);
+    if (faltan) return toast.error(`Faltan ${numero(faltan.preventa - faltan.total)} de ${faltan.nombre} para cubrir los pedidos`);
     setBusy(true);
     try {
-      const { data, error } = await supabase.rpc("abrir_carga_camion", { p: { id, ruta_id: ruta, fecha, vendedor_id: vendedor, vehiculo, notas, pedidos: seleccionados, extras: extras.map((e) => ({ producto_id: e.producto_id, cantidad: e.cantidad })) } });
+      const { data, error } = await supabase.rpc("abrir_carga_camion", { p: { id, ruta_id: ruta, fecha, vendedor_id: vendedor, vehiculo, notas, pedidos: seleccionados, totales: resumen.map((r) => ({ producto_id: r.id, cantidad: r.total })) } });
       if (error) throw error;
       await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga", "pedidos-carga-consolidado"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
-      toast.success("Camión cargado · Inventario trasladado desde bodega");
+      toast.success("Camión cargado");
       onDone(data);
     } catch (e) { toast.error(e instanceof Error ? e.message : String((e as { message?: string }).message ?? "No se pudo cargar")); } finally { setBusy(false); }
   }
+
   return <Dialog open onOpenChange={(o) => !o && !busy && onClose()}><DialogContent className="max-h-[92dvh] max-w-3xl overflow-y-auto"><DialogHeader><DialogTitle>Nueva carga de camión</DialogTitle><DialogDescription>Salida de bodega</DialogDescription></DialogHeader>
     <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1"><Label htmlFor="carga-ruta">Ruta</Label><select id="carga-ruta" className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={ruta} onChange={(e) => { setRuta(e.target.value); setSeleccionados([]); }}><option value="">Seleccionar ruta…</option>{rutas?.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}</select></div><div className="space-y-1"><Label htmlFor="carga-fecha">Fecha de salida</Label><Input id="carga-fecha" type="date" value={fecha} onChange={(e) => { setFecha(e.target.value); setSeleccionados([]); }} /></div>
       <div className="space-y-1"><Label htmlFor="carga-vehiculo">Vehículo / placa</Label><Input id="carga-vehiculo" value={vehiculo} onChange={(e) => setVehiculo(e.target.value)} /></div>

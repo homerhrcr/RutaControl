@@ -320,6 +320,9 @@ export function HistorialCliente({
               </div>
               <div className="mt-3 flex gap-2">
                 <TelegramEnviar clienteId={cliente?.id} texto={buildMensaje()} />
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={imprimir}>
+                  <Printer className="h-4 w-4" /> Imprimir
+                </Button>
                 <Button size="sm" variant="outline" className="gap-1.5" onClick={copiarMensaje}>
                   <Copy className="h-4 w-4" /> Copiar
                 </Button>

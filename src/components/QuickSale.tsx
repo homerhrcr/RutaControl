@@ -38,7 +38,10 @@ export function QuickSale({
   const { data: pendientes = [] } = usePendientesCamion();
   const [origen, setOrigen] = useState("");
   const disponibles = (cargas ?? []).filter((c) => c.estado === "en_ruta" && (c.vendedor_id === user?.id || isAdmin));
-  const carga = origen === "bodega" ? undefined : disponibles.find((c) => c.id === origen) ?? disponibles.find((c) => c.vendedor_id === user?.id && c.ruta_id === cliente?.ruta_id);
+  // El inventario queda fijado al camión en ruta de la ruta del cliente: lo que no va a bordo no se puede entregar.
+  const deRuta = disponibles.filter((c) => c.ruta_id === cliente?.ruta_id);
+  const carga = deRuta.find((c) => c.vendedor_id === user?.id) ?? deRuta[0];
+  void origen;
   const inventario = carga ? descontarPendientes(carga, pendientes) : [];
   const { data: productos, listo: preciosListos, listaNombre, error: preciosError } = useProductosCliente(cliente?.id, carga?.ruta_id ?? cliente?.ruta_id ?? null);
   const { data: ventasPrev } = useVentasCliente(cliente?.id, 1);
@@ -245,11 +248,8 @@ export function QuickSale({
         </DialogHeader>
 
         <div className="border-b px-3 py-2">
-          <label htmlFor="venta-origen" className="mb-1 block text-xs text-muted-foreground">Inventario de venta</label>
-          <select id="venta-origen" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={carga?.id ?? "bodega"} onChange={(e) => { setOrigen(e.target.value); setCart({}); }}>
-            <option value="bodega">Bodega</option>
-            {disponibles.map((c) => <option key={c.id} value={c.id}>Camión · {c.rutas?.nombre} · {c.vehiculo || c.fecha}</option>)}
-          </select>
+          <p className="mb-1 text-xs text-muted-foreground">Inventario de venta</p>
+          <p className="flex h-9 items-center rounded-md border bg-muted/40 px-2 text-sm font-medium">{carga ? `Camión · ${carga.rutas?.nombre} · ${carga.vehiculo || carga.fecha}` : "Bodega (no hay camión en ruta para esta ruta)"}</p>
         </div>
 
         <div className="flex items-center gap-2 border-b p-3">

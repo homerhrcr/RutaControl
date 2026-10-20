@@ -5,6 +5,8 @@ import { formatCRC, formatDateTime } from "@/lib/format";
 import { Printer, MessageCircle, X, Copy } from "lucide-react";
 import type { CartItem } from "@/lib/data";
 import { TelegramEnviar } from "@/components/TelegramCliente";
+import { useEmpresa } from "@/lib/empresa";
+import { useAuth } from "@/lib/auth";
 
 export interface TiqueteData {
   venta_id: string;
@@ -21,21 +23,17 @@ export interface TiqueteData {
   fecha_limite?: string | null;
 }
 
-const EMPRESA = {
-  nombre: "Ruta Directo",
-  telefono: "Tel: 2000-0000",
-};
-
 function consecutivo(id: string) {
   return id.replace(/-/g, "").slice(0, 8).toUpperCase();
 }
 
-function buildTexto(t: TiqueteData) {
+function buildTexto(t: TiqueteData, nombre: string, telefono: string) {
   const lineas = t.items.map(
     (i) => `${i.cantidad} x ${i.nombre}  ${formatCRC(i.precio * i.cantidad)}`,
   );
   return [
-    `*${EMPRESA.nombre}*`,
+    `*${nombre}*`,
+    telefono ? `Tel: ${telefono}` : null,
     `Tiquete #${consecutivo(t.venta_id)}`,
     formatDateTime(t.fecha),
     `Cliente: ${t.cliente_nombre}`,
@@ -62,6 +60,10 @@ export function Tiquete({
   onClose: () => void;
 }) {
   const printRef = useRef<HTMLDivElement>(null);
+  const { data: empresa } = useEmpresa();
+  const { organizacionActiva } = useAuth();
+  const nombreEmpresa = empresa?.nombre ?? organizacionActiva?.nombre ?? "Su empresa";
+  const telefonoEmpresa = empresa?.telefono ?? "";
 
   if (!data) return null;
 
@@ -91,7 +93,7 @@ export function Tiquete({
   async function copiar() {
     if (!data) return;
     try {
-      await navigator.clipboard.writeText(buildTexto(data));
+      await navigator.clipboard.writeText(buildTexto(data, nombreEmpresa, telefonoEmpresa));
     } catch {
       alert("No se pudo copiar automáticamente.");
     }
@@ -113,8 +115,8 @@ export function Tiquete({
             className="mx-auto max-w-[280px] rounded-md bg-white p-4 font-mono text-[12px] leading-tight text-black shadow"
           >
             <div className="c">
-              <div className="b big">{EMPRESA.nombre}</div>
-              <div>{EMPRESA.telefono}</div>
+              <div className="b big">{nombreEmpresa}</div>
+              {telefonoEmpresa && <div>Tel: {telefonoEmpresa}</div>}
             </div>
             <div className="sep" />
             <div className="row">

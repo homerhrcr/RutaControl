@@ -46,6 +46,7 @@ const ESTADOS: Record<string, { label: string; variant: "default" | "secondary" 
   anulado: { label: "Anulado", variant: "destructive" },
 };
 
+const norm = (s: string | null | undefined) => (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 function hoy(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offset);
@@ -61,6 +62,7 @@ function PedidosPage() {
   const [ruta, setRuta] = useState("all");
   const [nuevo, setNuevo] = useState(false);
   const [entregar, setEntregar] = useState<any>(null);
+  const [busqueda, setBusqueda] = useState("");
 
   const { data: pedidos } = useQuery({
     queryKey: ["pedidos", fecha, ruta],
@@ -120,14 +122,15 @@ function PedidosPage() {
             </select>
           </div>
         </div>
+        <Input placeholder="Buscar cliente…" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar cliente" />
         <Tabs defaultValue="pedidos">
           <TabsList>
-            <TabsTrigger value="pedidos">Pedidos ({pedidos?.length ?? 0})</TabsTrigger>
+            <TabsTrigger value="pedidos">Pedidos ({filtrados.length})</TabsTrigger>
             <TabsTrigger value="carga">Carga del camión</TabsTrigger>
           </TabsList>
           <TabsContent value="pedidos" className="space-y-3">
-            {(pedidos ?? []).length === 0 && <p className="text-sm text-muted-foreground">No hay pedidos para esta fecha.</p>}
-            {(pedidos ?? []).map((p) => (
+            {filtrados.length === 0 && <p className="text-sm text-muted-foreground">No hay pedidos que coincidan.</p>}
+            {filtrados.map((p) => (
               <Card key={p.id} className="space-y-2 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
@@ -185,6 +188,7 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId }: { open: boolean; 
   const invalidate = useInvalidate();
   const [cliente, setCliente] = useState("");
   const [f, setF] = useState(fecha);
+  const [busqCli, setBusqCli] = useState("");
   const [items, setItems] = useState<LineaItem[]>([]);
   const [notas, setNotas] = useState("");
   const [busy, setBusy] = useState(false);
@@ -225,9 +229,10 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId }: { open: boolean; 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Cliente</Label>
+              <Input placeholder="Buscar cliente…" value={busqCli} onChange={(e) => setBusqCli(e.target.value)} className="mb-1 h-9" />
               <select aria-label="Cliente del pedido" className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={cliente} onChange={(e) => { setCliente(e.target.value); setItems([]); }}>
                 <option value="">Seleccionar…</option>
-                {(clientes ?? []).map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                {(clientes ?? []).filter((c) => c.id === cliente || norm(c.nombre).includes(norm(busqCli))).map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
               </select>
             </div>
             <div className="space-y-1"><Label className="text-xs">Entrega</Label><Input type="date" value={f} onChange={(e) => setF(e.target.value)} /></div>

@@ -56,7 +56,7 @@ export function ListasPrecios() {
       </div>
       <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Buscar producto…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
       <div className="overflow-x-auto"><table className="w-full text-sm">
-        <thead><tr className="border-b text-left text-muted-foreground"><th className="py-2 pr-3">Producto</th><th className="px-2 py-2 text-right">Base</th><th className="px-2 py-2">Precio de lista</th><th className="w-10" /></tr></thead>
+        <thead><tr className="border-b text-left text-muted-foreground"><th className="py-2 pr-3">Producto</th><th className="px-2 py-2 text-right" title="Se usa para clientes sin clasificación o sin precio en su lista">General</th><th className="px-2 py-2">Precio de lista</th><th className="w-10" /></tr></thead>
         <tbody>{lista && precios !== undefined && productos.filter((p) => `${p.nombre} ${p.codigo}`.toLowerCase().includes(search.toLowerCase())).map((p) => {
           const fijo = precios.find((x) => x.lista_id === lista.id && x.producto_id === p.id);
           return <PrecioFila key={`${lista.id}-${p.id}-${fijo?.updated_at ?? "base"}`} listaId={lista.id} producto={p} precio={fijo?.precio} />;
@@ -88,8 +88,24 @@ function PrecioFila({ listaId, producto, precio }: { listaId: string; producto: 
     finally { setBusy(false); }
   }
   return <tr className="border-b border-border/50">
-    <td className="min-w-32 py-2 pr-3 font-medium">{producto.nombre}</td><td className="whitespace-nowrap px-2 py-2 text-right text-muted-foreground">{formatCRC(producto.precio)}</td>
+    <td className="min-w-32 py-2 pr-3 font-medium">{producto.nombre}</td><td className="px-2 py-2 text-right"><PrecioGeneral key={`${producto.id}-${producto.precio}`} producto={producto} /></td>
     <td className="px-2 py-2"><Input type="number" min="0" step="0.01" className="w-32" aria-label={`Precio de ${producto.nombre}`} placeholder={`Base: ${producto.precio}`} value={valor} onChange={(e) => setValor(e.target.value)} /></td>
     <td><Button size="icon" variant="ghost" aria-label={`Guardar precio de ${producto.nombre}`} title="Guardar precio" disabled={busy || valor === (precio === undefined ? "" : String(precio))} onClick={guardar}><Save className="h-4 w-4" /></Button></td>
   </tr>;
+}
+/** Precio general: fallback para clientes sin clasificación o sin precio en su lista. */
+function PrecioGeneral({ producto }: { producto: { id: string; nombre: string; precio: number } }) {
+  const [valor, setValor] = useState(String(producto.precio ?? 0));
+  const qc = useQueryClient();
+  async function guardar() {
+    try {
+      const n = validarPrecio(valor) ?? 0;
+      if (n === Number(producto.precio)) return;
+      const { error } = await supabase.from("productos").update({ precio: n }).eq("id", producto.id);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ["productos"] });
+      toast.success(`Precio general de ${producto.nombre}: ${formatCRC(n)}`);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "No se pudo guardar"); setValor(String(producto.precio ?? 0)); }
+  }
+  return <Input type="number" min="0" step="0.01" className="ml-auto w-28 text-right" aria-label={`Precio general de ${producto.nombre}`} value={valor} onChange={(e) => setValor(e.target.value)} onBlur={guardar} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />;
 }

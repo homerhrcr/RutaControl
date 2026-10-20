@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { toast } from "sonner";
 import { Plus, Search, AlertTriangle } from "lucide-react";
-import { formatCRC } from "@/lib/format";
+import { useListasPrecios, usePreciosProductos } from "@/lib/listas-precios";
 
 export const Route = createFileRoute("/_authenticated/productos")({
   head: () => ({
@@ -34,6 +34,13 @@ const empty = { codigo: "", nombre: "", categoria_id: "", precio: 0, costo: 0, e
 
 export function ProductosPage() {
   const { data: productos } = useProductos();
+  const { data: listas = [] } = useListasPrecios();
+  const { data: precios = [] } = usePreciosProductos();
+  const preciosPorProducto = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const x of precios) m.set(x.producto_id, (m.get(x.producto_id) ?? 0) + 1);
+    return m;
+  }, [precios]);
   const { isAdmin } = useAuth();
   const invalidate = useInvalidate();
   const [search, setSearch] = useState("");
@@ -127,7 +134,7 @@ export function ProductosPage() {
                       {!p.activo && <Badge variant="secondary">Inactivo</Badge>}
                     </div>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-lg font-black text-primary">{formatCRC(p.precio)}</span>
+                      <span className="text-xs text-muted-foreground">{(preciosPorProducto.get(p.id) ?? 0)} de {listas.length} listas con precio</span>
                       <span className={`flex items-center gap-1 text-sm ${Number(p.existencia) <= Number(p.existencia_minima) ? "text-destructive" : "text-muted-foreground"}`}>
                         {Number(p.existencia) <= Number(p.existencia_minima) && <AlertTriangle className="h-3.5 w-3.5" />}
                         {Number(p.existencia)} u.
@@ -157,10 +164,8 @@ export function ProductosPage() {
 
             </div>
             <F label="Nombre"><Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></F>
-            <div className="grid grid-cols-2 gap-3">
-              <F label="Precio"><Input type="number" value={form.precio || ""} onChange={(e) => setForm({ ...form, precio: Number(e.target.value) || 0 })} /></F>
-              <F label="Costo"><Input type="number" value={form.costo || ""} onChange={(e) => setForm({ ...form, costo: Number(e.target.value) || 0 })} /></F>
-            </div>
+            <F label="Costo"><Input type="number" value={form.costo || ""} onChange={(e) => setForm({ ...form, costo: Number(e.target.value) || 0 })} /></F>
+            <p className="rounded-lg border border-dashed p-2 text-xs text-muted-foreground">El precio de venta se define en Administración → Precios según la clasificación de cada cliente.</p>
             <div className="grid grid-cols-2 gap-3">
               <F label="Existencia"><Input type="number" value={form.existencia || ""} onChange={(e) => setForm({ ...form, existencia: Number(e.target.value) || 0 })} /></F>
               <F label="Mínimo"><Input type="number" value={form.existencia_minima || ""} onChange={(e) => setForm({ ...form, existencia_minima: Number(e.target.value) || 0 })} /></F>

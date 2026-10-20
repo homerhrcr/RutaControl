@@ -93,7 +93,7 @@ export function Tiquete({
   async function copiar() {
     if (!data) return;
     try {
-      await navigator.clipboard.writeText(buildTexto(data));
+      await navigator.clipboard.writeText(buildTexto(data, nombreEmpresa, telefonoEmpresa));
     } catch {
       alert("No se pudo copiar automáticamente.");
     }
@@ -115,8 +115,8 @@ export function Tiquete({
             className="mx-auto max-w-[280px] rounded-md bg-white p-4 font-mono text-[12px] leading-tight text-black shadow"
           >
             <div className="c">
-              <div className="b big">{EMPRESA.nombre}</div>
-              <div>{EMPRESA.telefono}</div>
+              <div className="b big">{nombreEmpresa}</div>
+              {telefonoEmpresa && <div>Tel: {telefonoEmpresa}</div>}
             </div>
             <div className="sep" />
             <div className="row">

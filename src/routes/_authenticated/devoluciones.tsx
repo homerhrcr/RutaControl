@@ -192,7 +192,11 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Cliente</Label>
-              <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={cliente} onChange={(e) => setCliente(e.target.value)}>
+              <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={cliente} onChange={(e) => {
+                setCliente(e.target.value);
+                const c = (clientes ?? []).find((x) => x.id === e.target.value) as any;
+                setRuta(c?.ruta_id ?? (c?.cliente_rutas?.length ? c.cliente_rutas[0].ruta_id : "") ?? "");
+              }}>
                 <option value="">Retorno de ruta (sin cliente)</option>
                 {(clientes ?? []).map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
               </select>

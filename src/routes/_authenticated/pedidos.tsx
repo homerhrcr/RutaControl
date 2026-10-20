@@ -242,7 +242,7 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId }: { open: boolean; 
             </div>
             <div className="space-y-1"><Label className="text-xs">Entrega</Label><Input type="date" value={f} onChange={(e) => setF(e.target.value)} /></div>
           </div>
-          <ItemsEditor clienteId={cliente} items={items} onChange={setItems} nuevo={(b) => b} />
+          <ItemsEditor clienteId={cliente} rutaId={((clientes ?? []).find((x) => x.id === cliente) as any)?.cliente_rutas?.[0]?.ruta_id ?? (clientes ?? []).find((x) => x.id === cliente)?.ruta_id ?? null} items={items} onChange={setItems} nuevo={(b) => b} />
           <Textarea placeholder="Notas" value={notas} onChange={(e) => setNotas(e.target.value)} />
           <Button className="w-full" size="lg" disabled={busy} onClick={guardar}>{busy ? "Guardando…" : `Guardar · ${formatCRC(total)}`}</Button>
         </div>
@@ -305,7 +305,7 @@ function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; onClose:
         <DialogHeader><DialogTitle>Entregar a {pedido.clientes?.nombre}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">Ajuste las cantidades si se entregó menos o más de lo pedido.</p>
-          <ItemsEditor clienteId={pedido.cliente_id} items={items} onChange={setItems} nuevo={(b) => b} />
+          <ItemsEditor clienteId={pedido.cliente_id} rutaId={pedido.ruta_id} items={items} onChange={setItems} nuevo={(b) => b} />
           <div className="grid grid-cols-2 gap-2">
             <Button variant={metodo === "contado" ? "default" : "outline"} onClick={() => setMetodo("contado")}>Contado</Button>
             <Button variant={metodo === "credito" ? "default" : "outline"} onClick={() => setMetodo("credito")}>Crédito</Button>

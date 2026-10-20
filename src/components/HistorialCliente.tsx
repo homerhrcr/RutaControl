@@ -8,6 +8,7 @@ import {
   eliminarAbono,
 } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
+import { useEmpresa } from "@/lib/empresa";
 import { formatCRC } from "@/lib/format";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -23,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Trash2, Pencil } from "lucide-react";
+import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Trash2, Pencil, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { editarPrecioLineaVenta } from "@/lib/precios.functions";

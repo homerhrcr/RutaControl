@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { toast } from "sonner";
-import { Plus, Search, AlertTriangle } from "lucide-react";
+import { Plus, Search, AlertTriangle, Trash2 } from "lucide-react";
 import { useListasPrecios, usePreciosProductos } from "@/lib/listas-precios";
 
 export const Route = createFileRoute("/_authenticated/productos")({
@@ -83,6 +83,23 @@ export function ProductosPage() {
   function openEdit(p: any) {
     setForm({ codigo: p.codigo, nombre: p.nombre, categoria_id: p.categoria_id ?? "", precio: Number(p.precio), costo: Number(p.costo), existencia: Number(p.existencia), existencia_minima: Number(p.existencia_minima), activo: p.activo, cabys: p.cabys ?? "", tarifa_iva: Number(p.tarifa_iva ?? 13) });
     setEditId(p.id); setOpen(true);
+  }
+
+  async function remove() {
+    if (!editId) return;
+    if (!confirm("¿Eliminar este producto? Esta acción no se puede deshacer.")) return;
+    setBusy(true);
+    const { error } = await supabase.from("productos").delete().eq("id", editId);
+    setBusy(false);
+    if (error) {
+      if (error.message.includes("foreign key") || error.code === "23503") {
+        return toast.error("No se puede eliminar: el producto tiene ventas, pedidos o precios registrados. Mejor desactívalo.");
+      }
+      return toast.error(error.message);
+    }
+    toast.success("Producto eliminado");
+    invalidate(["productos"]);
+    setOpen(false);
   }
 
   async function save() {
@@ -179,6 +196,11 @@ export function ProductosPage() {
               <Switch checked={form.activo} onCheckedChange={(v) => setForm({ ...form, activo: v })} />
             </div>
             <Button className="w-full" size="lg" disabled={busy} onClick={save}>{busy ? "Guardando…" : "Guardar"}</Button>
+            {isAdmin && editId && (
+              <Button variant="destructive" className="w-full gap-1.5" disabled={busy} onClick={remove}>
+                <Trash2 className="h-4 w-4" /> Eliminar producto
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>

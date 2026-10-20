@@ -72,6 +72,7 @@ export function QuickSale({
 
   function add(p: { id: string; nombre: string; precio: number }, delta: number) {
     if (!preciosListos) return toast.error("No se han cargado los precios del cliente");
+    if (delta > 0 && !(Number(p.precio) > 0)) return toast.error(`${p.nombre} no tiene precio para la clasificación de este cliente`);
     if (carga && delta > 0 && (cart[p.id]?.cantidad ?? 0) + delta > disponibleCamion(inventario.find((d) => d.producto_id === p.id) ?? { producto_id: p.id, preventa: 0, extra: 0, vendido: 0, devuelto: 0, merma: 0 })) {
       toast.error("No hay más unidades disponibles en este camión");
       return;

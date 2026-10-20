@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCRC } from "@/lib/format";
 import { Trash2, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 export interface LineaItem {
   producto_id: string;
@@ -32,6 +33,7 @@ export function ItemsEditor<T extends LineaItem>({
   function agregar() {
     const p = productos?.find((x) => x.id === sel);
     if (!p || !listo) return;
+    if (!(Number(p.precio) > 0)) return toast.error(`${p.nombre} no tiene precio para la clasificación de este cliente`);
     onChange([...items, nuevo({ producto_id: p.id, nombre: p.nombre, precio: Number(p.precio), cantidad: 1 })]);
     setSel("");
   }
@@ -43,7 +45,7 @@ export function ItemsEditor<T extends LineaItem>({
         <select className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm" value={sel} onChange={(e) => setSel(e.target.value)}>
           <option value="">Seleccionar producto…</option>
           {(productos ?? []).map((p) => (
-            <option key={p.id} value={p.id}>{p.nombre} — {formatCRC(Number(p.precio))}</option>
+            <option key={p.id} value={p.id}>{p.nombre} — {Number(p.precio) > 0 ? formatCRC(Number(p.precio)) : "sin precio"}</option>
           ))}
         </select>
         <Button type="button" size="icon" onClick={agregar} disabled={!sel || !listo} aria-label="Agregar producto"><Plus className="h-4 w-4" /></Button>

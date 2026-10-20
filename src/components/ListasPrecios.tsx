@@ -56,7 +56,7 @@ export function ListasPrecios() {
       </div>
       <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Buscar producto…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
       <div className="overflow-x-auto"><table className="w-full text-sm">
-        <thead><tr className="border-b text-left text-muted-foreground"><th className="py-2 pr-3">Producto</th><th className="px-2 py-2 text-right">Base</th><th className="px-2 py-2">Precio de lista</th><th className="w-10" /></tr></thead>
+        <thead><tr className="border-b text-left text-muted-foreground"><th className="py-2 pr-3">Producto</th><th className="px-2 py-2 text-right" title="Se usa para clientes sin clasificación o sin precio en su lista">General</th><th className="px-2 py-2">Precio de lista</th><th className="w-10" /></tr></thead>
         <tbody>{lista && precios !== undefined && productos.filter((p) => `${p.nombre} ${p.codigo}`.toLowerCase().includes(search.toLowerCase())).map((p) => {
           const fijo = precios.find((x) => x.lista_id === lista.id && x.producto_id === p.id);
           return <PrecioFila key={`${lista.id}-${p.id}-${fijo?.updated_at ?? "base"}`} listaId={lista.id} producto={p} precio={fijo?.precio} />;
@@ -88,7 +88,7 @@ function PrecioFila({ listaId, producto, precio }: { listaId: string; producto: 
     finally { setBusy(false); }
   }
   return <tr className="border-b border-border/50">
-    <td className="min-w-32 py-2 pr-3 font-medium">{producto.nombre}</td><td className="whitespace-nowrap px-2 py-2 text-right text-muted-foreground">{formatCRC(producto.precio)}</td>
+    <td className="min-w-32 py-2 pr-3 font-medium">{producto.nombre}</td><td className="px-2 py-2 text-right"><PrecioGeneral key={`${producto.id}-${producto.precio}`} producto={producto} /></td>
     <td className="px-2 py-2"><Input type="number" min="0" step="0.01" className="w-32" aria-label={`Precio de ${producto.nombre}`} placeholder={`Base: ${producto.precio}`} value={valor} onChange={(e) => setValor(e.target.value)} /></td>
     <td><Button size="icon" variant="ghost" aria-label={`Guardar precio de ${producto.nombre}`} title="Guardar precio" disabled={busy || valor === (precio === undefined ? "" : String(precio))} onClick={guardar}><Save className="h-4 w-4" /></Button></td>
   </tr>;

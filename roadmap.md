@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Bloquear Venta rápida sin camión activo de la ruta y conservar carga_id online/offline; nueve pruebas aprobadas. Navegador autenticado: camión fijo comprobado con cargas existentes y bloqueo comprobado simulando cargas vacías, sin registrar ventas ni alterar datos.
 - [x] Tiquete de devolución: vista, copia para WhatsApp/Telegram, envío mediante el canal existente y PDF compartible con aplicaciones de impresión Bluetooth. Importes probados; copia y PDF comprobados con datos simulados porque no hay devoluciones recibidas en la empresa activa.
 - [ ] Probar tiquete con devolución real, destinatario Telegram e impresora Bluetooth — requiere una devolución recibida y acceso al dispositivo; no hay conexión Bluetooth directa implementada.
 - [x] Ordenar clientes con arrastre compatible con tablet y posición escrita; flechas y guardado persistente conservados. Tres pruebas aprobadas; arrastre de mouse/táctil y guardado/lectura comprobados con sesión real.

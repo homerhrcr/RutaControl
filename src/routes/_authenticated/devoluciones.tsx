@@ -216,6 +216,9 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { 
             </div>
           </div>
           <ItemsEditor<Linea>
+            permitirSinPrecio
+            clienteId={cliente || undefined}
+            rutaId={ruta || null}
             items={items}
             onChange={setItems}
             nuevo={(b) => ({ ...b, motivo: MOTIVOS[0], destino: "merma" })}

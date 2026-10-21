@@ -182,10 +182,23 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     return data;
   } });
   const total = (ventas ?? []).reduce((s, v) => s + Number(v.total), 0);
-  const reporte: Reporte = { titulo: "Carga y liquidación de camión", descripcion: `${carga.vehiculo || "Camión"} · ${carga.estado === "en_ruta" ? "En ruta" : "Cerrada"}${locales.length ? " · Incluye ventas pendientes de sincronizar" : ""}`, indicadores: [
-    { label: "Costo total del producto que sale", valor: costoTotal, tipo: "moneda" },
-    { label: "Precio de venta total cargado", valor: ventaTotal, tipo: "moneda" },
-    { label: "Utilidad estimada", valor: ventaTotal - costoTotal, tipo: "moneda" },
+  const { data: devsMerma } = useQuery({ queryKey: ["devoluciones-carga", carga.id], queryFn: async () => {
+    const fin = new Date(`${carga.fecha}T00:00:00`); fin.setDate(fin.getDate() + 1);
+    const { data, error } = await supabase.from("devoluciones").select("devoluciones_detalle(producto_id, cantidad, destino)").eq("ruta_id", carga.ruta_id).gte("fecha", `${carga.fecha}T00:00:00`).lt("fecha", fin.toISOString());
+    if (error) throw error;
+    return (data ?? []).flatMap((d) => d.devoluciones_detalle ?? []).filter((l) => l.destino === "merma");
+  } });
+  const cerrada = carga.estado !== "en_ruta";
+  const costoVendido = detalle.reduce((s, d) => s + costoU(d.producto_id) * Number(d.vendido), 0);
+  const perdidaMerma = detalle.reduce((s, d) => s + costoU(d.producto_id) * Number(d.merma), 0);
+  const perdidaDevol = (devsMerma ?? []).reduce((s, l) => s + costoU(l.producto_id ?? "") * Number(l.cantidad), 0);
+  const sobrantes = detalle.reduce((s, d) => s + costoU(d.producto_id) * Number(d.devuelto), 0);
+  const utilidadReal = total - costoVendido - perdidaMerma - perdidaDevol;
+  const resumen: [string, number][] = cerrada
+    ? [["Ventas reales", total], ["Costo de lo vendido", costoVendido], ["Pérdida por merma", perdidaMerma], ["Pérdida por devoluciones", perdidaDevol], ["Sobrantes devueltos a bodega (no es pérdida)", sobrantes], ["Utilidad real de la ruta", utilidadReal]]
+    : [["Costo total del producto que sale", costoTotal], ["Precio de venta total cargado", ventaTotal], ["Utilidad estimada", ventaTotal - costoTotal]];
+  const reporte: Reporte = { titulo: "Carga y liquidación de camión", descripcion: `${carga.vehiculo || "Camión"} · ${cerrada ? "Cerrada" : "En ruta"}${locales.length ? " · Incluye ventas pendientes de sincronizar" : ""}`, indicadores: [
+    ...resumen.map(([label, valor]) => ({ label, valor, tipo: "moneda" as const })),
     { label: "Unidades cargadas", valor: detalle.reduce((s, d) => s + Number(d.preventa) + Number(d.extra), 0), tipo: "entero" },
     { label: "Unidades vendidas", valor: detalle.reduce((s, d) => s + Number(d.vendido), 0), tipo: "entero" },
     { label: "Ventas sincronizadas", valor: total, tipo: "moneda" },
@@ -221,7 +234,8 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   return <section className="space-y-4">
     <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-bold">{carga.rutas?.nombre}</h2><p className="text-sm text-muted-foreground">{carga.fecha} · {carga.vehiculo || "Sin placa"} · {carga.estado === "en_ruta" ? "En ruta" : "Cerrada"}</p></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => exportar("pdf")}><FileText className="mr-2 h-4 w-4" />PDF</Button><Button size="sm" variant="outline" onClick={() => exportar("excel")}><FileSpreadsheet className="mr-2 h-4 w-4" />Excel</Button></div></div>
     {locales.length > 0 && <p className="text-sm text-warning">{locales.length} venta(s) pendientes de sincronizar · Descontadas del disponible local</p>}
-    <div className="grid gap-2 sm:grid-cols-3">{[["Costo total del producto que sale", costoTotal], ["Precio de venta total cargado", ventaTotal], ["Utilidad estimada", ventaTotal - costoTotal]].map(([l, v]) => <div key={l as string} className="rounded-md border p-3"><div className="text-xs text-muted-foreground">{l}</div><div className="text-lg font-bold text-primary">₡{Math.round(Number(v)).toLocaleString("es-CR")}</div></div>)}</div>
+    {!cerrada && ventaTotal === 0 && <p className="text-sm text-warning">Esta ruta no tiene lista de precios con productos; asígnela en Administración → Rutas para calcular la venta y la utilidad estimada.</p>}
+    <div className="grid gap-2 sm:grid-cols-3">{resumen.map(([l, v]) => <div key={l} className="rounded-md border p-3"><div className="text-xs text-muted-foreground">{l}</div><div className={`text-lg font-bold ${v < 0 ? "text-destructive" : "text-primary"}`}>₡{Math.round(v).toLocaleString("es-CR")}</div></div>)}</div>
     <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-3 text-left">Producto</th><th>Preventa</th><th>Extra</th><th>Vendido</th><th>A bordo</th><th>Reservado</th><th>Libre venta</th><th>Devuelto</th><th>Merma</th></tr></thead><tbody>{detalle.map((d) => <tr key={d.id} className="border-b"><td className="py-3 font-medium">{d.nombre_producto}</td>{[d.preventa, d.extra, d.vendido, enCamion(d), d.reservado, Math.max(0, enCamion(d) - d.reservado), d.devuelto, d.merma].map((n, i) => <td key={i} className={`text-center ${i === 3 ? "font-bold text-primary" : ""}`}>{numero(Number(n))}</td>)}</tr>)}</tbody></table></div>
     {carga.notas && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{carga.notas}</p>}
     {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{isAdmin && <Button variant="outline" disabled={!online} onClick={abrirEdicion}><Pencil className="mr-2 h-4 w-4" />Editar carga</Button>}{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y registrar sobrantes</Button>}</div>}

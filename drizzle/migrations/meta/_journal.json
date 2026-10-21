@@ -92,6 +92,13 @@
       "when": 1792591976423,
       "tag": "0012_editar_carga_camion",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792603830995,
+      "tag": "0013_catalogo_opciones",
+      "breakpoints": true
     }
   ]
 }

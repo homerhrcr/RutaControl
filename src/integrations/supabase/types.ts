@@ -225,24 +225,89 @@ export type Database = {
           },
         ]
       }
-      categorias: {
+      catalogo_opciones: {
         Row: {
+          activo: boolean
+          catalogo: string
+          codigo: string
           created_at: string
+          descripcion: string | null
+          etiqueta: string
           id: string
-          nombre: string
+          orden: number
           organization_id: string
+          predeterminado: boolean
+          protegido: boolean
+          updated_at: string
         }
         Insert: {
+          activo?: boolean
+          catalogo: string
+          codigo: string
           created_at?: string
+          descripcion?: string | null
+          etiqueta: string
           id?: string
-          nombre: string
+          orden?: number
           organization_id?: string
+          predeterminado?: boolean
+          protegido?: boolean
+          updated_at?: string
         }
         Update: {
+          activo?: boolean
+          catalogo?: string
+          codigo?: string
           created_at?: string
+          descripcion?: string | null
+          etiqueta?: string
+          id?: string
+          orden?: number
+          organization_id?: string
+          predeterminado?: boolean
+          protegido?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_opciones_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categorias: {
+        Row: {
+          activo: boolean
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          orden: number
+          organization_id: string
+          predeterminado: boolean
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          orden?: number
+          organization_id?: string
+          predeterminado?: boolean
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
           id?: string
           nombre?: string
+          orden?: number
           organization_id?: string
+          predeterminado?: boolean
         }
         Relationships: [
           {
@@ -256,24 +321,36 @@ export type Database = {
       }
       categorias_gasto: {
         Row: {
+          activo: boolean
           created_at: string
+          descripcion: string | null
           id: string
           nombre: string
+          orden: number
           organization_id: string
+          predeterminado: boolean
           updated_at: string
         }
         Insert: {
+          activo?: boolean
           created_at?: string
+          descripcion?: string | null
           id?: string
           nombre: string
+          orden?: number
           organization_id?: string
+          predeterminado?: boolean
           updated_at?: string
         }
         Update: {
+          activo?: boolean
           created_at?: string
+          descripcion?: string | null
           id?: string
           nombre?: string
+          orden?: number
           organization_id?: string
+          predeterminado?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -1410,29 +1487,35 @@ export type Database = {
       }
       rutas: {
         Row: {
+          activo: boolean
           created_at: string
           dia: string | null
           id: string
           lista_precio_id: string | null
           nombre: string
+          orden: number
           organization_id: string
           updated_at: string
         }
         Insert: {
+          activo?: boolean
           created_at?: string
           dia?: string | null
           id?: string
           lista_precio_id?: string | null
           nombre: string
+          orden?: number
           organization_id?: string
           updated_at?: string
         }
         Update: {
+          activo?: boolean
           created_at?: string
           dia?: string | null
           id?: string
           lista_precio_id?: string | null
           nombre?: string
+          orden?: number
           organization_id?: string
           updated_at?: string
         }
@@ -1805,6 +1888,7 @@ export type Database = {
       is_platform_admin: { Args: { _uid?: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       registrar_devolucion: { Args: { p: Json }; Returns: string }
+      sembrar_catalogo_opciones: { Args: { p_org: string }; Returns: undefined }
       set_default_organization: { Args: { p_org: string }; Returns: undefined }
       telegram_recibir: {
         Args: {

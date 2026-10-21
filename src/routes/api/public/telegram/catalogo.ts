@@ -31,13 +31,20 @@ async function contextoPrecios(admin: any, org: string, cliente: { id: string; r
   return (producto: { id: string; precio: number }) => resolverPrecio({ producto, clienteId: cliente.id, rutaId: cliente.ruta_id, fecha, rutas: rutas.data, listas: listas.data, precios: precios.data, especiales: especiales.data, listaClienteId: cliente.lista_precio_id });
 }
 
+/** Motivos activos del catálogo administrable de la empresa. */
+async function motivosDevolucion(admin: any, org: string): Promise<string[]> {
+  const { data } = await admin.from("catalogo_opciones").select("codigo,etiqueta").eq("organization_id", org).eq("catalogo", "motivo_devolucion").eq("activo", true).order("orden");
+  return (data ?? []).map((m: any) => m.etiqueta);
+}
+
 async function catalogo(admin: any, org: string, cliente: any) {
   const [{ data: productos }, { data: categorias }] = await Promise.all([
     admin.from("productos").select("id,nombre,precio,categoria_id,existencia").eq("organization_id", org).eq("activo", true).order("nombre"),
     admin.from("categorias").select("id,nombre").eq("organization_id", org).order("nombre"),
   ]);
   const precio = await contextoPrecios(admin, org, cliente);
-  return { productos: (productos ?? []).map((p: any) => ({ ...p, info: precio(p) })).filter((p: any) => p.info.valido).map((p: any) => ({ ...p, precio: p.info.precio })), categorias: categorias ?? [] };
+  const motivos = await motivosDevolucion(admin, org);
+  return { motivos, productos: (productos ?? []).map((p: any) => ({ ...p, info: precio(p) })).filter((p: any) => p.info.valido).map((p: any) => ({ ...p, precio: p.info.precio })), categorias: categorias ?? [] };
 }
 
 export const Route = createFileRoute("/api/public/telegram/catalogo")({
@@ -66,6 +73,8 @@ export const Route = createFileRoute("/api/public/telegram/catalogo")({
         const { data: prods } = await r.admin.from("productos").select("id,nombre").eq("organization_id", r.org).in("id", ids);
         const mapa = new Map((prods ?? []).map((x: any) => [x.id, x.nombre]));
         if (mapa.size !== ids.length) return Response.json({ error: "Algún producto no existe" }, { status: 400 });
+        const validos = new Set(await motivosDevolucion(r.admin, r.org));
+        if (dv.data.items.some((i) => !validos.has(i.motivo))) return Response.json({ error: "Motivo de devolución no válido" }, { status: 400 });
         const texto = textoSolicitudDevolucion(dv.data.items.map((i) => ({ nombre: mapa.get(i.producto_id) as string, cantidad: i.cantidad, motivo: i.motivo })), dv.data.notas);
         const { error } = await r.admin.from("telegram_mensajes").insert({ organization_id: r.org, cliente_id: r.cliente.id, direccion: "entrada", texto, estado: "recibido", dedupe_key: dedupe });
         if (error) { console.error("Devolución Telegram", error); return Response.json({ error: "No se pudo guardar la solicitud" }, { status: 500 }); }

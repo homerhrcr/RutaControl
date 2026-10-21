@@ -2,10 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus, ShoppingCart, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MOTIVOS_DEVOLUCION } from "@/lib/telegram";
 
 type Producto = { id: string; nombre: string; precio: number; categoria_id: string | null; agotado: boolean };
-type Datos = { empresa: string; cliente: string; productos: Producto[]; categorias: { id: string; nombre: string }[] };
+type Datos = { empresa: string; cliente: string; productos: Producto[]; categorias: { id: string; nombre: string }[]; motivos: string[] };
 
 export const Route = createFileRoute("/telegram/catalogo")({
   head: () => ({
@@ -93,8 +92,8 @@ function Catalogo() {
               <div><p className="font-medium">{i.nombre}</p><p className="text-sm text-muted-foreground">{i.cantidad} × {crc(i.precio)}</p></div>
               <div className="flex flex-col items-end gap-2">
                 <Cantidad n={i.cantidad} onMas={() => cambiar(i.id, 1)} onMenos={() => cambiar(i.id, -1)} />
-                {dev && <select aria-label="Motivo" value={motivos[i.id] ?? "Vencimiento"} onChange={(e) => setMotivos((m) => ({ ...m, [i.id]: e.target.value }))} className="rounded-md border border-input bg-background p-1 text-sm">
-                  {MOTIVOS_DEVOLUCION.map((m) => <option key={m}>{m}</option>)}</select>}
+                {dev && <select aria-label="Motivo" value={motivos[i.id] ?? datos?.motivos?.[0] ?? ""} onChange={(e) => setMotivos((m) => ({ ...m, [i.id]: e.target.value }))} className="rounded-md border border-input bg-background p-1 text-sm">
+                  {(datos?.motivos ?? []).map((m) => <option key={m}>{m}</option>)}</select>}
               </div>
             </div>))}
           {!dev && <label className="block text-sm">Fecha de entrega

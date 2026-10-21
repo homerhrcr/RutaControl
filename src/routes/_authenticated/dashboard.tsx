@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
@@ -60,7 +62,15 @@ function diasSerie(n: number) {
 }
 
 export function DashboardPage() {
+  const { isAdmin } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAdmin) navigate({ to: "/ruta", replace: true });
+  }, [isAdmin, navigate]);
+
   const { data } = useQuery({
+    enabled: isAdmin,
     queryKey: ["dashboard"],
     queryFn: async () => {
       const now = new Date();
@@ -155,6 +165,8 @@ export function DashboardPage() {
       };
     },
   });
+
+  if (!isAdmin) return null;
 
   return (
     <div>

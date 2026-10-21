@@ -41,7 +41,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, mobile: true },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true, mobile: true },
   { to: "/ruta", label: "Iniciar Ruta", icon: Truck, mobile: true },
   { to: "/pedidos", label: "Preventa", icon: ClipboardList, mobile: true },
   { to: "/carga-camion", label: "Carga de Camión", icon: Truck },

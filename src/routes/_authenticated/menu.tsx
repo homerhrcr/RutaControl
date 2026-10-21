@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/menu")({
 });
 
 const ITEMS = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
   { to: "/carga-camion", label: "Carga de Camión", icon: Truck },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/cobranza", label: "Crédito y Cobros", icon: CreditCard },

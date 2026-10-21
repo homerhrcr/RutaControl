@@ -58,7 +58,7 @@ const NAV: NavItem[] = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { nombre, roles, isAdmin, esSuperadmin, signOut } = useAuth();
+  const { nombre, roles, isAdmin, esSuperadmin, organizacionActiva, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -173,7 +173,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        <main className="flex-1 pb-20 md:pb-0">{children}</main>
+        <main key={organizacionActiva?.id ?? "sin-empresa"} className="flex-1 pb-20 md:pb-0">{children}</main>
 
         {/* Mobile bottom nav */}
         <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t bg-card md:hidden">

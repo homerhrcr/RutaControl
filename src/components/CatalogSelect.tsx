@@ -129,7 +129,7 @@ export function CatalogoDialog({
   cerrar,
   onRenamed,
 }: {
-  catalogo: CatalogKey;
+  catalogo: CatalogKey | CatalogoOpcionKey;
   abierto: boolean;
   cerrar: () => void;
   onRenamed?: (anterior: string, nuevo: string) => void;

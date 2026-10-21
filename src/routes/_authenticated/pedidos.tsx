@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useClientes, useRutas, useInvalidate, registrarVenta } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { CatalogSelect } from "@/components/CatalogSelect";
 import { ItemsEditor, type LineaItem } from "@/components/ItemsEditor";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

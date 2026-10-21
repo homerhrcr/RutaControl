@@ -70,6 +70,7 @@ export function DashboardPage() {
   }, [isAdmin, navigate]);
 
   const { data } = useQuery({
+    enabled: isAdmin,
     queryKey: ["dashboard"],
     queryFn: async () => {
       const now = new Date();

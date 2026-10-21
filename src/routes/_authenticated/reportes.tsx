@@ -247,7 +247,7 @@ function ReporteVista({ r }: { r: Reporte }) {
         {r.indicadores.map((i) => (
           <Card key={i.label} className="p-3">
             <p className="text-xs text-muted-foreground">{i.label}</p>
-            <p className={cn("truncate text-lg font-black", i.valor < 0 && "text-destructive")}>
+            <p className={cn("truncate text-lg font-black", typeof i.valor === "number" && i.valor < 0 && "text-destructive")}>
               {formatoValor(i.valor, i.tipo, i.tipo !== "moneda" && tieneDecimales([i.valor]))}
             </p>
           </Card>

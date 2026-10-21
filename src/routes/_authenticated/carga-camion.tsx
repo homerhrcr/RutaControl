@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { useRutas, useProductos } from "@/lib/data";
 import { useCargasCamion, usePendientesCamion, descontarPendientes, enCamion, type CargaCamion } from "@/lib/carga-camion";
 import { useEmpresa } from "@/lib/empresa";
+import { useProductosCliente } from "@/lib/listas-precios";
 import { descargarReporteExcel, verReportePdf, type Reporte } from "@/lib/reporte-export";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -156,8 +157,6 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const cargado = (d: (typeof detalle)[number]) => Number(d.preventa) + Number(d.extra);
   const costoU = (pid: string) => Number(productosTodos?.find((x) => x.id === pid)?.costo ?? 0);
   const ventaU = (pid: string) => Number(preciosRuta?.find((x) => x.id === pid)?.precio ?? 0);
-  const costoTotal = detalle.reduce((s, d) => s + costoU(d.producto_id) * cargado(d), 0);
-  const ventaTotal = detalle.reduce((s, d) => s + ventaU(d.producto_id) * cargado(d), 0);
   const costoTotal = detalle.reduce((s, d) => s + costoU(d.producto_id) * cargado(d), 0);
   const ventaTotal = detalle.reduce((s, d) => s + ventaU(d.producto_id) * cargado(d), 0);
   function abrirEdicion() {

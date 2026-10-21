@@ -183,6 +183,9 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   } });
   const total = (ventas ?? []).reduce((s, v) => s + Number(v.total), 0);
   const reporte: Reporte = { titulo: "Carga y liquidación de camión", descripcion: `${carga.vehiculo || "Camión"} · ${carga.estado === "en_ruta" ? "En ruta" : "Cerrada"}${locales.length ? " · Incluye ventas pendientes de sincronizar" : ""}`, indicadores: [
+    { label: "Costo total del producto que sale", valor: costoTotal, tipo: "moneda" },
+    { label: "Precio de venta total cargado", valor: ventaTotal, tipo: "moneda" },
+    { label: "Utilidad estimada", valor: ventaTotal - costoTotal, tipo: "moneda" },
     { label: "Unidades cargadas", valor: detalle.reduce((s, d) => s + Number(d.preventa) + Number(d.extra), 0), tipo: "entero" },
     { label: "Unidades vendidas", valor: detalle.reduce((s, d) => s + Number(d.vendido), 0), tipo: "entero" },
     { label: "Ventas sincronizadas", valor: total, tipo: "moneda" },
@@ -191,7 +194,12 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   ], secciones: [{ titulo: "Control de inventario", columnas: [
     { key: "nombre", titulo: "Producto", tipo: "texto" }, { key: "preventa", titulo: "Preventa", tipo: "entero" }, { key: "extra", titulo: "Extra", tipo: "entero" },
     { key: "vendido", titulo: "Vendido", tipo: "entero" }, { key: "abordo", titulo: "A bordo", tipo: "entero" }, { key: "devuelto", titulo: "Devuelto a bodega", tipo: "entero" }, { key: "merma", titulo: "Merma", tipo: "entero" },
-  ], filas: detalle.map((d) => ({ nombre: d.nombre_producto, preventa: Number(d.preventa), extra: Number(d.extra), vendido: Number(d.vendido), abordo: enCamion(d), devuelto: Number(d.devuelto), merma: Number(d.merma) })) }] };
+    { key: "costo", titulo: "Precio costo", tipo: "moneda" }, { key: "costoTotal", titulo: "Total costo", tipo: "moneda" },
+    { key: "venta", titulo: "Precio venta", tipo: "moneda" }, { key: "ventaTotal", titulo: "Total venta", tipo: "moneda" },
+  ], filas: detalle.map((d) => ({ nombre: d.nombre_producto, preventa: Number(d.preventa), extra: Number(d.extra), vendido: Number(d.vendido), abordo: enCamion(d), devuelto: Number(d.devuelto), merma: Number(d.merma),
+    costo: costoU(d.producto_id), costoTotal: costoU(d.producto_id) * cargado(d), venta: ventaU(d.producto_id), ventaTotal: ventaU(d.producto_id) * cargado(d) })),
+  totales: { nombre: "Total", preventa: detalle.reduce((s, d) => s + Number(d.preventa), 0), extra: detalle.reduce((s, d) => s + Number(d.extra), 0), vendido: detalle.reduce((s, d) => s + Number(d.vendido), 0), abordo: detalle.reduce((s, d) => s + enCamion(d), 0), devuelto: detalle.reduce((s, d) => s + Number(d.devuelto), 0), merma: detalle.reduce((s, d) => s + Number(d.merma), 0), costo: "", costoTotal, venta: "", ventaTotal },
+  }] };
   async function exportar(tipo: "pdf" | "excel") {
     if (!empresa) return toast.error("Todavía no se han cargado los datos de la empresa");
     try { await (tipo === "pdf" ? verReportePdf : descargarReporteExcel)(reporte, empresa, { periodo: carga.fecha, ruta: carga.rutas?.nombre ?? "", usuario: nombre }); } catch { toast.error("No se pudo generar el documento"); }

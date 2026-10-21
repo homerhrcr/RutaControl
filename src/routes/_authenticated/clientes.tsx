@@ -2,6 +2,7 @@ import { PreciosEspecialesCliente } from "@/components/PreciosEspecialesCliente"
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { OpcionSelect } from "@/components/OpcionSelect";
 import { useClientes, useRutas, useInvalidate, eliminarCliente } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -264,13 +265,7 @@ function ClientesPage() {
             {editId ? <PreciosEspecialesCliente clienteId={editId} /> : <p className="text-xs text-muted-foreground">Guarde el cliente para registrar precios especiales.</p>}
             <div className="grid grid-cols-2 gap-3">
               <Field label="Tipo de cédula">
-                <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.tipo_identificacion} onChange={(e) => setForm({ ...form, tipo_identificacion: e.target.value })}>
-                  <option value="">Sin cédula</option>
-                  <option value="01">Física</option>
-                  <option value="02">Jurídica</option>
-                  <option value="03">DIMEX</option>
-                  <option value="04">NITE</option>
-                </select>
+                <OpcionSelect catalogo="tipo_identificacion" vacio="Sin cédula" ariaLabel="Tipo de cédula" value={form.tipo_identificacion} onChange={(v) => setForm({ ...form, tipo_identificacion: v })} />
               </Field>
               <Field label="Cédula">
                 <Input value={form.identificacion} onChange={(e) => setForm({ ...form, identificacion: e.target.value.replace(/\D/g, "") })} />
@@ -288,7 +283,7 @@ function ClientesPage() {
             </Field>
             <Field label="Rutas (puede seleccionar varias)">
               <div className="flex flex-wrap gap-2">
-                {rutas?.map((r) => {
+                {rutas?.filter((r) => r.activo || form.ruta_ids.includes(r.id)).map((r) => {
                   const active = form.ruta_ids.includes(r.id);
                   return (
                     <Button

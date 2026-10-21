@@ -75,7 +75,7 @@ export const devolucionTelegramSchema = z.object({
   c: z.string().regex(/^-?\d{1,20}$/), s: z.string().regex(/^[A-Za-z0-9_-]{20,100}$/),
   id: z.string().uuid(),
   notas: z.string().max(500).optional(),
-  items: z.array(z.object({ producto_id: z.string().uuid(), cantidad: z.number().int().positive().max(9999), motivo: z.enum(MOTIVOS_DEVOLUCION) })).min(1).max(100),
+  items: z.array(z.object({ producto_id: z.string().uuid(), cantidad: z.number().int().positive().max(9999), motivo: z.string().trim().min(1).max(80) })).min(1).max(100),
 });
 
 export function textoSolicitudDevolucion(items: { nombre: string; cantidad: number; motivo: string }[], notas?: string) {

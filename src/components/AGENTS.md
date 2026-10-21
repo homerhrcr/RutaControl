@@ -1,0 +1,3 @@
+- Return receipts use persisted return details and actual applied credit; shareable thermal-width PDFs and the existing Telegram message sender avoid confusing returns with sale receipts or promising unsupported direct Bluetooth printing.
+- Client location editing uses ClienteUbicacion with validated decimal coordinates and a lazy Google Maps picker; reuse the existing SDK script/callback to avoid loading Maps twice.
+- QuickSale is exclusively a route-sale tool: require an active matching load and validate onboard availability before confirmation and submission; always send its non-null carga_id online and offline to prevent warehouse fallback.

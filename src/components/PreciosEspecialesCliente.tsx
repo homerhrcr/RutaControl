@@ -75,7 +75,7 @@ export function PreciosEspecialesCliente({ clienteId }: { clienteId: string }) {
         </select>
         <select aria-label="Alcance del precio especial" className="h-9 rounded-md border bg-background px-2 text-sm" value={f.ruta_id} onChange={(e) => setF({ ...f, ruta_id: e.target.value })}>
           <option value="">Todas las rutas</option>
-          {rutas.map((r) => <option key={r.id} value={r.id}>Solo {r.nombre}</option>)}
+          {rutas.filter((r) => r.activo || r.id === f.ruta_id).map((r) => <option key={r.id} value={r.id}>Solo {r.nombre}</option>)}
         </select>
         <Input aria-label="Precio especial" type="number" min="0" step="0.01" placeholder="Precio" className="h-9" value={f.precio} onChange={(e) => setF({ ...f, precio: e.target.value })} />
         <Input aria-label="Vigente desde" type="date" className="h-9" value={f.fecha_inicio} onChange={(e) => setF({ ...f, fecha_inicio: e.target.value })} />

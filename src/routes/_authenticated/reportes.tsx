@@ -211,7 +211,7 @@ function ReportesPage() {
             </div>
           )}
           <div className="w-52">
-            <CatalogSelect catalogo="rutas" placeholder="Ruta" useNombre value={ruta} onChange={setRuta} extraOptions={[{ value: "all", label: "Todas las rutas" }]} />
+            <CatalogSelect catalogo="rutas" incluirInactivas placeholder="Ruta" useNombre value={ruta} onChange={setRuta} extraOptions={[{ value: "all", label: "Todas las rutas" }]} />
           </div>
           <div className="ml-auto flex gap-2">
             <Button variant="outline" onClick={() => exportar("pdf")} disabled={!reporte || !!busy} className="gap-1.5">

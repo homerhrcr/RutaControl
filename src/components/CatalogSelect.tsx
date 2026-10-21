@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -20,9 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
+import { CatalogoEditor } from "@/components/CatalogosAdmin";
+import { DEFINICIONES } from "@/lib/catalogos";
 
-export type CatalogRow = { id: string; nombre: string };
+export type CatalogRow = { id: string; nombre: string; activo: boolean; orden: number };
 
 /** Catálogos administrables desde cualquier campo de selección. */
 export const CATALOGOS = {
@@ -33,13 +33,15 @@ export const CATALOGOS = {
 
 export type CatalogKey = keyof typeof CATALOGOS;
 
+/** Todas las opciones (activas e inactivas) ordenadas por el orden definido por el administrador. */
 export function useCatalogo(catalogo: CatalogKey) {
   return useQuery({
     queryKey: ["catalogo", catalogo],
     queryFn: async () => {
       const { data, error } = await supabase
         .from(CATALOGOS[catalogo].table as any)
-        .select("id, nombre")
+        .select("id, nombre, activo, orden")
+        .order("orden")
         .order("nombre");
       if (error) throw error;
       return (data ?? []) as unknown as CatalogRow[];
@@ -48,8 +50,8 @@ export function useCatalogo(catalogo: CatalogKey) {
 }
 
 /**
- * Campo de selección con administración en línea del catálogo:
- * permite agregar, renombrar y eliminar las opciones sin salir de la pantalla.
+ * Campo de selección con administración en línea del catálogo.
+ * Solo ofrece opciones activas, pero conserva el valor ya guardado aunque esté inactivo.
  */
 export function CatalogSelect({
   catalogo,
@@ -57,13 +59,12 @@ export function CatalogSelect({
   onChange,
   label,
   placeholder = "Seleccione una opción",
-  /** Usa el nombre como valor en vez del id (para columnas de texto). */
   useNombre = false,
-  /** Opciones fijas extra al inicio de la lista (por ejemplo "Todas"). */
   extraOptions = [],
   className,
   disabled,
   onRenamed,
+  incluirInactivas = false,
 }: {
   catalogo: CatalogKey;
   value: string;
@@ -75,23 +76,22 @@ export function CatalogSelect({
   className?: string;
   disabled?: boolean;
   onRenamed?: (anterior: string, nuevo: string) => void;
+  /** Para filtros de búsqueda: muestra también las inactivas. */
+  incluirInactivas?: boolean;
 }) {
   const { data: items } = useCatalogo(catalogo);
   const { isAdmin } = useAuth();
   const [admin, setAdmin] = useState(false);
+  const visibles = (items ?? []).filter((i) => incluirInactivas || i.activo || (useNombre ? i.nombre : i.id) === value);
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         {label ? <Label className="text-xs">{label}</Label> : <span />}
         {isAdmin && (
-        <button
-          type="button"
-          className="text-xs font-medium text-primary hover:underline"
-          onClick={() => setAdmin(true)}
-        >
-          Administrar
-        </button>
+          <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setAdmin(true)}>
+            Administrar
+          </button>
         )}
       </div>
       <Select value={value} onValueChange={onChange} disabled={disabled}>
@@ -100,13 +100,11 @@ export function CatalogSelect({
         </SelectTrigger>
         <SelectContent>
           {extraOptions.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
-            </SelectItem>
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
           ))}
-          {(items ?? []).map((i) => (
+          {visibles.map((i) => (
             <SelectItem key={i.id} value={useNombre ? i.nombre : i.id}>
-              {i.nombre}
+              {i.nombre}{i.activo ? "" : " (inactiva)"}
             </SelectItem>
           ))}
         </SelectContent>
@@ -136,160 +134,19 @@ export function CatalogoDialog({
   cerrar: () => void;
   onRenamed?: (anterior: string, nuevo: string) => void;
 }) {
-  const { table, titulo } = CATALOGOS[catalogo];
-  const { data: items } = useCatalogo(catalogo);
-  const qc = useQueryClient();
-  const [nueva, setNueva] = useState("");
-  const [editando, setEditando] = useState<string | null>(null);
-  const [texto, setTexto] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  function refrescar() {
-    qc.invalidateQueries({ queryKey: ["catalogo", catalogo] });
-    qc.invalidateQueries({ queryKey: ["categorias"] });
-    qc.invalidateQueries({ queryKey: ["rutas"] });
-    qc.invalidateQueries({ queryKey: ["productos"] });
-    qc.invalidateQueries({ queryKey: ["gastos"] });
-  }
-
-  async function agregar() {
-    const nombre = nueva.trim();
-    if (!nombre) return toast.error("Escriba un nombre");
-    if ((items ?? []).some((i) => i.nombre.toLowerCase() === nombre.toLowerCase()))
-      return toast.error("Ya existe una opción con ese nombre");
-    setBusy(true);
-    const { error } = await supabase.from(table as any).insert({ nombre } as any);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    setNueva("");
-    refrescar();
-    toast.success("Opción agregada");
-  }
-
-  async function guardar(item: CatalogRow) {
-    const nombre = texto.trim();
-    if (!nombre) return toast.error("Escriba un nombre");
-    setBusy(true);
-    const { error } = await supabase
-      .from(table as any)
-      .update({ nombre } as any)
-      .eq("id", item.id);
-    // Las columnas de texto (gastos.categoria) guardan el nombre: se actualizan también.
-    if (!error && catalogo === "categorias_gasto")
-      await supabase.from("gastos").update({ categoria: nombre }).eq("categoria", item.nombre);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    setEditando(null);
-    onRenamed?.(item.nombre, nombre);
-    refrescar();
-    toast.success("Opción actualizada");
-  }
-
-  async function borrar(item: CatalogRow) {
-    setBusy(true);
-    const { error } = await supabase.from(table as any).delete().eq("id", item.id);
-    setBusy(false);
-    if (error)
-      return toast.error("No se puede eliminar: hay registros que la utilizan");
-    refrescar();
-    toast.success("Opción eliminada");
-  }
-
+  const def = DEFINICIONES.find((d) => d.key === catalogo)!;
   return (
-    <Dialog
-      open={abierto}
-      onOpenChange={(o) => {
-        if (!o) {
-          setEditando(null);
-          cerrar();
-        }
-      }}
-    >
+    <Dialog open={abierto} onOpenChange={(o) => { if (!o) cerrar(); }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{titulo}</DialogTitle>
+          <DialogTitle>{def.titulo}</DialogTitle>
           <DialogDescription>
-            Agregue, renombre o elimine las opciones que utiliza su empresa. Al renombrar una
-            opción se actualizan los registros que ya la usaban.
+            Agregue, renombre, ordene, active o desactive las opciones. Las opciones desactivadas no se ofrecen en registros nuevos; los registros anteriores se conservan.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="flex gap-2">
-          <Input
-            value={nueva}
-            onChange={(e) => setNueva(e.target.value)}
-            placeholder="Nueva opción"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                agregar();
-              }
-            }}
-          />
-          <Button onClick={agregar} disabled={busy}>
-            Agregar
-          </Button>
-        </div>
-
-        <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border p-2">
-          {(items ?? []).map((c) => (
-            <div key={c.id} className="flex items-center gap-2 rounded px-2 py-1 hover:bg-muted/60">
-              {editando === c.id ? (
-                <>
-                  <Input
-                    value={texto}
-                    onChange={(e) => setTexto(e.target.value)}
-                    className="h-8"
-                    autoFocus
-                  />
-                  <Button size="sm" disabled={busy} onClick={() => guardar(c)}>
-                    Guardar
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setEditando(null)}>
-                    Cancelar
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <span className="flex-1 text-sm">{c.nombre}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setEditando(c.id);
-                      setTexto(c.nombre);
-                    }}
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive"
-                    disabled={busy}
-                    onClick={() => borrar(c)}
-                  >
-                    Eliminar
-                  </Button>
-                </>
-              )}
-            </div>
-          ))}
-          {(items ?? []).length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">Sin opciones aún.</p>
-          )}
-        </div>
-
+        <CatalogoEditor def={def} onRenamed={onRenamed} />
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setEditando(null);
-              cerrar();
-            }}
-          >
-            Cerrar
-          </Button>
+          <Button variant="outline" onClick={cerrar}>Cerrar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -136,6 +136,7 @@ function GastosPage() {
           <div className="w-52">
             <CatalogSelect
               catalogo="rutas"
+              incluirInactivas
               label="Ruta"
               placeholder="Ruta"
               value={rutaFiltro}

@@ -1,3 +1,4 @@
+import { OpcionSelect } from "@/components/OpcionSelect";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,9 +63,7 @@ export function ConfigFiscal() {
       <div className="grid gap-3 md:grid-cols-2">
         <div className="space-y-1">
           <Label className="text-xs">Tipo de cédula</Label>
-          <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={f.tipo_identificacion} onChange={(e) => setF({ ...f, tipo_identificacion: e.target.value })}>
-            <option value="01">Física</option><option value="02">Jurídica</option><option value="03">DIMEX</option><option value="04">NITE</option>
-          </select>
+          <OpcionSelect catalogo="tipo_identificacion" ariaLabel="Tipo de cédula" value={f.tipo_identificacion} onChange={(v) => setF({ ...f, tipo_identificacion: v })} />
         </div>
         {campo("identificacion", "Cédula")}
         {campo("nombre_fiscal", "Nombre o razón social")}

@@ -37,7 +37,11 @@ export const Route = createFileRoute("/_authenticated/devoluciones")({
   component: DevolucionesPage,
 });
 
-const MOTIVOS = ["Vencido", "Dañado / quebrado", "Mal estado", "No vendido", "Error de pedido"];
+import { OpcionSelect } from "@/components/OpcionSelect";
+import { useOpciones } from "@/lib/catalogos";
+import { predeterminada } from "@/lib/catalogos-logica";
+
+const MOTIVOS_BASE = ["Vencido", "Dañado / quebrado", "Mal estado", "No vendido", "Error de pedido"];
 type Linea = LineaItem & InspeccionProducto & { motivo: string; destino: "reingreso" | "merma" };
 
 function DevolucionesPage() {
@@ -124,12 +128,14 @@ function motivoDe(m: string) {
   if (t.includes("dañ") || t.includes("quebr") || t.includes("empaque")) return "Dañado / quebrado";
   if (t.includes("estado") || t.includes("agri")) return "Mal estado";
   if (t.includes("error") || t.includes("pedido")) return "Error de pedido";
-  return MOTIVOS.find((x) => x.toLowerCase() === t) ?? "Mal estado";
+  return MOTIVOS_BASE.find((x) => x.toLowerCase() === t) ?? m;
 }
 
 export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { open: boolean; onOpenChange: (v: boolean) => void; clienteId?: string; solicitud?: SolicitudDevolucion | null }) {
   const { data: clientes } = useClientes();
   const { data: rutas } = useRutas();
+  const { data: motivos = [] } = useOpciones("motivo_devolucion");
+  const { data: destinos = [] } = useOpciones("destino_devolucion");
   const { data: productos } = useProductos(true);
   const { user } = useAuth();
   const [devolucionId, setDevolucionId] = useState<string>(() => crypto.randomUUID());
@@ -211,7 +217,7 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { 
               <Label className="text-xs">Ruta</Label>
               <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={ruta} onChange={(e) => setRuta(e.target.value)}>
                 <option value="">—</option>
-                {(rutas ?? []).map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                {(rutas ?? []).filter((r) => r.activo || r.id === ruta).map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
               </select>
             </div>
           </div>
@@ -221,17 +227,12 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { 
             rutaId={ruta || null}
             items={items}
             onChange={setItems}
-            nuevo={(b) => ({ ...b, motivo: MOTIVOS[0], destino: "merma" })}
+            nuevo={(b) => ({ ...b, motivo: predeterminada(motivos) ?? "Mal estado", destino: (predeterminada(destinos) ?? "merma") as Linea["destino"] })}
             extra={(it, set) => (
               <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                <select className="h-9 rounded-md border bg-background px-2 text-sm" value={it.motivo} onChange={(e) => set({ motivo: e.target.value })}>
-                  {MOTIVOS.map((m) => <option key={m}>{m}</option>)}
-                </select>
-                <select aria-label={`Destino de ${it.nombre}`} className="h-9 rounded-md border bg-background px-2 text-sm" value={it.destino} onChange={(e) => set({ destino: e.target.value as Linea["destino"], recomendacion_aplicada: false })}>
-                  <option value="merma">Merma (se desecha)</option>
-                  <option value="reingreso">Regresa a bodega</option>
-                </select>
+                <OpcionSelect catalogo="motivo_devolucion" ariaLabel={`Motivo de ${it.nombre}`} className="h-9 rounded-md border bg-background px-2 text-sm" value={it.motivo} onChange={(v) => set({ motivo: v })} />
+                <OpcionSelect catalogo="destino_devolucion" ariaLabel={`Destino de ${it.nombre}`} className="h-9 rounded-md border bg-background px-2 text-sm" value={it.destino} onChange={(v) => set({ destino: v as Linea["destino"], recomendacion_aplicada: false })} />
               </div>
               <DevolucionInspeccion productoId={it.producto_id} nombre={it.nombre} devolucionId={devolucionId} value={it} onChange={set} />
               </div>

@@ -13,6 +13,7 @@ import { AuditoriaPage } from "./auditoria";
 import { Map } from "lucide-react";
 import { EmpresasAdmin } from "@/components/EmpresasAdmin";
 import { EmpresaPerfil } from "@/components/EmpresaPerfil";
+import { CatalogosAdmin } from "@/components/CatalogosAdmin";
 import { ListasPrecios } from "@/components/ListasPrecios";
 import { useListasPrecios } from "@/lib/listas-precios";
 import { useRutas } from "@/lib/data";
@@ -49,6 +50,7 @@ function AdministracionPage() {
             <TabsTrigger value="usuarios">Usuarios</TabsTrigger>
             <TabsTrigger value="rutas">Rutas</TabsTrigger>
             <TabsTrigger value="precios">Precios</TabsTrigger>
+            <TabsTrigger value="catalogos">Catálogos</TabsTrigger>
             <TabsTrigger value="auditoria">Auditoría</TabsTrigger>
             <TabsTrigger value="fiscal">Facturación</TabsTrigger>
             {esSuperadmin && <TabsTrigger value="empresas">Empresas</TabsTrigger>}
@@ -57,6 +59,7 @@ function AdministracionPage() {
           <TabsContent value="usuarios" className="-mx-4 md:-mx-6"><UsuariosPage /></TabsContent>
           <TabsContent value="rutas"><RutasAdmin /></TabsContent>
           <TabsContent value="precios"><ListasPrecios /></TabsContent>
+          <TabsContent value="catalogos"><CatalogosAdmin /></TabsContent>
           <TabsContent value="auditoria" className="-mx-4 md:-mx-6"><AuditoriaPage /></TabsContent>
           <TabsContent value="fiscal"><ConfigFiscal /></TabsContent>
           {esSuperadmin && <TabsContent value="empresas"><EmpresasAdmin /></TabsContent>}

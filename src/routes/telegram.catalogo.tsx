@@ -56,7 +56,7 @@ function Catalogo() {
   async function enviar() {
     setEnviando(true); setError("");
     try {
-      const r = await fetch("/api/public/telegram/catalogo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dev ? { modo: "devolucion", c, s, id: pedidoId, notas, items: items.map((i) => ({ producto_id: i.id, cantidad: i.cantidad, motivo: motivos[i.id] ?? "Vencimiento" })) } : { c, s, id: pedidoId, fecha_entrega: fecha, notas, items: items.map((i) => ({ producto_id: i.id, cantidad: i.cantidad })) }) });
+      const r = await fetch("/api/public/telegram/catalogo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dev ? { modo: "devolucion", c, s, id: pedidoId, notas, items: items.map((i) => ({ producto_id: i.id, cantidad: i.cantidad, motivo: motivos[i.id] ?? datos?.motivos?.[0] ?? "Otro" })) } : { c, s, id: pedidoId, fecha_entrega: fecha, notas, items: items.map((i) => ({ producto_id: i.id, cantidad: i.cantidad })) }) });
       const j = await r.json(); if (!r.ok) throw new Error(j.error);
       setListo(true);
     } catch (e: any) { setError(e.message || "No se pudo enviar"); } finally { setEnviando(false); }

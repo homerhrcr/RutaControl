@@ -21,6 +21,7 @@ export function ItemsEditor<T extends LineaItem>({
   extra,
   clienteId,
   rutaId,
+  permitirSinPrecio,
 }: {
   items: T[];
   onChange: (items: T[]) => void;
@@ -28,6 +29,8 @@ export function ItemsEditor<T extends LineaItem>({
   extra?: (item: T, set: (patch: Partial<T>) => void) => React.ReactNode;
   clienteId?: string;
   rutaId?: string | null;
+  /** Devoluciones: permite productos sin precio (precio 0). */
+  permitirSinPrecio?: boolean;
 }) {
   const { data: productos, listo, listaNombre } = useProductosCliente(clienteId, rutaId);
   const [sel, setSel] = useState("");
@@ -35,8 +38,8 @@ export function ItemsEditor<T extends LineaItem>({
   function agregar() {
     const p = productos?.find((x) => x.id === sel);
     if (!p || !listo) return;
-    if (!p.precioInfo.valido) return toast.error(`${p.nombre}: ${p.precioInfo.mensaje}`);
-    onChange([...items, nuevo({ producto_id: p.id, nombre: p.nombre, precio: Number(p.precio), cantidad: 1 })]);
+    if (!p.precioInfo.valido && !permitirSinPrecio) return toast.error(`${p.nombre}: ${p.precioInfo.mensaje}`);
+    onChange([...items, nuevo({ producto_id: p.id, nombre: p.nombre, precio: p.precioInfo.valido ? Number(p.precio) : 0, cantidad: 1 })]);
     setSel("");
   }
 

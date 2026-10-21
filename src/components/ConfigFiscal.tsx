@@ -61,10 +61,7 @@ export function ConfigFiscal() {
         </p>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="space-y-1">
-          <Label className="text-xs">Tipo de cédula</Label>
-          <OpcionSelect catalogo="tipo_identificacion" ariaLabel="Tipo de cédula" value={f.tipo_identificacion} onChange={(v) => setF({ ...f, tipo_identificacion: v })} />
-        </div>
+        <OpcionSelect catalogo="tipo_identificacion" label="Tipo de cédula" ariaLabel="Tipo de cédula" value={f.tipo_identificacion} onChange={(v) => setF({ ...f, tipo_identificacion: v })} />
         {campo("identificacion", "Cédula")}
         {campo("nombre_fiscal", "Nombre o razón social")}
         {campo("nombre_comercial", "Nombre comercial")}

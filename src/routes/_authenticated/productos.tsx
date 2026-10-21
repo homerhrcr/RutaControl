@@ -190,7 +190,7 @@ export function ProductosPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <F label="Código CABYS"><Input inputMode="numeric" maxLength={13} value={form.cabys} onChange={(e) => setForm({ ...form, cabys: e.target.value.replace(/\D/g, "") })} /></F>
-              <F label="IVA %"><OpcionSelect catalogo="tarifa_iva" ariaLabel="IVA" value={String(form.tarifa_iva)} onChange={(v) => setForm({ ...form, tarifa_iva: Number(v) })} /></F>
+              <OpcionSelect catalogo="tarifa_iva" label="IVA %" ariaLabel="IVA" value={String(form.tarifa_iva)} onChange={(v) => setForm({ ...form, tarifa_iva: Number(v) })} />
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
               <Label>Producto activo</Label>

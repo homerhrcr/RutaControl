@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Truck, FileText, FileSpreadsheet, ArrowLeft, PackageCheck } from "lucide-react";
+import { Plus, Truck, FileText, FileSpreadsheet, ArrowLeft, PackageCheck, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -146,7 +146,28 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const [mermas, setMermas] = useState<Record<string, number>>({});
   const [notas, setNotas] = useState("");
   const [busy, setBusy] = useState(false);
+  const [editar, setEditar] = useState(false);
+  const [extras, setExtras] = useState<Record<string, number>>({});
+  const [vehiculoEd, setVehiculoEd] = useState("");
+  const [agregarId, setAgregarId] = useState("");
+  const { data: productosTodos } = useProductos();
   const detalle = descontarPendientes(carga, pendientes);
+  function abrirEdicion() {
+    setExtras(Object.fromEntries(carga.cargas_camion_detalle.map((d) => [d.producto_id, Number(d.extra)])));
+    setVehiculoEd(carga.vehiculo ?? ""); setAgregarId(""); setEditar(true);
+  }
+  async function guardarEdicion() {
+    if (!navigator.onLine) return toast.error("Editar la carga necesita conexión");
+    if (Object.values(extras).some((n) => !Number.isFinite(n) || n < 0)) return toast.error("Las cantidades no pueden ser negativas");
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("editar_carga_camion", { p: { id: carga.id, vehiculo: vehiculoEd, extras: Object.entries(extras).map(([producto_id, extra]) => ({ producto_id, extra })) } });
+      if (error) throw error;
+      await Promise.all(["cargas_camion", "productos"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+      setEditar(false); toast.success("Carga actualizada");
+    } catch (e) { toast.error(String((e as { message?: string }).message ?? "No se pudo editar")); } finally { setBusy(false); }
+  }
+  const nombreProd = (id: string) => carga.cargas_camion_detalle.find((d) => d.producto_id === id)?.nombre_producto ?? productosTodos?.find((x) => x.id === id)?.nombre ?? "";
   const locales = pendientes.filter((p) => p.carga_id === carga.id);
   const { data: ventas } = useQuery({ queryKey: ["ventas-camion", carga.id], queryFn: async () => {
     const { data, error } = await supabase.from("ventas").select("total, metodo_pago").eq("carga_id", carga.id);
@@ -187,7 +208,13 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     {locales.length > 0 && <p className="text-sm text-warning">{locales.length} venta(s) pendientes de sincronizar · Descontadas del disponible local</p>}
     <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-3 text-left">Producto</th><th>Preventa</th><th>Extra</th><th>Vendido</th><th>A bordo</th><th>Reservado</th><th>Libre venta</th><th>Devuelto</th><th>Merma</th></tr></thead><tbody>{detalle.map((d) => <tr key={d.id} className="border-b"><td className="py-3 font-medium">{d.nombre_producto}</td>{[d.preventa, d.extra, d.vendido, enCamion(d), d.reservado, Math.max(0, enCamion(d) - d.reservado), d.devuelto, d.merma].map((n, i) => <td key={i} className={`text-center ${i === 3 ? "font-bold text-primary" : ""}`}>{numero(Number(n))}</td>)}</tr>)}</tbody></table></div>
     {carga.notas && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{carga.notas}</p>}
-    {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y registrar sobrantes</Button>}</div>}
+    {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{isAdmin && <Button variant="outline" disabled={!online} onClick={abrirEdicion}><Pencil className="mr-2 h-4 w-4" />Editar carga</Button>}{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y registrar sobrantes</Button>}</div>}
+    <Dialog open={editar} onOpenChange={(o) => !busy && setEditar(o)}><DialogContent className="max-h-[90dvh] max-w-xl overflow-y-auto"><DialogHeader><DialogTitle>Editar carga</DialogTitle><DialogDescription>Ajuste el producto extra a bordo. La diferencia se descuenta o regresa a bodega.</DialogDescription></DialogHeader>
+      <div className="space-y-1"><Label htmlFor="ed-vehiculo">Vehículo / placa</Label><Input id="ed-vehiculo" value={vehiculoEd} onChange={(e) => setVehiculoEd(e.target.value)} /></div>
+      <table className="w-full text-sm"><thead><tr className="border-b"><th className="py-2 text-left">Producto</th><th>Preventa</th><th>Extra</th></tr></thead><tbody>{Object.keys(extras).map((pid) => { const d = carga.cargas_camion_detalle.find((x) => x.producto_id === pid); return <tr key={pid} className="border-b"><td className="py-2">{nombreProd(pid)}</td><td className="text-center">{numero(Number(d?.preventa ?? 0))}</td><td className="p-2"><Input aria-label={`Extra ${nombreProd(pid)}`} type="number" min={0} step="0.01" className="w-24" value={extras[pid]} onChange={(e) => setExtras((s) => ({ ...s, [pid]: Number(e.target.value) }))} /></td></tr>; })}</tbody></table>
+      <div className="flex gap-2"><select aria-label="Agregar producto" className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm" value={agregarId} onChange={(e) => setAgregarId(e.target.value)}><option value="">Agregar producto…</option>{(productosTodos ?? []).filter((x) => x.activo && !(x.id in extras)).map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select><Button type="button" variant="outline" disabled={!agregarId} onClick={() => { setExtras((s) => ({ ...s, [agregarId]: 1 })); setAgregarId(""); }}><Plus className="h-4 w-4" /></Button></div>
+      <Button disabled={busy} onClick={guardarEdicion}>{busy ? "Guardando…" : "Guardar cambios"}</Button>
+    </DialogContent></Dialog>
     <Dialog open={cerrar} onOpenChange={(o) => !busy && setCerrar(o)}><DialogContent className="max-h-[90dvh] max-w-xl overflow-y-auto"><DialogHeader><DialogTitle>Liquidar carga de camión</DialogTitle><DialogDescription>Sobrantes y productos dañados</DialogDescription></DialogHeader>
       <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b"><th className="py-2 text-left">Producto</th><th>Sobrante</th><th>Daños / merma</th><th>Regresa</th></tr></thead><tbody>{detalle.filter((d) => enCamion(d) > 0).map((d) => <tr key={d.id} className="border-b"><td className="py-2">{d.nombre_producto}</td><td className="text-center">{numero(enCamion(d))}</td><td className="p-2"><Input aria-label={`Merma ${d.nombre_producto}`} type="number" min={0} max={enCamion(d)} step="0.01" value={mermas[d.producto_id] ?? 0} onChange={(e) => setMermas((s) => ({ ...s, [d.producto_id]: Number(e.target.value) }))} className="w-20" /></td><td className="text-center font-bold">{numero(enCamion(d) - (mermas[d.producto_id] ?? 0))}</td></tr>)}</tbody></table></div>
       <Textarea aria-label="Observaciones de liquidación" placeholder="Observaciones / motivo de la merma" value={notas} onChange={(e) => setNotas(e.target.value)} />

@@ -218,9 +218,9 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { 
               catalogo="rutas"
               label="Ruta"
               placeholder="—"
-              value={ruta}
-              onChange={setRuta}
-              extraOptions={[{ value: "", label: "—" }]}
+              value={ruta || "__none__"}
+              onChange={(v) => setRuta(v === "__none__" ? "" : v)}
+              extraOptions={[{ value: "__none__", label: "—" }]}
             />
           </div>
           <ItemsEditor<Linea>

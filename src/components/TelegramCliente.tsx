@@ -172,9 +172,9 @@ export function PedidoTelegram({ pedidoId, clienteId, nombre, rutaId, fechaEntre
             catalogo="rutas"
             label="Ruta de entrega"
             placeholder="Sin ruta"
-            value={ruta}
-            onChange={setRuta}
-            extraOptions={[{ value: "", label: "Sin ruta" }]}
+            value={ruta || "__none__"}
+            onChange={(v) => setRuta(v === "__none__" ? "" : v)}
+            extraOptions={[{ value: "__none__", label: "Sin ruta" }]}
           />
           <label className="space-y-1 text-sm"><span className="font-medium">Fecha estimada</span>
             <Input aria-label="Fecha estimada de entrega" type="date" value={fechaE} onChange={(e) => setFechaE(e.target.value)} /></label>

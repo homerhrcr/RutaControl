@@ -9,6 +9,7 @@ import { useRutas, useProductos } from "@/lib/data";
 import { useCargasCamion, usePendientesCamion, descontarPendientes, enCamion, type CargaCamion } from "@/lib/carga-camion";
 import { useEmpresa } from "@/lib/empresa";
 import { useProductosCliente } from "@/lib/listas-precios";
+import { estimarCarga } from "@/lib/carga-estimacion";
 import { descargarReporteExcel, verReportePdf, type Reporte } from "@/lib/reporte-export";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -152,13 +153,14 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const [vehiculoEd, setVehiculoEd] = useState("");
   const [agregarId, setAgregarId] = useState("");
   const { data: productosTodos } = useProductos();
-  const { data: preciosRuta } = useProductosCliente(undefined, carga.ruta_id);
+  const { data: preciosRuta, listo: preciosListos, listaNombre, error: errorPrecios } = useProductosCliente(undefined, carga.ruta_id);
   const detalle = descontarPendientes(carga, pendientes);
   const cargado = (d: (typeof detalle)[number]) => Number(d.preventa) + Number(d.extra);
   const costoU = (pid: string) => Number(productosTodos?.find((x) => x.id === pid)?.costo ?? 0);
-  const ventaU = (pid: string) => Number(preciosRuta?.find((x) => x.id === pid)?.precio ?? 0);
-  const costoTotal = detalle.reduce((s, d) => s + costoU(d.producto_id) * cargado(d), 0);
-  const ventaTotal = detalle.reduce((s, d) => s + ventaU(d.producto_id) * cargado(d), 0);
+  const estimacion = estimarCarga(detalle, productosTodos ?? [], preciosRuta ?? []);
+  const { costoTotal, ventaTotal } = estimacion;
+  const valorLinea = (pid: string) => estimacion.filas.find((f) => f.producto_id === pid);
+  const monedaEstimada = (n: number | null) => n === null ? "Pendiente de precio" : `₡${numero(n)}`;
   function abrirEdicion() {
     setExtras(Object.fromEntries(carga.cargas_camion_detalle.map((d) => [d.producto_id, Number(d.extra)])));
     setVehiculoEd(carga.vehiculo ?? ""); setAgregarId(""); setEditar(true);
@@ -194,11 +196,11 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const perdidaDevol = (devsMerma ?? []).reduce((s, l) => s + costoU(l.producto_id ?? "") * Number(l.cantidad), 0);
   const sobrantes = detalle.reduce((s, d) => s + costoU(d.producto_id) * Number(d.devuelto), 0);
   const utilidadReal = total - costoVendido - perdidaMerma - perdidaDevol;
-  const resumen: [string, number][] = cerrada
+  const resumen: [string, number | null][] = cerrada
     ? [["Ventas reales", total], ["Costo de lo vendido", costoVendido], ["Pérdida por merma", perdidaMerma], ["Pérdida por devoluciones", perdidaDevol], ["Sobrantes devueltos a bodega (no es pérdida)", sobrantes], ["Utilidad real de la ruta", utilidadReal]]
-    : [["Costo total del producto que sale", costoTotal], ["Precio de venta total cargado", ventaTotal], ["Utilidad estimada", ventaTotal - costoTotal]];
+    : [["Costo total del producto que sale", costoTotal], ["Precio de venta estimado cargado", ventaTotal], ["Utilidad estimada", estimacion.utilidad]];
   const reporte: Reporte = { titulo: "Carga y liquidación de camión", descripcion: `${carga.vehiculo || "Camión"} · ${cerrada ? "Cerrada" : "En ruta"}${locales.length ? " · Incluye ventas pendientes de sincronizar" : ""}`, indicadores: [
-    ...resumen.map(([label, valor]) => ({ label, valor, tipo: "moneda" as const })),
+    ...resumen.map(([label, valor]) => ({ label, valor: valor ?? "Pendiente de precio", tipo: valor === null ? "texto" as const : "moneda" as const })),
     { label: "Unidades cargadas", valor: detalle.reduce((s, d) => s + Number(d.preventa) + Number(d.extra), 0), tipo: "entero" },
     { label: "Unidades vendidas", valor: detalle.reduce((s, d) => s + Number(d.vendido), 0), tipo: "entero" },
     { label: "Ventas sincronizadas", valor: total, tipo: "moneda" },
@@ -208,12 +210,14 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     { key: "nombre", titulo: "Producto", tipo: "texto" }, { key: "preventa", titulo: "Preventa", tipo: "entero" }, { key: "extra", titulo: "Extra", tipo: "entero" },
     { key: "vendido", titulo: "Vendido", tipo: "entero" }, { key: "abordo", titulo: "A bordo", tipo: "entero" }, { key: "devuelto", titulo: "Devuelto a bodega", tipo: "entero" }, { key: "merma", titulo: "Merma", tipo: "entero" },
     { key: "costo", titulo: "Precio costo", tipo: "moneda" }, { key: "costoTotal", titulo: "Total costo", tipo: "moneda" },
-    { key: "venta", titulo: "Precio venta", tipo: "moneda" }, { key: "ventaTotal", titulo: "Total venta", tipo: "moneda" },
+    { key: "venta", titulo: "Precio venta estimado", tipo: "moneda" }, { key: "ventaTotal", titulo: "Total venta estimado", tipo: "moneda" },
   ], filas: detalle.map((d) => ({ nombre: d.nombre_producto, preventa: Number(d.preventa), extra: Number(d.extra), vendido: Number(d.vendido), abordo: enCamion(d), devuelto: Number(d.devuelto), merma: Number(d.merma),
-    costo: costoU(d.producto_id), costoTotal: costoU(d.producto_id) * cargado(d), venta: ventaU(d.producto_id), ventaTotal: ventaU(d.producto_id) * cargado(d) })),
-  totales: { nombre: "Total", preventa: detalle.reduce((s, d) => s + Number(d.preventa), 0), extra: detalle.reduce((s, d) => s + Number(d.extra), 0), vendido: detalle.reduce((s, d) => s + Number(d.vendido), 0), abordo: detalle.reduce((s, d) => s + enCamion(d), 0), devuelto: detalle.reduce((s, d) => s + Number(d.devuelto), 0), merma: detalle.reduce((s, d) => s + Number(d.merma), 0), costo: "", costoTotal, venta: "", ventaTotal },
+    costo: costoU(d.producto_id), costoTotal: costoU(d.producto_id) * cargado(d), venta: valorLinea(d.producto_id)?.venta ?? "Sin precio", ventaTotal: valorLinea(d.producto_id)?.ventaTotal ?? "Sin precio" })),
+  totales: { nombre: "Total", preventa: detalle.reduce((s, d) => s + Number(d.preventa), 0), extra: detalle.reduce((s, d) => s + Number(d.extra), 0), vendido: detalle.reduce((s, d) => s + Number(d.vendido), 0), abordo: detalle.reduce((s, d) => s + enCamion(d), 0), devuelto: detalle.reduce((s, d) => s + Number(d.devuelto), 0), merma: detalle.reduce((s, d) => s + Number(d.merma), 0), costo: "", costoTotal, venta: "", ventaTotal: ventaTotal ?? "Pendiente de precio" },
+  nota: !cerrada ? `${listaNombre}. Estimación de venta de toda la carga (preventa + extra).${estimacion.faltantes.length ? " Hay productos sin precio: no se calcula utilidad hasta completar la lista de esta ruta." : ""}` : undefined,
   }] };
   async function exportar(tipo: "pdf" | "excel") {
+    if (!preciosListos || productosTodos === undefined) return toast.error(errorPrecios ? "No se pudieron leer los precios de la ruta" : "Espere a que se carguen los costos y precios de la ruta");
     if (!empresa) return toast.error("Todavía no se han cargado los datos de la empresa");
     try { await (tipo === "pdf" ? verReportePdf : descargarReporteExcel)(reporte, empresa, { periodo: carga.fecha, ruta: carga.rutas?.nombre ?? "", usuario: nombre }); } catch { toast.error("No se pudo generar el documento"); }
   }
@@ -234,8 +238,10 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   return <section className="space-y-4">
     <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-bold">{carga.rutas?.nombre}</h2><p className="text-sm text-muted-foreground">{carga.fecha} · {carga.vehiculo || "Sin placa"} · {carga.estado === "en_ruta" ? "En ruta" : "Cerrada"}</p></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => exportar("pdf")}><FileText className="mr-2 h-4 w-4" />PDF</Button><Button size="sm" variant="outline" onClick={() => exportar("excel")}><FileSpreadsheet className="mr-2 h-4 w-4" />Excel</Button></div></div>
     {locales.length > 0 && <p className="text-sm text-warning">{locales.length} venta(s) pendientes de sincronizar · Descontadas del disponible local</p>}
-    {!cerrada && ventaTotal === 0 && <p className="text-sm text-warning">Esta ruta no tiene lista de precios con productos; asígnela en Administración → Rutas para calcular la venta y la utilidad estimada.</p>}
-    <div className="grid gap-2 sm:grid-cols-3">{resumen.map(([l, v]) => <div key={l} className="rounded-md border p-3"><div className="text-xs text-muted-foreground">{l}</div><div className={`text-lg font-bold ${v < 0 ? "text-destructive" : "text-primary"}`}>₡{Math.round(v).toLocaleString("es-CR")}</div></div>)}</div>
+    {!cerrada && <p className="text-xs text-muted-foreground">{listaNombre}</p>}
+    {!cerrada && preciosListos && estimacion.faltantes.length > 0 && <p className="text-sm text-warning">Complete los precios de esta ruta para calcular la utilidad estimada: {detalle.filter((d) => estimacion.faltantes.includes(d.producto_id)).map((d) => d.nombre_producto).join(", ")}. <Link to="/administracion" className="underline">Administración → Rutas / Precios</Link></p>}
+    <div className="grid gap-2 sm:grid-cols-3">{resumen.map(([l, v]) => <div key={l} className="rounded-md border p-3"><div className="text-xs text-muted-foreground">{l}</div><div className={`text-lg font-bold ${v !== null && v < 0 ? "text-destructive" : "text-primary"}`}>{!preciosListos || productosTodos === undefined ? "Cargando…" : monedaEstimada(v)}</div></div>)}</div>
+    <section className="space-y-2"><h3 className="font-semibold">Valoración estimada de salida</h3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-2 text-left">Producto</th><th>Cargado</th><th>Precio costo</th><th>Total costo</th><th>Precio venta estimado</th><th>Total venta estimado</th></tr></thead><tbody>{detalle.map((d) => { const f = valorLinea(d.producto_id); return <tr key={d.id} className="border-b"><td className="py-2">{d.nombre_producto}</td><td className="text-right">{numero(cargado(d))}</td><td className="text-right">{monedaEstimada(f?.costo ?? null)}</td><td className="text-right">{monedaEstimada(f?.costoTotal ?? null)}</td><td className="text-right">{monedaEstimada(f?.venta ?? null)}</td><td className="text-right">{monedaEstimada(f?.ventaTotal ?? null)}</td></tr>; })}</tbody><tfoot><tr className="border-t font-bold"><td className="py-2" colSpan={3}>Total estimado</td><td className="text-right">{monedaEstimada(costoTotal)}</td><td></td><td className="text-right">{monedaEstimada(ventaTotal)}</td></tr></tfoot></table></div></section>
     <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-3 text-left">Producto</th><th>Preventa</th><th>Extra</th><th>Vendido</th><th>A bordo</th><th>Reservado</th><th>Libre venta</th><th>Devuelto</th><th>Merma</th></tr></thead><tbody>{detalle.map((d) => <tr key={d.id} className="border-b"><td className="py-3 font-medium">{d.nombre_producto}</td>{[d.preventa, d.extra, d.vendido, enCamion(d), d.reservado, Math.max(0, enCamion(d) - d.reservado), d.devuelto, d.merma].map((n, i) => <td key={i} className={`text-center ${i === 3 ? "font-bold text-primary" : ""}`}>{numero(Number(n))}</td>)}</tr>)}</tbody></table></div>
     {carga.notas && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{carga.notas}</p>}
     {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{isAdmin && <Button variant="outline" disabled={!online} onClick={abrirEdicion}><Pencil className="mr-2 h-4 w-4" />Editar carga</Button>}{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y registrar sobrantes</Button>}</div>}

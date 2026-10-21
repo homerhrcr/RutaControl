@@ -3,7 +3,7 @@ import type { EmpresaDatos } from "@/lib/empresa";
 import { esNumerica, formatoValor, numFmtExcel, tieneDecimales, valorCelda, type Columna, type Fila, type TipoCol } from "@/lib/reporte-formato";
 import { descargarBlob, mostrarPdf } from "@/lib/pdf-preview";
 
-export type Indicador = { label: string; valor: number; tipo: TipoCol };
+export type Indicador = { label: string; valor: number | string; tipo: TipoCol };
 export type Seccion = { titulo: string; columnas: Columna[]; filas: Fila[]; totales?: Fila; nota?: string };
 export type Reporte = { titulo: string; descripcion: string; indicadores: Indicador[]; secciones: Seccion[] };
 export type Contexto = { periodo: string; ruta: string; usuario: string };

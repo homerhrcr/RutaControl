@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CatalogSelect } from "@/components/CatalogSelect";
 import { Send, Copy, Link2, Unlink, Loader2, MessageCircle, CheckCircle2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
@@ -167,11 +168,14 @@ export function PedidoTelegram({ pedidoId, clienteId, nombre, rutaId, fechaEntre
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-lg"><DialogHeader><DialogTitle>Telegram · Pedido #{numero}</DialogTitle></DialogHeader>
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <label className="space-y-1 text-sm"><span className="font-medium">Ruta de entrega</span>
-            <select aria-label="Ruta de entrega" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={ruta} onChange={(e) => setRuta(e.target.value)}>
-              <option value="">Sin ruta</option>
-              {(rutas ?? []).filter((r) => r.activo !== false || r.id === ruta).map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-            </select></label>
+          <CatalogSelect
+            catalogo="rutas"
+            label="Ruta de entrega"
+            placeholder="Sin ruta"
+            value={ruta || "__none__"}
+            onChange={(v) => setRuta(v === "__none__" ? "" : v)}
+            extraOptions={[{ value: "__none__", label: "Sin ruta" }]}
+          />
           <label className="space-y-1 text-sm"><span className="font-medium">Fecha estimada</span>
             <Input aria-label="Fecha estimada de entrega" type="date" value={fechaE} onChange={(e) => setFechaE(e.target.value)} /></label>
         </div>

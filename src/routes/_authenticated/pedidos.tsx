@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useClientes, useRutas, useInvalidate, registrarVenta } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { CatalogSelect } from "@/components/CatalogSelect";
 import { ItemsEditor, type LineaItem } from "@/components/ItemsEditor";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -119,13 +120,15 @@ function PedidosPage() {
       <div className="space-y-4 p-4 md:p-6">
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1"><Label className="text-xs">Fecha de entrega (vacío = todas)</Label><div className="flex gap-1"><Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />{fecha && <Button variant="ghost" size="sm" className="h-10" onClick={() => setFecha("")}>Todas</Button>}</div></div>
-          <div className="space-y-1">
-            <Label className="text-xs">Ruta</Label>
-            <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={ruta} onChange={(e) => setRuta(e.target.value)}>
-              <option value="all">Todas</option>
-              {(rutas ?? []).map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-            </select>
-          </div>
+          <CatalogSelect
+            catalogo="rutas"
+            incluirInactivas
+            label="Ruta"
+            placeholder="Ruta"
+            value={ruta}
+            onChange={setRuta}
+            extraOptions={[{ value: "all", label: "Todas" }]}
+          />
         </div>
         <Input placeholder="Buscar cliente…" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar cliente" />
         <Tabs defaultValue="pedidos">

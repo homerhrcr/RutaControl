@@ -264,9 +264,7 @@ function ClientesPage() {
             </Field>
             {editId ? <PreciosEspecialesCliente clienteId={editId} /> : <p className="text-xs text-muted-foreground">Guarde el cliente para registrar precios especiales.</p>}
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Tipo de cédula">
-                <OpcionSelect catalogo="tipo_identificacion" vacio="Sin cédula" ariaLabel="Tipo de cédula" value={form.tipo_identificacion} onChange={(v) => setForm({ ...form, tipo_identificacion: v })} />
-              </Field>
+              <OpcionSelect catalogo="tipo_identificacion" label="Tipo de cédula" vacio="Sin cédula" ariaLabel="Tipo de cédula" value={form.tipo_identificacion} onChange={(v) => setForm({ ...form, tipo_identificacion: v })} />
               <Field label="Cédula">
                 <Input value={form.identificacion} onChange={(e) => setForm({ ...form, identificacion: e.target.value.replace(/\D/g, "") })} />
               </Field>

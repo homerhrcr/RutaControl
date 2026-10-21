@@ -38,6 +38,7 @@ export const Route = createFileRoute("/_authenticated/devoluciones")({
 });
 
 import { OpcionSelect } from "@/components/OpcionSelect";
+import { CatalogSelect } from "@/components/CatalogSelect";
 import { useOpciones } from "@/lib/catalogos";
 import { predeterminada } from "@/lib/catalogos-logica";
 
@@ -213,13 +214,14 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { 
                 {(clientes ?? []).map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
               </select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Ruta</Label>
-              <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={ruta} onChange={(e) => setRuta(e.target.value)}>
-                <option value="">—</option>
-                {(rutas ?? []).filter((r) => r.activo || r.id === ruta).map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-              </select>
-            </div>
+            <CatalogSelect
+              catalogo="rutas"
+              label="Ruta"
+              placeholder="—"
+              value={ruta || "__none__"}
+              onChange={(v) => setRuta(v === "__none__" ? "" : v)}
+              extraOptions={[{ value: "__none__", label: "—" }]}
+            />
           </div>
           <ItemsEditor<Linea>
             permitirSinPrecio
@@ -231,8 +233,8 @@ export function NuevaDevolucion({ open, onOpenChange, clienteId, solicitud }: { 
             extra={(it, set) => (
               <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                <OpcionSelect catalogo="motivo_devolucion" ariaLabel={`Motivo de ${it.nombre}`} className="h-9 rounded-md border bg-background px-2 text-sm" value={it.motivo} onChange={(v) => set({ motivo: v })} />
-                <OpcionSelect catalogo="destino_devolucion" ariaLabel={`Destino de ${it.nombre}`} className="h-9 rounded-md border bg-background px-2 text-sm" value={it.destino} onChange={(v) => set({ destino: v as Linea["destino"], recomendacion_aplicada: false })} />
+                <OpcionSelect catalogo="motivo_devolucion" label="Motivo" ariaLabel={`Motivo de ${it.nombre}`} className="h-9 rounded-md border bg-background px-2 text-sm" value={it.motivo} onChange={(v) => set({ motivo: v })} />
+                <OpcionSelect catalogo="destino_devolucion" label="Destino" ariaLabel={`Destino de ${it.nombre}`} className="h-9 rounded-md border bg-background px-2 text-sm" value={it.destino} onChange={(v) => set({ destino: v as Linea["destino"], recomendacion_aplicada: false })} />
               </div>
               <DevolucionInspeccion productoId={it.producto_id} nombre={it.nombre} devolucionId={devolucionId} value={it} onChange={set} />
               </div>

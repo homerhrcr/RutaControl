@@ -164,10 +164,10 @@ export function CatalogoEditor({ def, onRenamed }: { def: DefCatalogo; onRenamed
             ) : (
               <div className="flex flex-wrap items-center gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className={`text-sm ${f.activo ? "" : "text-muted-foreground line-through"}`}>
+                  <div className={`text-sm ${f.activo ? "" : "text-muted-foreground line-through"}`}>
                     {f.etiqueta}{f.predeterminado && <Badge variant="secondary" className="ml-2">Predeterminada</Badge>}
                     {f.protegido && <span className="ml-2 text-xs text-muted-foreground">código {f.codigo}</span>}
-                  </p>
+                  </div>
                   {f.descripcion && <p className="text-xs text-muted-foreground">{f.descripcion}</p>}
                 </div>
                 {isAdmin && (

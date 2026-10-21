@@ -62,6 +62,13 @@ function diasSerie(n: number) {
 }
 
 export function DashboardPage() {
+  const { isAdmin } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAdmin) navigate({ to: "/ruta", replace: true });
+  }, [isAdmin, navigate]);
+
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {

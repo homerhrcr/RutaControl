@@ -24,3 +24,4 @@
 - [x] Telegram pedidos: confirmación explícita "en ruta", aviso de confirmación ya enviada, mensaje adicional del pedido y reenvío controlado
 - [x] Datos de empresa con logo en Administración; reportes gerenciales (resumen, rentabilidad por ruta, mermas, cartera, clientes, productos, ventas, gastos) con vista previa PDF y Excel con formato de moneda/números
 - [x] Eliminar productos solo para administradores: botón en la ficha del producto con confirmación; si el producto tiene ventas, pedidos o precios registrados se sugiere desactivarlo en su lugar.
+- [x] Administración de catálogos y selectores editables

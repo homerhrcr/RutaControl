@@ -19,7 +19,7 @@ export function useCategorias() {
   return useQuery({
     queryKey: ["categorias"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("categorias").select("*").order("nombre");
+      const { data, error } = await supabase.from("categorias").select("*").order("orden").order("nombre");
       if (error) throw error;
       return data;
     },
@@ -30,7 +30,7 @@ export function useRutas() {
   return useQuery({
     queryKey: ["rutas"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("rutas").select("*").order("nombre");
+      const { data, error } = await supabase.from("rutas").select("*").order("orden").order("nombre");
       if (error) throw error;
       return data;
     },

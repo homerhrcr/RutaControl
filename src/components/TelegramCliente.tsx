@@ -170,7 +170,7 @@ export function PedidoTelegram({ pedidoId, clienteId, nombre, rutaId, fechaEntre
           <label className="space-y-1 text-sm"><span className="font-medium">Ruta de entrega</span>
             <select aria-label="Ruta de entrega" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={ruta} onChange={(e) => setRuta(e.target.value)}>
               <option value="">Sin ruta</option>
-              {(rutas ?? []).map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+              {(rutas ?? []).filter((r) => r.activo || r.id === ruta).map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
             </select></label>
           <label className="space-y-1 text-sm"><span className="font-medium">Fecha estimada</span>
             <Input aria-label="Fecha estimada de entrega" type="date" value={fechaE} onChange={(e) => setFechaE(e.target.value)} /></label>

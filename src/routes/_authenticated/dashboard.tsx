@@ -166,6 +166,8 @@ export function DashboardPage() {
     },
   });
 
+  if (!isAdmin) return null;
+
   return (
     <div>
       <PageHeader title="Dashboard Gerencial" subtitle="Resumen del mes" />

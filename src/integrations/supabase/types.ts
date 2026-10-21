@@ -1877,6 +1877,7 @@ export type Database = {
       cerrar_carga_camion: { Args: { p: Json }; Returns: string }
       current_organization_id: { Args: never; Returns: string }
       editar_carga_camion: { Args: { p: Json }; Returns: string }
+      guardar_orden_ruta: { Args: { p_items: Json }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

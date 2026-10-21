@@ -53,14 +53,12 @@ export function useClientes(rutaId?: string) {
   });
 }
 
-// Guarda el orden de entrega de los clientes en una ruta
+// Guarda el orden de entrega de los clientes en una ruta (una sola llamada atómica)
 export async function guardarOrdenRuta(items: { id: string; orden: number }[]) {
-  for (const it of items) {
-    const { error } = await supabase
-      .from("cliente_rutas")
-      .update({ orden: it.orden })
-      .eq("id", it.id);
-    if (error) throw error;
+  const { data, error } = await supabase.rpc("guardar_orden_ruta", { p_items: items });
+  if (error) throw error;
+  if (typeof data === "number" && data < items.length) {
+    throw new Error(`Solo se guardaron ${data} de ${items.length} posiciones; intente de nuevo`);
   }
 }
 

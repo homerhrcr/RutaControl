@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CatalogoEditor } from "@/components/CatalogosAdmin";
-import { DEFINICIONES } from "@/lib/catalogos";
+import { DEFINICIONES, type CatalogoOpcionKey } from "@/lib/catalogos";
 
 export type CatalogRow = { id: string; nombre: string; activo: boolean; orden: number };
 

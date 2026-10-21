@@ -183,6 +183,9 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   } });
   const total = (ventas ?? []).reduce((s, v) => s + Number(v.total), 0);
   const reporte: Reporte = { titulo: "Carga y liquidación de camión", descripcion: `${carga.vehiculo || "Camión"} · ${carga.estado === "en_ruta" ? "En ruta" : "Cerrada"}${locales.length ? " · Incluye ventas pendientes de sincronizar" : ""}`, indicadores: [
+    { label: "Costo total del producto que sale", valor: costoTotal, tipo: "moneda" },
+    { label: "Precio de venta total cargado", valor: ventaTotal, tipo: "moneda" },
+    { label: "Utilidad estimada", valor: ventaTotal - costoTotal, tipo: "moneda" },
     { label: "Unidades cargadas", valor: detalle.reduce((s, d) => s + Number(d.preventa) + Number(d.extra), 0), tipo: "entero" },
     { label: "Unidades vendidas", valor: detalle.reduce((s, d) => s + Number(d.vendido), 0), tipo: "entero" },
     { label: "Ventas sincronizadas", valor: total, tipo: "moneda" },
@@ -191,7 +194,12 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   ], secciones: [{ titulo: "Control de inventario", columnas: [
     { key: "nombre", titulo: "Producto", tipo: "texto" }, { key: "preventa", titulo: "Preventa", tipo: "entero" }, { key: "extra", titulo: "Extra", tipo: "entero" },
     { key: "vendido", titulo: "Vendido", tipo: "entero" }, { key: "abordo", titulo: "A bordo", tipo: "entero" }, { key: "devuelto", titulo: "Devuelto a bodega", tipo: "entero" }, { key: "merma", titulo: "Merma", tipo: "entero" },
-  ], filas: detalle.map((d) => ({ nombre: d.nombre_producto, preventa: Number(d.preventa), extra: Number(d.extra), vendido: Number(d.vendido), abordo: enCamion(d), devuelto: Number(d.devuelto), merma: Number(d.merma) })) }] };
+    { key: "costo", titulo: "Precio costo", tipo: "moneda" }, { key: "costoTotal", titulo: "Total costo", tipo: "moneda" },
+    { key: "venta", titulo: "Precio venta", tipo: "moneda" }, { key: "ventaTotal", titulo: "Total venta", tipo: "moneda" },
+  ], filas: detalle.map((d) => ({ nombre: d.nombre_producto, preventa: Number(d.preventa), extra: Number(d.extra), vendido: Number(d.vendido), abordo: enCamion(d), devuelto: Number(d.devuelto), merma: Number(d.merma),
+    costo: costoU(d.producto_id), costoTotal: costoU(d.producto_id) * cargado(d), venta: ventaU(d.producto_id), ventaTotal: ventaU(d.producto_id) * cargado(d) })),
+  totales: { nombre: "Total", preventa: detalle.reduce((s, d) => s + Number(d.preventa), 0), extra: detalle.reduce((s, d) => s + Number(d.extra), 0), vendido: detalle.reduce((s, d) => s + Number(d.vendido), 0), abordo: detalle.reduce((s, d) => s + enCamion(d), 0), devuelto: detalle.reduce((s, d) => s + Number(d.devuelto), 0), merma: detalle.reduce((s, d) => s + Number(d.merma), 0), costo: "", costoTotal, venta: "", ventaTotal },
+  }] };
   async function exportar(tipo: "pdf" | "excel") {
     if (!empresa) return toast.error("Todavía no se han cargado los datos de la empresa");
     try { await (tipo === "pdf" ? verReportePdf : descargarReporteExcel)(reporte, empresa, { periodo: carga.fecha, ruta: carga.rutas?.nombre ?? "", usuario: nombre }); } catch { toast.error("No se pudo generar el documento"); }
@@ -213,6 +221,7 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   return <section className="space-y-4">
     <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-bold">{carga.rutas?.nombre}</h2><p className="text-sm text-muted-foreground">{carga.fecha} · {carga.vehiculo || "Sin placa"} · {carga.estado === "en_ruta" ? "En ruta" : "Cerrada"}</p></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => exportar("pdf")}><FileText className="mr-2 h-4 w-4" />PDF</Button><Button size="sm" variant="outline" onClick={() => exportar("excel")}><FileSpreadsheet className="mr-2 h-4 w-4" />Excel</Button></div></div>
     {locales.length > 0 && <p className="text-sm text-warning">{locales.length} venta(s) pendientes de sincronizar · Descontadas del disponible local</p>}
+    <div className="grid gap-2 sm:grid-cols-3">{[["Costo total del producto que sale", costoTotal], ["Precio de venta total cargado", ventaTotal], ["Utilidad estimada", ventaTotal - costoTotal]].map(([l, v]) => <div key={l as string} className="rounded-md border p-3"><div className="text-xs text-muted-foreground">{l}</div><div className="text-lg font-bold text-primary">₡{Math.round(Number(v)).toLocaleString("es-CR")}</div></div>)}</div>
     <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-3 text-left">Producto</th><th>Preventa</th><th>Extra</th><th>Vendido</th><th>A bordo</th><th>Reservado</th><th>Libre venta</th><th>Devuelto</th><th>Merma</th></tr></thead><tbody>{detalle.map((d) => <tr key={d.id} className="border-b"><td className="py-3 font-medium">{d.nombre_producto}</td>{[d.preventa, d.extra, d.vendido, enCamion(d), d.reservado, Math.max(0, enCamion(d) - d.reservado), d.devuelto, d.merma].map((n, i) => <td key={i} className={`text-center ${i === 3 ? "font-bold text-primary" : ""}`}>{numero(Number(n))}</td>)}</tr>)}</tbody></table></div>
     {carga.notas && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{carga.notas}</p>}
     {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{isAdmin && <Button variant="outline" disabled={!online} onClick={abrirEdicion}><Pencil className="mr-2 h-4 w-4" />Editar carga</Button>}{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y registrar sobrantes</Button>}</div>}

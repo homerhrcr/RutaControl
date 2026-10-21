@@ -151,7 +151,13 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const [vehiculoEd, setVehiculoEd] = useState("");
   const [agregarId, setAgregarId] = useState("");
   const { data: productosTodos } = useProductos();
+  const { data: preciosRuta } = useProductosCliente(undefined, carga.ruta_id);
   const detalle = descontarPendientes(carga, pendientes);
+  const cargado = (d: (typeof detalle)[number]) => Number(d.preventa) + Number(d.extra);
+  const costoU = (pid: string) => Number(productosTodos?.find((x) => x.id === pid)?.costo ?? 0);
+  const ventaU = (pid: string) => Number(preciosRuta?.find((x) => x.id === pid)?.precio ?? 0);
+  const costoTotal = detalle.reduce((s, d) => s + costoU(d.producto_id) * cargado(d), 0);
+  const ventaTotal = detalle.reduce((s, d) => s + ventaU(d.producto_id) * cargado(d), 0);
   function abrirEdicion() {
     setExtras(Object.fromEntries(carga.cargas_camion_detalle.map((d) => [d.producto_id, Number(d.extra)])));
     setVehiculoEd(carga.vehiculo ?? ""); setAgregarId(""); setEditar(true);

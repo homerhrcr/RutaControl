@@ -117,9 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const { error } = await supabase.rpc("set_default_organization", { p_org: id });
     if (error) throw new Error(error.message);
-    queryClient.clear();
+    // Cancelar lecturas de la empresa anterior sin desconectar las consultas
+    // montadas: clear() las dejaba sin observadores y no se refrescaban.
+    await queryClient.cancelQueries();
     if (user) await loadProfile(user.id);
-    await queryClient.invalidateQueries();
+    await queryClient.resetQueries();
   }
 
   return (

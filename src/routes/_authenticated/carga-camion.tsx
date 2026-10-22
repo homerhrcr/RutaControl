@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Truck, FileText, FileSpreadsheet, ArrowLeft, PackageCheck, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -95,10 +95,10 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     // Todos los pedidos pendientes de la ruta, sin importar la fecha: la ruta puede tardar varios días.
     const { data, error } = await supabase.from("pedidos").select("*, clientes(nombre), pedidos_detalle(*)").or(ruta ? `ruta_id.eq.${ruta},ruta_id.is.null` : "ruta_id.is.null").in("estado", ["confirmado", "cargado"]).is("carga_id", null).order("fecha_entrega").order("created_at");
     if (error) throw error;
-    // Preselecciona las preventas cuya entrega es hasta la fecha de salida.
-    setSeleccionados((data ?? []).filter((p) => p.fecha_entrega <= fecha).map((p) => p.id));
     return data;
   } });
+  // Preselecciona las preventas cuya entrega es hasta la fecha de salida.
+  useEffect(() => { setSeleccionados((pedidos ?? []).filter((p) => p.fecha_entrega <= fecha).map((p) => p.id)); }, [pedidos, fecha]);
   const resumen = useMemo(() => {
     const m = new Map<string, { id: string; nombre: string; preventa: number }>();
     const get = (pid: string, nombre: string) => { const d = m.get(pid) ?? { id: pid, nombre, preventa: 0 }; m.set(pid, d); return d; };
@@ -171,16 +171,16 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const monedaEstimada = (n: number | null) => n === null ? "Pendiente de precio" : `₡${numero(n)}`;
   function abrirEdicion() {
     setExtras(Object.fromEntries(carga.cargas_camion_detalle.map((d) => [d.producto_id, Number(d.extra)])));
-    setVehiculoEd(carga.vehiculo ?? ""); setAgregarId(""); setEditar(true);
+    setVehiculoEd(carga.vehiculo ?? ""); setAgregarId(""); setPedidosAgregar((pedidosPend ?? []).filter((p) => p.fecha_entrega <= carga.fecha).map((p) => p.id)); setEditar(true);
   }
   async function guardarEdicion() {
     if (!navigator.onLine) return toast.error("Editar la carga necesita conexión");
     if (Object.values(extras).some((n) => !Number.isFinite(n) || n < 0)) return toast.error("Las cantidades no pueden ser negativas");
     setBusy(true);
     try {
-      const { error } = await supabase.rpc("editar_carga_camion", { p: { id: carga.id, vehiculo: vehiculoEd, extras: Object.entries(extras).map(([producto_id, extra]) => ({ producto_id, extra })) } });
+      const { error } = await supabase.rpc("editar_carga_camion", { p: { id: carga.id, vehiculo: vehiculoEd, pedidos: pedidosAgregar, extras: Object.entries(extras).map(([producto_id, extra]) => ({ producto_id, extra })) } });
       if (error) throw error;
-      await Promise.all(["cargas_camion", "productos"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+      await Promise.all(["cargas_camion", "productos", "pedidos", "pedidos-carga"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
       setEditar(false); toast.success("Carga actualizada");
     } catch (e) { toast.error(String((e as { message?: string }).message ?? "No se pudo editar")); } finally { setBusy(false); }
   }

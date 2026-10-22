@@ -104,13 +104,6 @@ export function RutaPage() {
     if (data.length === 1) setEntregaPedido(data[0]);
     else setEntregaPedidos(data);
   }
-  const _noop = useQuery({
-    queryKey: ["noop-ruta"],
-    enabled: false,
-    queryFn: async () => {
-      return null;
-    },
-  });
   const conPedido = useMemo(() => new Set(pedidosPend ?? []), [pedidosPend]);
   const { data: saldos } = useQuery({
     queryKey: ["saldos-map"],

@@ -7,7 +7,8 @@ import { disponibleCamion, enCamion, reservasPedidos, sumarProductos } from "./c
 export function useCargasCamion() {
   const { organizacionActiva } = useAuth();
   return useQuery({
-    queryKey: ["cargas_camion", organizacionActiva?.id], enabled: !!organizacionActiva,
+     queryKey: ["cargas_camion", organizacionActiva?.id], enabled: !!organizacionActiva,
+     refetchInterval: 15000, refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase.from("cargas_camion").select("*, rutas(nombre), cargas_camion_detalle(*), ventas(id), pedidos!pedidos_carga_id_fkey(id, estado, venta_id, pedidos_detalle(producto_id, cantidad))").order("created_at", { ascending: false });
       if (error) throw error;
@@ -35,7 +36,7 @@ export function descontarPendientes(carga: CargaCamion, pendientes: VentaParams[
   const confirmadas = new Set(carga.ventas.map((v) => v.id));
   const unicas = new Map(pendientes.filter((v) => v.carga_id === carga.id && (!v.id || !confirmadas.has(v.id))).map((v) => [v.id, v]));
   const cantidades = sumarProductos([...unicas.values()].flatMap((v) => v.items));
-  const excluir = new Set([...unicas.keys()].filter(Boolean) as string[]);
+   const excluir = new Set([...confirmadas, ...unicas.keys()].filter(Boolean) as string[]);
   if (pedidoEntrega) excluir.add(pedidoEntrega);
   const reservas = reservasPedidos((carga.pedidos ?? []) as never, excluir);
   return carga.cargas_camion_detalle.map((d) => ({ ...d, vendido: Number(d.vendido) + (cantidades.get(d.producto_id) ?? 0), reservado: reservas.get(d.producto_id) ?? 0 }));

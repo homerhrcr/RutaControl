@@ -168,3 +168,9 @@
   50% { border-color: hsl(28 95% 55% / 0.3); box-shadow: 0 0 12px 2px hsl(28 95% 55% / 0.5); }
 }
 .pedido-parpadeo { animation: pedido-parpadeo 1.2s ease-in-out infinite; background-color: hsl(28 95% 55% / 0.08); }
+@keyframes stock-parpadeo {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.stock-bajo { color: var(--destructive); font-weight: 700; animation: stock-parpadeo 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .stock-bajo { animation: none; } }

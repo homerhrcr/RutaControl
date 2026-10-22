@@ -7,6 +7,12 @@ export function enCamion(d: ExistenciaCamion) {
 export function disponibleCamion(d: ExistenciaCamion) {
   return Math.max(0, enCamion(d) - Number(d.reservado ?? 0));
 }
+export function estadoStockCamion(disponible: number) {
+  return disponible <= 0 ? "agotado" : disponible <= 5 ? "bajo" : "disponible";
+}
+export function validarMermaCamion(cantidad: number, abordo: number, motivo: string) {
+  return Number.isFinite(cantidad) && cantidad > 0 && cantidad <= abordo && motivo.trim().length > 0;
+}
 export function sumarProductos(items: { producto_id: string; cantidad: number }[]) {
   const cantidades = new Map<string, number>();
   for (const i of items) cantidades.set(i.producto_id, (cantidades.get(i.producto_id) ?? 0) + Number(i.cantidad));

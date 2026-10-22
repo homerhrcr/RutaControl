@@ -32,6 +32,29 @@ test("cierre con 6 vendidos y 2 dañados devuelve 7 a bodega y deja cero a bordo
   expect(disponibleCamion({ ...leche, vendido: 6, merma: 2, devuelto: 7 })).toBe(0);
 });
 import { reservasPedidos as rp, validarVentaCamion as vv } from "./carga-camion-calculos";
+import { enCamion, validarMermaCamion, estadoStockCamion } from "./carga-camion-calculos";
+test("14 cargadas menos 10 vendidas y 3 mermas dejan 1 disponible", () => {
+  const d = { ...leche, preventa: 3, extra: 11, vendido: 10, merma: 3 };
+  expect(enCamion(d)).toBe(1);
+  expect(disponibleCamion(d)).toBe(1);
+});
+test("3 de preventa en 14 cargadas dejan 11 para venta libre", () => {
+  expect(disponibleCamion({ ...leche, preventa: 3, extra: 11, reservado: 3 })).toBe(11);
+});
+test("una venta confirmada libera la reserva aunque el estado del pedido tarde en actualizarse", () => {
+  expect(rp([{ id: "pedido", estado: "cargado", pedidos_detalle: [{ producto_id: "leche", cantidad: 3 }] }], new Set(["pedido"])).get("leche") ?? 0).toBe(0);
+});
+test("merma sin justificación o mayor a bordo se rechaza", () => {
+  expect(validarMermaCamion(3, 4, "  ")).toBe(false);
+  expect(validarMermaCamion(5, 4, "Empaque roto")).toBe(false);
+  expect(validarMermaCamion(NaN, 4, "Empaque roto")).toBe(false);
+  expect(validarMermaCamion(3, 4, "Empaque roto")).toBe(true);
+});
+test("agotado a cero y alerta baja hasta cinco unidades", () => {
+  expect(estadoStockCamion(0)).toBe("agotado");
+  expect(estadoStockCamion(5)).toBe("bajo");
+  expect(estadoStockCamion(6)).toBe("disponible");
+});
 test("producto reservado para pedido no se puede vender directo", () => {
   const pedidos = [{ id: "p1", estado: "cargado", pedidos_detalle: [{ producto_id: "a", cantidad: 3 }] }];
   const det = (exc) => [{ producto_id: "a", preventa: 3, extra: 2, vendido: 0, devuelto: 0, merma: 0, reservado: rp(pedidos, exc).get("a") ?? 0 }];

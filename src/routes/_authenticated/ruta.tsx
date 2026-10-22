@@ -7,6 +7,7 @@ import { useSolicitudesDevolucion } from "@/lib/solicitudes-devolucion";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { QuickSale } from "@/components/QuickSale";
+import { EntregarPedido, PEDIDO_ENTREGA_SELECT } from "@/components/EntregarPedido";
 import { AbonoDialog } from "@/components/AbonoDialog";
 import { HistorialCliente } from "@/components/HistorialCliente";
 import { MapaRutas } from "@/components/MapaRutas";
@@ -16,6 +17,7 @@ import { EvidenciaButton } from "@/components/EvidenciaButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -35,6 +37,7 @@ import {
   List,
   Map,
   CheckCircle2,
+  Package,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ruta")({
@@ -66,6 +69,8 @@ export function RutaPage() {
   const [saleClient, setSaleClient] = useState<any | null>(null);
   const [abonoClient, setAbonoClient] = useState<any | null>(null);
   const [histClient, setHistClient] = useState<any | null>(null);
+  const [entregaPedidos, setEntregaPedidos] = useState<any[] | null>(null);
+  const [entregaPedido, setEntregaPedido] = useState<any | null>(null);
   const [ordenMode, setOrdenMode] = useState(false);
   const [vista, setVista] = useState<"lista" | "mapa">("lista");
   const [orderList, setOrderList] = useState<any[] | null>(null);
@@ -85,6 +90,25 @@ export function RutaPage() {
       const { data, error } = await supabase.from("pedidos").select("cliente_id").not("estado", "in", "(entregado,anulado)");
       if (error) throw error;
       return (data ?? []).map((p) => p.cliente_id).filter(Boolean) as string[];
+    },
+  });
+  async function abrirEntrega(clienteId: string) {
+    const { data, error } = await supabase
+      .from("pedidos")
+      .select(PEDIDO_ENTREGA_SELECT)
+      .eq("cliente_id", clienteId)
+      .not("estado", "in", "(entregado,anulado)")
+      .order("fecha_entrega");
+    if (error) return toast.error(error.message);
+    if (!data?.length) return toast.info("Este cliente ya no tiene pedidos pendientes");
+    if (data.length === 1) setEntregaPedido(data[0]);
+    else setEntregaPedidos(data);
+  }
+  const _noop = useQuery({
+    queryKey: ["noop-ruta"],
+    enabled: false,
+    queryFn: async () => {
+      return null;
     },
   });
   const conPedido = useMemo(() => new Set(pedidosPend ?? []), [pedidosPend]);
@@ -389,6 +413,11 @@ export function RutaPage() {
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
+                      {conPedido.has(c.id) && (
+                        <Button size="sm" variant="secondary" className="h-7 gap-1 border border-[hsl(28_95%_55%)] px-2 text-[11px] text-[hsl(28_95%_55%)]" onClick={() => abrirEntrega(c.id)} title="Entregar pedido">
+                          <Package className="h-3.5 w-3.5" /> <span>Entregar</span>
+                        </Button>
+                      )}
                       <Button size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => setSaleClient({ ...c, ruta_id: rutaId === "all" ? c.ruta_id : rutaId })} title="Vender">
                         <Zap className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Vender</span>
                       </Button>
@@ -425,6 +454,32 @@ export function RutaPage() {
           </div>
         )}
       </div>
+
+      {entregaPedido && (
+        <EntregarPedido
+          pedido={entregaPedido}
+          vendedorId={user?.id ?? ""}
+          onClose={() => {
+            setEntregaPedido(null);
+            invalidate(["pedidos", "visitados-hoy", "saldos-map"]);
+          }}
+        />
+      )}
+      {entregaPedidos && (
+        <Dialog open onOpenChange={(v) => !v && setEntregaPedidos(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>¿Qué pedido desea entregar?</DialogTitle></DialogHeader>
+            <div className="space-y-2">
+              {entregaPedidos.map((p) => (
+                <Button key={p.id} variant="outline" className="h-auto w-full justify-between py-2" onClick={() => { setEntregaPedidos(null); setEntregaPedido(p); }}>
+                  <span>Entrega {p.fecha_entrega} · {p.pedidos_detalle?.length ?? 0} productos</span>
+                  <span className="font-bold">{formatCRC(Number(p.total))}</span>
+                </Button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {vista === "mapa" && <MapaRutas rutaInicial={rutaId === "all" ? "todas" : rutaId} />}
 

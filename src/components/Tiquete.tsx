@@ -7,6 +7,7 @@ import type { CartItem } from "@/lib/data";
 import { TelegramEnviar } from "@/components/TelegramCliente";
 import { useEmpresa } from "@/lib/empresa";
 import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 export interface TiqueteData {
   venta_id: string;
@@ -94,6 +95,7 @@ export function Tiquete({
     if (!data) return;
     try {
       await navigator.clipboard.writeText(buildTexto(data, nombreEmpresa, telefonoEmpresa));
+      toast.success("Tiquete copiado");
     } catch {
       alert("No se pudo copiar automáticamente.");
     }

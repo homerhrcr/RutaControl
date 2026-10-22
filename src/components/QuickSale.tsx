@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Plus, Minus, Search, Repeat, X, Banknote, CreditCard, Star, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCargasCamion, usePendientesCamion, descontarPendientes, disponibleCamion } from "@/lib/carga-camion";
-import { validarVentaRuta } from "@/lib/carga-camion-calculos";
+import { validarVentaRuta, estadoStockCamion } from "@/lib/carga-camion-calculos";
 
 const FAVORITOS = ["Queso Semiduro", "Queso Ratón", "Leche Fresca", "Yogurt", "Natilla", "Cuajada"];
 
@@ -280,6 +280,8 @@ export function QuickSale({
           {!preciosListos && <p className="col-span-full text-sm text-muted-foreground">{preciosError ? "No se pudieron cargar los precios del cliente." : "Cargando precios…"}</p>}
           {(carga ? list : []).map((p) => {
             const qty = cart[p.id]?.cantidad ?? 0;
+            const libre = inventario.filter((d) => d.producto_id === p.id).reduce((s, d) => s + disponibleCamion(d), 0);
+            const restante = Math.max(0, libre - qty);
             return (
               <div
                 key={p.id}
@@ -288,28 +290,28 @@ export function QuickSale({
                   qty > 0 && "border-primary ring-1 ring-primary",
                 )}
               >
-                <button
+                <Button variant="ghost" disabled={!preciosListos || !p.precioInfo.valido || restante <= 0}
                   onClick={() => add(p, 1)}
-                  className="flex flex-1 flex-col items-start text-left"
+                  className="h-auto flex flex-1 flex-col items-start whitespace-normal p-0 text-left"
                 >
                   {isFavorite(p.nombre) && <Star className="mb-1 h-3.5 w-3.5 fill-warning text-warning" />}
                   <span className="line-clamp-2 text-sm font-semibold leading-tight">{p.nombre}</span>
                   <span className="mt-1 text-sm font-bold text-primary">{p.precioInfo.valido ? formatCRC(p.precio) : "Sin precio"}</span>
                   <span className="text-[10px] leading-tight text-muted-foreground" title={p.precioInfo.mensaje}>{p.precioInfo.mensaje}</span>
-                  {carga && <span className="text-xs text-muted-foreground">Disponible: {inventario.filter((d) => d.producto_id === p.id).reduce((s, d) => s + disponibleCamion(d), 0)}</span>}
-                </button>
+                  {carga && <span className={`text-xs ${estadoStockCamion(restante) !== "disponible" ? "stock-bajo" : "text-muted-foreground"}`}>{restante === 0 ? "Agotado para venta libre" : `Disponible para vender: ${restante}`}</span>}
+                </Button>
                 {qty > 0 ? (
                   <div className="mt-2 flex items-center justify-between">
                     <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => add(p, -1)}>
                       <Minus className="h-4 w-4" />
                     </Button>
                     <span className="text-base font-bold">{qty}</span>
-                    <Button size="icon" className="h-8 w-8" onClick={() => add(p, 1)}>
+                    <Button size="icon" className="h-8 w-8" disabled={restante <= 0} onClick={() => add(p, 1)}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                 ) : (
-                  <Button size="sm" variant="outline" className="mt-2 gap-1" disabled={!preciosListos || !p.precioInfo.valido} onClick={() => add(p, 1)}>
+                  <Button size="sm" variant="outline" className="mt-2 gap-1" disabled={!preciosListos || !p.precioInfo.valido || restante <= 0} onClick={() => add(p, 1)}>
                     <Plus className="h-4 w-4" /> Agregar
                   </Button>
                 )}

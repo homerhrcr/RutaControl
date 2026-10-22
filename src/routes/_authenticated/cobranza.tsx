@@ -54,7 +54,7 @@ export function CobranzaPage() {
   const rows = q.trim()
     ? allRows.filter((r) => norm(`${r.cliente.nombre} ${r.cliente.telefono ?? ""}`).includes(norm(q.trim())))
     : allRows;
-  const total = allRows.reduce((s, r) => s + r.saldo, 0);
+  const total = (creditos ?? []).reduce((s, c) => s + Number(c.saldo), 0);
 
   // antigüedad de saldos (cartera de crédito)
   const buckets: Record<string, number> = { "0-30 días": 0, "31-60 días": 0, "61-90 días": 0, "+90 días": 0 };
@@ -159,8 +159,7 @@ function CreditosRuta() {
     if (error) return toast.error(error.message);
     toast.success(`Abono registrado · ${formatCRC(m)}`);
     setMontos((s) => ({ ...s, [id]: 0 }));
-    qc.invalidateQueries({ queryKey: ["creditos-ruta"] });
-    qc.invalidateQueries({ queryKey: ["dashboard"] });
+    await Promise.all(["creditos-ruta", "creditos-pendientes", "dashboard", "reportes-gerenciales"].map((key) => qc.invalidateQueries({ queryKey: [key] })));
   }
   return (
     <Card className="space-y-2 p-3">

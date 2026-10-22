@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { cn } from "@/lib/utils";
+import { atribuirCobranza, incluirCobranza } from "@/lib/cobranza-reportes";
 import { esNumerica, formatoValor, tieneDecimales } from "@/lib/reporte-formato";
 import { descargarReporteExcel, verReportePdf, type Reporte } from "@/lib/reporte-export";
 import {
@@ -109,8 +110,8 @@ function ReportesPage() {
         todo<any>((f, t) => supabase.from("ventas").select("id,fecha,total,metodo_pago,cliente_id,ruta_id").gte("fecha", a).lte("fecha", b).order("fecha").range(f, t)),
         todo<any>((f, t) => supabase.from("detalle_ventas").select("producto_id,nombre_producto,cantidad,total_linea,productos(costo,categorias(nombre)),ventas!inner(fecha,ruta_id,cliente_id)").gte("ventas.fecha", a).lte("ventas.fecha", b).range(f, t)),
         todo<any>((f, t) => supabase.from("gastos").select("fecha,monto,categoria,descripcion,ruta_id").gte("fecha", a).lte("fecha", b).order("fecha").range(f, t)),
-        todo<any>((f, t) => supabase.from("abonos").select("fecha,monto,cliente_id").gte("fecha", a).lte("fecha", b).range(f, t)),
-        todo<any>((f, t) => supabase.from("creditos").select("saldo,fecha,cliente_id").gt("saldo", 0).range(f, t)),
+        todo<any>((f, t) => supabase.from("abonos").select("fecha,monto,cliente_id,creditos(cliente_id,ruta_id,ventas(ruta_id))").gte("fecha", a).lte("fecha", b).range(f, t)),
+        todo<any>((f, t) => supabase.from("creditos").select("saldo,fecha,cliente_id,ruta_id,ventas(ruta_id)").gt("saldo", 0).range(f, t)),
         todo<any>((f, t) => supabase.from("devoluciones").select("fecha,total,cliente_id,ruta_id,devoluciones_detalle(nombre_producto,cantidad,precio_unitario,motivo,destino)").gte("fecha", a).lte("fecha", b).range(f, t)),
         todo<any>((f, t) => supabase.from("productos").select("id,nombre,existencia,costo,activo,categorias(nombre)").range(f, t)),
         todo<any>((f, t) => supabase.from("ventas").select("fecha,total,cliente_id").gte("fecha", hace90).range(f, t)),
@@ -154,8 +155,13 @@ function ReportesPage() {
         ruta: rutaDe(x.ventas?.ruta_id, x.ventas?.cliente_id),
       })).filter((x) => ok(x.ruta)),
       gastos: data.gastos.map((g: any) => ({ fecha: g.fecha, monto: Number(g.monto), categoria: g.categoria, descripcion: g.descripcion ?? "", ruta: (g.ruta_id && rutaNom.get(g.ruta_id)) || "General" })).filter((g) => ok(g.ruta)),
-      abonos: data.abonos.filter((x: any) => okCli(x.cliente_id)).map((x: any) => ({ fecha: x.fecha, monto: Number(x.monto) })),
-      creditos: data.creditos.filter((c: any) => okCli(c.cliente_id)).map((c: any) => ({ cliente: cliNom.get(c.cliente_id) ?? "—", ruta: rutaDe(null, c.cliente_id), saldo: Number(c.saldo), fecha: c.fecha })),
+       abonos: data.abonos.filter((x: any) => incluirCobranza(ruta, atribuirCobranza(x.creditos, x.cliente_id, rutaNom, cliRutas))).map((x: any) => ({ fecha: x.fecha, monto: Number(x.monto) })),
+       creditos: data.creditos.map((c: any) => ({
+         c, atribucion: atribuirCobranza(c, c.cliente_id, rutaNom, cliRutas),
+       })).filter(({ atribucion }) => incluirCobranza(ruta, atribucion)).map(({ c, atribucion }) => ({
+         cliente: c.cliente_id ? cliNom.get(c.cliente_id) ?? "—" : `${atribucion.ruta} (Cierre global)`,
+         ruta: atribucion.ruta, saldo: Number(c.saldo), fecha: c.fecha,
+       })),
       devoluciones: data.devoluciones.map((x: any) => ({
         fecha: x.fecha, total: Number(x.total), cliente: cliNom.get(x.cliente_id) ?? "—", ruta: rutaDe(x.ruta_id, x.cliente_id),
         lineas: (x.devoluciones_detalle ?? []).map((l: any) => ({ producto: l.nombre_producto, cantidad: Number(l.cantidad), monto: Number(l.cantidad) * Number(l.precio_unitario), motivo: l.motivo, destino: l.destino })),

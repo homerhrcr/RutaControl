@@ -69,9 +69,14 @@ export function DashboardPage() {
     if (perfilListo && !isAdmin) navigate({ to: "/ruta", replace: true });
   }, [isAdmin, perfilListo, navigate]);
 
-  const { data } = useQuery({
+  const { data, dataUpdatedAt } = useQuery({
     enabled: isAdmin,
     queryKey: ["dashboard"],
+    // Se refresca solo: cada venta o entrega aparece en segundos, sin recargar.
+    refetchInterval: 15000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
     queryFn: async () => {
       const now = new Date();
       const startDay = new Date(now); startDay.setHours(0, 0, 0, 0);
@@ -170,7 +175,10 @@ export function DashboardPage() {
 
   return (
     <div>
-      <PageHeader title="Dashboard Gerencial" subtitle="Resumen del mes" />
+      <PageHeader
+        title="Dashboard Gerencial"
+        subtitle={`Resumen del mes · En vivo${dataUpdatedAt ? ` · actualizado ${new Date(dataUpdatedAt).toLocaleTimeString("es-CR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : ""}`}
+      />
       <div className="space-y-4 p-4 md:p-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
           <Stat icon={Wallet} label="Ventas hoy" value={formatCRC(data?.hoy ?? 0)} to="/dashboard" />

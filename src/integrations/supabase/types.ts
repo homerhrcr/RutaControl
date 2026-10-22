@@ -363,6 +363,93 @@ export type Database = {
           },
         ]
       }
+      cierres_ruta: {
+        Row: {
+          carga_id: string | null
+          contado: number
+          created_at: string
+          credito: number
+          credito_id: string | null
+          diferencia: number
+          fecha: string
+          id: string
+          notas: string | null
+          organization_id: string
+          ruta_id: string
+          total_vendido: number
+          usuario_id: string | null
+          venta_id: string | null
+        }
+        Insert: {
+          carga_id?: string | null
+          contado: number
+          created_at?: string
+          credito: number
+          credito_id?: string | null
+          diferencia: number
+          fecha?: string
+          id?: string
+          notas?: string | null
+          organization_id?: string
+          ruta_id: string
+          total_vendido: number
+          usuario_id?: string | null
+          venta_id?: string | null
+        }
+        Update: {
+          carga_id?: string | null
+          contado?: number
+          created_at?: string
+          credito?: number
+          credito_id?: string | null
+          diferencia?: number
+          fecha?: string
+          id?: string
+          notas?: string | null
+          organization_id?: string
+          ruta_id?: string
+          total_vendido?: number
+          usuario_id?: string | null
+          venta_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cierres_ruta_carga_id_fkey"
+            columns: ["carga_id"]
+            isOneToOne: false
+            referencedRelation: "cargas_camion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cierres_ruta_credito_id_fkey"
+            columns: ["credito_id"]
+            isOneToOne: false
+            referencedRelation: "creditos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cierres_ruta_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cierres_ruta_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "rutas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cierres_ruta_venta_id_fkey"
+            columns: ["venta_id"]
+            isOneToOne: false
+            referencedRelation: "ventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cliente_rutas: {
         Row: {
           cliente_id: string
@@ -590,6 +677,7 @@ export type Database = {
           id: string
           monto: number
           organization_id: string
+          ruta_id: string | null
           saldo: number
           updated_at: string
           venta_id: string | null
@@ -603,6 +691,7 @@ export type Database = {
           id?: string
           monto?: number
           organization_id?: string
+          ruta_id?: string | null
           saldo?: number
           updated_at?: string
           venta_id?: string | null
@@ -616,6 +705,7 @@ export type Database = {
           id?: string
           monto?: number
           organization_id?: string
+          ruta_id?: string | null
           saldo?: number
           updated_at?: string
           venta_id?: string | null
@@ -633,6 +723,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creditos_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "rutas"
             referencedColumns: ["id"]
           },
           {
@@ -1864,6 +1961,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      abonar_credito_ruta: { Args: { p: Json }; Returns: undefined }
       abrir_carga_camion: { Args: { p: Json }; Returns: string }
       anular_venta_camion: { Args: { p_venta: string }; Returns: undefined }
       cambios_desde: {
@@ -1875,6 +1973,7 @@ export type Database = {
         }[]
       }
       cerrar_carga_camion: { Args: { p: Json }; Returns: string }
+      cierre_global_ruta: { Args: { p: Json }; Returns: string }
       current_organization_id: { Args: never; Returns: string }
       editar_carga_camion: { Args: { p: Json }; Returns: string }
       guardar_orden_ruta: { Args: { p_items: Json }; Returns: number }

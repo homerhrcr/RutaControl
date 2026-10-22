@@ -113,6 +113,13 @@
       "when": 1792670477577,
       "tag": "0015_editar_carga_agregar_pedidos",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792688876685,
+      "tag": "0016_cierre_global_ruta",
+      "breakpoints": true
     }
   ]
 }

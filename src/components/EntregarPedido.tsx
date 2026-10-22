@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { formatCRC } from "@/lib/format";
 import { toast } from "sonner";
 import { queueEntrega } from "@/lib/offline";
+import { Tiquete, type TiqueteData } from "@/components/Tiquete";
 
 export const PEDIDO_ENTREGA_SELECT = "*, clientes(nombre), rutas(nombre), pedidos_detalle(*)";
 
@@ -21,6 +22,7 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
   );
   const [metodo, setMetodo] = useState<"contado" | "credito">("contado");
   const [busy, setBusy] = useState(false);
+  const [tiquete, setTiquete] = useState<TiqueteData | null>(null);
   const total = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
   async function confirmar() {
@@ -56,13 +58,25 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
       if (error) throw error;
       toast.success("Pedido entregado y facturado");
       invalidate(["pedidos", "ventas", "productos", "creditos", "creditos-pendientes", "cargas_camion", "ventas-camion"]);
-      onClose();
+      setTiquete({
+        venta_id: venta.id,
+        cliente_id: pedido.cliente_id,
+        cliente_nombre: pedido.clientes?.nombre ?? "Cliente",
+        fecha: venta.fecha ?? new Date().toISOString(),
+        items: entregados,
+        subtotal: total,
+        descuento: 0,
+        total: Number(venta.total),
+        metodo,
+      });
     } catch (e: any) {
       toast.error(e.message ?? "No se pudo entregar");
     } finally {
       setBusy(false);
     }
   }
+
+  if (tiquete) return <Tiquete data={tiquete} open onClose={onClose} />;
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>

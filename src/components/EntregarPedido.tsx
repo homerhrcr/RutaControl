@@ -26,10 +26,14 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
   async function confirmar() {
     const entregados = items.filter((i) => i.cantidad > 0);
     if (!entregados.length) return toast.error("No hay productos entregados");
-    const carga = cargas?.find((c) => c.id === pedido.carga_id);
-    if (pedido.carga_id && (!carga || !validarVentaCamion(descontarPendientes(carga, pendientes, pedido.id), entregados))) return toast.error("Revise las existencias disponibles del camión");
+    // Si el pedido no quedó ligado a una carga, se usa el camión activo de su ruta.
+    const carga = pedido.carga_id
+      ? cargas?.find((c) => c.id === pedido.carga_id)
+      : cargas?.find((c) => c.estado === "en_ruta" && c.ruta_id === pedido.ruta_id);
+    const cargaId = carga?.id ?? pedido.carga_id ?? null;
+    if (cargaId && (!carga || !validarVentaCamion(descontarPendientes(carga, pendientes, pedido.id), entregados))) return toast.error("Revise las existencias disponibles del camión");
     setBusy(true);
-    const ventaP = { id: pedido.venta_id ?? pedido.id, carga_id: pedido.carga_id ?? null, cliente_id: pedido.cliente_id, ruta_id: pedido.ruta_id, vendedor_id: vendedorId, items: entregados, descuento: 0, metodo };
+    const ventaP = { id: pedido.venta_id ?? pedido.id, carga_id: cargaId, cliente_id: pedido.cliente_id, ruta_id: pedido.ruta_id, vendedor_id: vendedorId, items: entregados, descuento: 0, metodo };
     if (!navigator.onLine) {
       await queueEntrega(pedido.id, ventaP);
       setBusy(false);
@@ -40,7 +44,7 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
       // El id de la venta es estable por pedido: si se reintenta, no se duplica.
       const venta = await registrarVenta({
         id: pedido.venta_id ?? pedido.id,
-        carga_id: pedido.carga_id ?? null,
+        carga_id: cargaId,
         cliente_id: pedido.cliente_id,
         ruta_id: pedido.ruta_id,
         vendedor_id: vendedorId,

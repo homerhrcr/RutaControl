@@ -95,6 +95,8 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     // Todos los pedidos pendientes de la ruta, sin importar la fecha: la ruta puede tardar varios días.
     const { data, error } = await supabase.from("pedidos").select("*, clientes(nombre), pedidos_detalle(*)").or(ruta ? `ruta_id.eq.${ruta},ruta_id.is.null` : "ruta_id.is.null").in("estado", ["confirmado", "cargado"]).is("carga_id", null).order("fecha_entrega").order("created_at");
     if (error) throw error;
+    // Preselecciona las preventas cuya entrega es hasta la fecha de salida.
+    setSeleccionados((data ?? []).filter((p) => p.fecha_entrega <= fecha).map((p) => p.id));
     return data;
   } });
   const resumen = useMemo(() => {
@@ -148,6 +150,12 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const [mermas, setMermas] = useState<Record<string, number>>({});
   const [notas, setNotas] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pedidosAgregar, setPedidosAgregar] = useState<string[]>([]);
+  const { data: pedidosPend } = useQuery({ queryKey: ["pedidos-carga", carga.ruta_id, "editar"], enabled: carga.estado === "en_ruta", queryFn: async () => {
+    const { data, error } = await supabase.from("pedidos").select("id, fecha_entrega, clientes(nombre), pedidos_detalle(cantidad)").or(carga.ruta_id ? `ruta_id.eq.${carga.ruta_id},ruta_id.is.null` : "ruta_id.is.null").in("estado", ["confirmado", "cargado"]).is("carga_id", null).order("fecha_entrega");
+    if (error) throw error;
+    return data;
+  } });
   const [editar, setEditar] = useState(false);
   const [extras, setExtras] = useState<Record<string, number>>({});
   const [vehiculoEd, setVehiculoEd] = useState("");
@@ -246,6 +254,7 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     {carga.notas && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{carga.notas}</p>}
     {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{isAdmin && <Button variant="outline" disabled={!online} onClick={abrirEdicion}><Pencil className="mr-2 h-4 w-4" />Editar carga</Button>}{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y registrar sobrantes</Button>}</div>}
     <Dialog open={editar} onOpenChange={(o) => !busy && setEditar(o)}><DialogContent className="max-h-[90dvh] max-w-xl overflow-y-auto"><DialogHeader><DialogTitle>Editar carga</DialogTitle><DialogDescription>Ajuste el producto extra a bordo. La diferencia se descuenta o regresa a bodega.</DialogDescription></DialogHeader>
+      {!!pedidosPend?.length && <section className="space-y-1 border-b pb-3"><div className="flex items-center justify-between"><h3 className="text-sm font-semibold">Preventas pendientes de cargar</h3><Button size="sm" variant="ghost" onClick={() => setPedidosAgregar(pedidosPend.map((p) => p.id))}>Seleccionar todos</Button></div>{pedidosPend.map((p) => <label key={p.id} className="flex items-center gap-3 py-1 text-sm"><input type="checkbox" checked={pedidosAgregar.includes(p.id)} onChange={(e) => setPedidosAgregar((s) => e.target.checked ? [...s, p.id] : s.filter((x) => x !== p.id))} /><span className="flex-1">{p.clientes?.nombre} <span className="text-xs text-muted-foreground">📅 {fechaLegible(p.fecha_entrega)}</span></span><span className="text-muted-foreground">{numero(p.pedidos_detalle.reduce((s, d) => s + Number(d.cantidad), 0))} u.</span></label>)}<p className="text-xs text-muted-foreground">Los pedidos marcados se suben al camión y se descuentan de bodega.</p></section>}
       <div className="space-y-1"><Label htmlFor="ed-vehiculo">Vehículo / placa</Label><Input id="ed-vehiculo" value={vehiculoEd} onChange={(e) => setVehiculoEd(e.target.value)} /></div>
       <table className="w-full text-sm"><thead><tr className="border-b"><th className="py-2 text-left">Producto</th><th>Preventa</th><th>Extra</th></tr></thead><tbody>{Object.keys(extras).map((pid) => { const d = carga.cargas_camion_detalle.find((x) => x.producto_id === pid); return <tr key={pid} className="border-b"><td className="py-2">{nombreProd(pid)}</td><td className="text-center">{numero(Number(d?.preventa ?? 0))}</td><td className="p-2"><Input aria-label={`Extra ${nombreProd(pid)}`} type="number" min={0} step="0.01" className="w-24" value={extras[pid]} onChange={(e) => setExtras((s) => ({ ...s, [pid]: Number(e.target.value) }))} /></td></tr>; })}</tbody></table>
       <div className="flex gap-2"><select aria-label="Agregar producto" className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm" value={agregarId} onChange={(e) => setAgregarId(e.target.value)}><option value="">Agregar producto…</option>{(productosTodos ?? []).filter((x) => x.activo && !(x.id in extras)).map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select><Button type="button" variant="outline" disabled={!agregarId} onClick={() => { setExtras((s) => ({ ...s, [agregarId]: 1 })); setAgregarId(""); }}><Plus className="h-4 w-4" /></Button></div>

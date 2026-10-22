@@ -161,7 +161,12 @@ export function useAbonosCliente(clienteId?: string, limit = 100) {
 
 export function useInvalidate() {
   const qc = useQueryClient();
-  return (keys: string[]) => keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  return (keys: string[]) => {
+    keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+    if (keys.some((k) => ["ventas", "pedidos", "creditos", "abonos", "gastos", "devoluciones"].includes(k))) {
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    }
+  };
 }
 
 export interface CartItem {

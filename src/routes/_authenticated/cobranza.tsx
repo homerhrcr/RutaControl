@@ -11,6 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { formatCRC, formatDate, daysBetween, agingBucket } from "@/lib/format";
 import { Search, HandCoins, Phone, AlertTriangle, Receipt } from "lucide-react";
 import { TelegramEnviar } from "@/components/TelegramCliente";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cobranza")({
   head: () => ({
@@ -124,5 +128,55 @@ export function CobranzaPage() {
         onClose={() => setHistorialClient(null)}
       />
     </div>
+  );
+}
+
+function CreditosRuta() {
+  const { isAdmin } = useAuth();
+  const qc = useQueryClient();
+  const [montos, setMontos] = useState<Record<string, number>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const { data } = useQuery({
+    queryKey: ["creditos-ruta"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("creditos")
+        .select("id, fecha, saldo, monto, rutas(nombre)")
+        .not("ruta_id", "is", null)
+        .gt("saldo", 0)
+        .order("fecha");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  if (!data?.length) return null;
+  async function abonar(id: string, saldo: number) {
+    const m = montos[id] ?? 0;
+    if (m <= 0 || m > saldo) return toast.error("El abono debe ser mayor a cero y no superar el saldo");
+    setBusy(id);
+    const { error } = await supabase.rpc("abonar_credito_ruta", { p: { id: crypto.randomUUID(), credito_id: id, monto: m } });
+    setBusy(null);
+    if (error) return toast.error(error.message);
+    toast.success(`Abono registrado · ${formatCRC(m)}`);
+    setMontos((s) => ({ ...s, [id]: 0 }));
+    qc.invalidateQueries({ queryKey: ["creditos-ruta"] });
+    qc.invalidateQueries({ queryKey: ["dashboard"] });
+  }
+  return (
+    <Card className="space-y-2 p-3">
+      <p className="font-semibold">Crédito por ruta</p>
+      {data.map((c: any) => (
+        <div key={c.id} className="flex flex-wrap items-center gap-2 border-t pt-2 text-sm">
+          <span className="min-w-0 flex-1">{c.rutas?.nombre ?? "Ruta"} · {formatDate(c.fecha)}</span>
+          <span className="font-black text-destructive">{formatCRC(c.saldo)}</span>
+          {isAdmin && (
+            <>
+              <Input type="number" inputMode="numeric" className="h-9 w-28" placeholder="₡0" value={montos[c.id] || ""} onChange={(e) => setMontos((s) => ({ ...s, [c.id]: Number(e.target.value) || 0 }))} />
+              <Button size="sm" disabled={busy === c.id} onClick={() => abonar(c.id, Number(c.saldo))}>Abonar</Button>
+            </>
+          )}
+        </div>
+      ))}
+    </Card>
   );
 }

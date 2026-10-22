@@ -17,6 +17,7 @@ interface AuthContextValue {
   roles: AppRole[];
   nombre: string;
   loading: boolean;
+  perfilListo: boolean;
   isAdmin: boolean;
   esSuperadmin: boolean;
   organizaciones: Organizacion[];
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [esSuperadmin, setEsSuperadmin] = useState(false);
   const [organizaciones, setOrganizaciones] = useState<Organizacion[]>([]);
   const [orgActivaId, setOrgActivaId] = useState<string | null>(null);
+  const [perfilUid, setPerfilUid] = useState<string | null>(null);
 
   const CACHE_KEY = "rd_perfil_cache";
 
@@ -52,9 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadProfile(uid: string) {
     try {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
-      if (cached?.uid === uid) applyProfile(cached);
+      if (cached?.uid === uid) { applyProfile(cached); setPerfilUid(uid); }
     } catch { /* ignore */ }
-    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) { setPerfilUid(uid); return; }
     try {
       const [{ data: superadmin, error: e1 }, { data: orgId, error: e2 }, { data: members, error: e3 }, { data: orgs, error: e4 }, { data: profile, error: e5 }] =
         await Promise.all([
@@ -72,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       applyProfile(p);
       localStorage.setItem(CACHE_KEY, JSON.stringify({ uid, ...p }));
     } catch { /* sin conexión: se mantiene el perfil local */ }
+    finally { setPerfilUid(uid); }
   }
 
   useEffect(() => {
@@ -86,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setOrganizaciones([]);
         setOrgActivaId(null);
         setEsSuperadmin(false);
+        setPerfilUid(null);
       }
     });
 
@@ -132,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         roles,
         nombre,
         loading,
+        perfilListo: !!user && perfilUid === user.id,
         isAdmin: roles.includes("administrador"),
         esSuperadmin,
         organizaciones,

@@ -62,12 +62,12 @@ function diasSerie(n: number) {
 }
 
 export function DashboardPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, perfilListo } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAdmin) navigate({ to: "/ruta", replace: true });
-  }, [isAdmin, navigate]);
+    if (perfilListo && !isAdmin) navigate({ to: "/ruta", replace: true });
+  }, [isAdmin, perfilListo, navigate]);
 
   const { data } = useQuery({
     enabled: isAdmin,

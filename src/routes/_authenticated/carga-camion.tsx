@@ -147,6 +147,7 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const qc = useQueryClient();
   const online = useOnline();
   const [cerrar, setCerrar] = useState(false);
+  const [cierreGlobal, setCierreGlobal] = useState(false);
   const [mermas, setMermas] = useState<Record<string, number>>({});
   const [notas, setNotas] = useState("");
   const [busy, setBusy] = useState(false);
@@ -252,7 +253,7 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     <section className="space-y-2"><h3 className="font-semibold">Valoración estimada de salida</h3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-2 text-left">Producto</th><th>Cargado</th><th>Precio costo</th><th>Total costo</th><th>Precio venta estimado</th><th>Total venta estimado</th></tr></thead><tbody>{detalle.map((d) => { const f = valorLinea(d.producto_id); return <tr key={d.id} className="border-b"><td className="py-2">{d.nombre_producto}</td><td className="text-right">{numero(cargado(d))}</td><td className="text-right">{monedaEstimada(f?.costo ?? null)}</td><td className="text-right">{monedaEstimada(f?.costoTotal ?? null)}</td><td className="text-right">{monedaEstimada(f?.venta ?? null)}</td><td className="text-right">{monedaEstimada(f?.ventaTotal ?? null)}</td></tr>; })}</tbody><tfoot><tr className="border-t font-bold"><td className="py-2" colSpan={3}>Total estimado</td><td className="text-right">{monedaEstimada(costoTotal)}</td><td></td><td className="text-right">{monedaEstimada(ventaTotal)}</td></tr></tfoot></table></div></section>
     <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-3 text-left">Producto</th><th>Preventa</th><th>Extra</th><th>Vendido</th><th>A bordo</th><th>Reservado</th><th>Libre venta</th><th>Devuelto</th><th>Merma</th></tr></thead><tbody>{detalle.map((d) => <tr key={d.id} className="border-b"><td className="py-3 font-medium">{d.nombre_producto}</td>{[d.preventa, d.extra, d.vendido, enCamion(d), d.reservado, Math.max(0, enCamion(d) - d.reservado), d.devuelto, d.merma].map((n, i) => <td key={i} className={`text-center ${i === 3 ? "font-bold text-primary" : ""}`}>{numero(Number(n))}</td>)}</tr>)}</tbody></table></div>
     {carga.notas && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{carga.notas}</p>}
-    {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{isAdmin && <Button variant="outline" disabled={!online} onClick={abrirEdicion}><Pencil className="mr-2 h-4 w-4" />Editar carga</Button>}{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y registrar sobrantes</Button>}</div>}
+    {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{isAdmin && <Button variant="outline" disabled={!online} onClick={abrirEdicion}><Pencil className="mr-2 h-4 w-4" />Editar carga</Button>}{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y registrar sobrantes</Button>}{isAdmin && <Button variant="secondary" disabled={!online || locales.length > 0} onClick={() => setCierreGlobal(true)}><PackageCheck className="mr-2 h-4 w-4" />Cierre global de ruta</Button>}</div>}
     <Dialog open={editar} onOpenChange={(o) => !busy && setEditar(o)}><DialogContent className="max-h-[90dvh] max-w-xl overflow-y-auto"><DialogHeader><DialogTitle>Editar carga</DialogTitle><DialogDescription>Ajuste el producto extra a bordo. La diferencia se descuenta o regresa a bodega.</DialogDescription></DialogHeader>
       {!!pedidosPend?.length && <section className="space-y-1 border-b pb-3"><div className="flex items-center justify-between"><h3 className="text-sm font-semibold">Preventas pendientes de cargar</h3><Button size="sm" variant="ghost" onClick={() => setPedidosAgregar(pedidosPend.map((p) => p.id))}>Seleccionar todos</Button></div>{pedidosPend.map((p) => <label key={p.id} className="flex items-center gap-3 py-1 text-sm"><input type="checkbox" checked={pedidosAgregar.includes(p.id)} onChange={(e) => setPedidosAgregar((s) => e.target.checked ? [...s, p.id] : s.filter((x) => x !== p.id))} /><span className="flex-1">{p.clientes?.nombre} <span className="text-xs text-muted-foreground">📅 {fechaLegible(p.fecha_entrega)}</span></span><span className="text-muted-foreground">{numero(p.pedidos_detalle.reduce((s, d) => s + Number(d.cantidad), 0))} u.</span></label>)}<p className="text-xs text-muted-foreground">Los pedidos marcados se suben al camión y se descuentan de bodega.</p></section>}
       <div className="space-y-1"><Label htmlFor="ed-vehiculo">Vehículo / placa</Label><Input id="ed-vehiculo" value={vehiculoEd} onChange={(e) => setVehiculoEd(e.target.value)} /></div>
@@ -265,5 +266,55 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
       <Textarea aria-label="Observaciones de liquidación" placeholder="Observaciones / motivo de la merma" value={notas} onChange={(e) => setNotas(e.target.value)} />
       <Button disabled={busy} onClick={liquidar}>{busy ? "Cerrando…" : "Confirmar cierre y retorno a bodega"}</Button>
     </DialogContent></Dialog>
+    {cierreGlobal && <CierreGlobal carga={carga} detalle={detalle} precioDe={(pid) => valorLinea(pid)?.venta ?? null} onClose={() => setCierreGlobal(false)} />}
   </section>;
+}
+
+function CierreGlobal({ carga, detalle, precioDe, onClose }: { carga: CargaCamion; detalle: ReturnType<typeof descontarPendientes>; precioDe: (pid: string) => number | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [sob, setSob] = useState<Record<string, number>>({});
+  const [mer, setMer] = useState<Record<string, number>>({});
+  const [contado, setContado] = useState("");
+  const [credito, setCredito] = useState("");
+  const [notas, setNotas] = useState("");
+  const [busy, setBusy] = useState(false);
+  const filas = detalle.filter((d) => enCamion(d) > 0).map((d) => {
+    const s = sob[d.producto_id] ?? 0, m = mer[d.producto_id] ?? 0, vend = enCamion(d) - s - m, precio = precioDe(d.producto_id);
+    return { d, s, m, vend, precio, total: vend > 0 && precio !== null ? vend * precio : 0 };
+  });
+  const total = filas.reduce((a, f) => a + f.total, 0);
+  const diferencia = Number(contado || 0) + Number(credito || 0) - total;
+  const sinPrecio = filas.filter((f) => f.vend > 0 && f.precio === null);
+  async function confirmar() {
+    if (filas.some((f) => f.s < 0 || f.m < 0 || f.vend < 0)) return toast.error("Sobrante y merma no pueden superar lo que quedó en el camión");
+    if (sinPrecio.length) return toast.error(`Falta el precio de: ${sinPrecio.map((f) => f.d.nombre_producto).join(", ")}`);
+    if (Number(contado) < 0 || Number(credito) < 0) return toast.error("Los montos no pueden ser negativos");
+    if ((Math.abs(diferencia) > 0.009 || filas.some((f) => f.m > 0)) && !notas.trim()) return toast.error("Explique el faltante o sobrante de caja en las observaciones");
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("cierre_global_ruta", { p: { carga_id: carga.id, contado: Number(contado || 0), credito: Number(credito || 0), notas, items: filas.map((f) => ({ producto_id: f.d.producto_id, sobrante: f.s, merma: f.m, precio: f.precio })) } });
+      if (error) throw error;
+      await Promise.all(["cargas_camion", "productos", "pedidos", "ventas", "ventas-camion", "creditos-pendientes", "creditos-ruta", "dashboard"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+      toast.success("Ruta cerrada · Venta y crédito registrados a nombre de la ruta");
+      onClose();
+    } catch (e) { toast.error(String((e as { message?: string }).message ?? "No se pudo cerrar la ruta")); } finally { setBusy(false); }
+  }
+  const num = (v: number | undefined) => v ?? 0;
+  return <Dialog open onOpenChange={(o) => !o && !busy && onClose()}><DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
+    <DialogHeader><DialogTitle>Cierre global de ruta</DialogTitle><DialogDescription>Anote lo que regresó y lo que se dañó. El resto se toma como vendido a precio de la ruta.</DialogDescription></DialogHeader>
+    <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-2 text-left">Producto</th><th>Quedó</th><th>Regresó</th><th>Merma</th><th>Vendido</th><th className="text-right">Total</th></tr></thead><tbody>
+      {filas.map((f) => <tr key={f.d.id} className="border-b"><td className="py-2">{f.d.nombre_producto}</td><td className="text-center">{numero(enCamion(f.d))}</td>
+        <td className="p-1"><Input aria-label={`Regresó ${f.d.nombre_producto}`} type="number" min={0} value={num(sob[f.d.producto_id])} onChange={(e) => setSob((s) => ({ ...s, [f.d.producto_id]: Number(e.target.value) }))} className="w-20" /></td>
+        <td className="p-1"><Input aria-label={`Merma ${f.d.nombre_producto}`} type="number" min={0} value={num(mer[f.d.producto_id])} onChange={(e) => setMer((s) => ({ ...s, [f.d.producto_id]: Number(e.target.value) }))} className="w-20" /></td>
+        <td className={`text-center font-bold ${f.vend < 0 ? "text-destructive" : ""}`}>{numero(f.vend)}</td><td className="text-right">{f.precio === null ? (f.vend > 0 ? "Sin precio" : "—") : `₡${numero(f.total)}`}</td></tr>)}
+    </tbody></table></div>
+    <div className="grid gap-3 sm:grid-cols-3">
+      <div className="rounded-md border p-3"><div className="text-xs text-muted-foreground">Total vendido</div><div className="text-lg font-bold text-primary">₡{numero(total)}</div></div>
+      <div className="space-y-1"><Label htmlFor="cg-contado">Dinero de contado</Label><Input id="cg-contado" type="number" min={0} value={contado} onChange={(e) => setContado(e.target.value)} /></div>
+      <div className="space-y-1"><Label htmlFor="cg-credito">Quedó a crédito</Label><Input id="cg-credito" type="number" min={0} value={credito} onChange={(e) => setCredito(e.target.value)} /></div>
+    </div>
+    <p className={`text-sm font-semibold ${Math.abs(diferencia) < 0.01 ? "text-primary" : "text-warning"}`}>{Math.abs(diferencia) < 0.01 ? "Cuadra exacto" : diferencia < 0 ? `Faltante de caja: ₡${numero(-diferencia)}` : `Sobrante de caja: ₡${numero(diferencia)}`}</p>
+    <Textarea aria-label="Observaciones del cierre" placeholder="Observaciones (obligatorio si hay faltante, sobrante o merma)" value={notas} onChange={(e) => setNotas(e.target.value)} />
+    <Button disabled={busy} onClick={confirmar}>{busy ? "Cerrando…" : "Confirmar cierre de ruta"}</Button>
+  </DialogContent></Dialog>;
 }

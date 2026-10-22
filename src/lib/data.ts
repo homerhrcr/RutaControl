@@ -163,8 +163,9 @@ export function useInvalidate() {
   const qc = useQueryClient();
   return (keys: string[]) => {
     keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
-    if (keys.some((k) => ["ventas", "pedidos", "creditos", "abonos", "gastos", "devoluciones"].includes(k))) {
+    if (keys.some((k) => ["ventas", "pedidos", "creditos", "abonos", "gastos", "devoluciones", "creditos-pendientes", "creditos-cliente", "creditos-ruta", "saldos-map"].includes(k))) {
       qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["reportes-gerenciales"] });
     }
   };
 }

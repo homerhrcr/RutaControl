@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { agruparEntregados, fechaEntregaHistorico, pedidoEntregado } from "@/lib/pedidos-historico";
+import { agruparHistorico, fechaEntregaHistorico, pedidoEntregado, pedidoEnHistorico, etiquetaHistorico } from "@/lib/pedidos-historico";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatCRC } from "@/lib/format";
 import { toast } from "sonner";
@@ -102,8 +102,8 @@ function PedidosPage() {
       (!q || norm(p.clientes?.nombre).includes(q) || norm(p.rutas?.nombre).includes(q) || norm(p.notas).includes(q))
     );
   }, [pedidos, busqueda, fecha]);
-  const pendientes = filtrados.filter((p) => !pedidoEntregado(p));
-  const historico = agruparEntregados(filtrados);
+  const pendientes = filtrados.filter((p) => !pedidoEnHistorico(p));
+  const historico = agruparHistorico(filtrados);
   const entregados = historico.reduce((total, grupo) => total + grupo.pedidos.length, 0);
 
   const carga = useMemo(() => {
@@ -197,7 +197,7 @@ function PedidosPage() {
               {historico.map((grupo) => (
                 <AccordionItem key={grupo.fecha} value={grupo.fecha}>
                   <AccordionTrigger>
-                    <span className="flex min-w-0 flex-wrap items-center gap-2"><Folder className="h-5 w-5 shrink-0 text-primary" /><span>{fechaLegible(grupo.fecha)}</span><Badge variant="secondary">{grupo.pedidos.length} entregados</Badge></span>
+                    <span className="flex min-w-0 flex-wrap items-center gap-2"><Folder className="h-5 w-5 shrink-0 text-primary" /><span>{fechaLegible(grupo.fecha)}</span><Badge variant="secondary">{etiquetaHistorico(grupo.pedidos)}</Badge></span>
                   </AccordionTrigger>
                   <AccordionContent className="space-y-3">{grupo.pedidos.map(fichaPedido)}</AccordionContent>
                 </AccordionItem>

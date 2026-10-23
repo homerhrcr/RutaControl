@@ -8,6 +8,11 @@ export function pedidoEntregado(pedido: PedidoHistorico) {
   return pedido.estado === "entregado";
 }
 
+// El histórico guarda lo que ya no está pendiente: entregado, cancelado o anulado.
+export function pedidoEnHistorico(pedido: PedidoHistorico) {
+  return pedidoEntregado(pedido) || pedido.estado === "cancelado" || pedido.estado === "anulado";
+}
+
 export function fechaEntregaHistorico(pedido: PedidoHistorico) {
   const fecha = pedido.ventas?.fecha;
   if (!fecha) return pedido.fecha_entrega;
@@ -21,14 +26,22 @@ export function fechaEntregaHistorico(pedido: PedidoHistorico) {
   return `${valor("year")}-${valor("month")}-${valor("day")}`;
 }
 
-export function agruparEntregados<T extends PedidoHistorico>(pedidos: T[]) {
+export function agruparHistorico<T extends PedidoHistorico>(pedidos: T[]) {
   const grupos = new Map<string, T[]>();
   for (const pedido of pedidos) {
-    if (!pedidoEntregado(pedido)) continue;
+    if (!pedidoEnHistorico(pedido)) continue;
     const fecha = fechaEntregaHistorico(pedido);
     const grupo = grupos.get(fecha) ?? [];
     grupo.push(pedido);
     grupos.set(fecha, grupo);
   }
   return [...grupos.entries()].sort(([a], [b]) => b.localeCompare(a)).map(([fecha, pedidos]) => ({ fecha, pedidos }));
+}
+
+export function etiquetaHistorico(pedidos: PedidoHistorico[]) {
+  const entregados = pedidos.filter(pedidoEntregado).length;
+  const cancelados = pedidos.length - entregados;
+  const partes = [`${entregados} entregado${entregados === 1 ? "" : "s"}`];
+  if (cancelados) partes.push(`${cancelados} cancelado${cancelados === 1 ? "" : "s"}`);
+  return partes.join(" · ");
 }

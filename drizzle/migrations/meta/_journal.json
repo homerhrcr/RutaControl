@@ -134,6 +134,13 @@
       "when": 1792714477550,
       "tag": "0018_cancelacion_pedidos",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792715292725,
+      "tag": "0019_liberar_reservas_pedidos_cancelados",
+      "breakpoints": true
     }
   ]
 }

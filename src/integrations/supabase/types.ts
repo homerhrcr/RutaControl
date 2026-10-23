@@ -1988,6 +1988,7 @@ export type Database = {
       is_platform_admin: { Args: { _uid?: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       registrar_devolucion: { Args: { p: Json }; Returns: string }
+      registrar_merma_camion: { Args: { p: Json }; Returns: string }
       sembrar_catalogo_opciones: { Args: { p_org: string }; Returns: undefined }
       set_default_organization: { Args: { p_org: string }; Returns: undefined }
       telegram_recibir: {

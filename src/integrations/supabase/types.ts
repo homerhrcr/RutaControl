@@ -1203,12 +1203,15 @@ export type Database = {
       }
       pedidos: {
         Row: {
+          cancelado_en: string | null
+          cancelado_por: string | null
           carga_id: string | null
           cliente_id: string
           created_at: string
           estado: string
           fecha_entrega: string
           id: string
+          motivo_cancelacion: string | null
           notas: string | null
           organization_id: string
           ruta_id: string | null
@@ -1218,12 +1221,15 @@ export type Database = {
           venta_id: string | null
         }
         Insert: {
+          cancelado_en?: string | null
+          cancelado_por?: string | null
           carga_id?: string | null
           cliente_id: string
           created_at?: string
           estado?: string
           fecha_entrega: string
           id?: string
+          motivo_cancelacion?: string | null
           notas?: string | null
           organization_id?: string
           ruta_id?: string | null
@@ -1233,12 +1239,15 @@ export type Database = {
           venta_id?: string | null
         }
         Update: {
+          cancelado_en?: string | null
+          cancelado_por?: string | null
           carga_id?: string | null
           cliente_id?: string
           created_at?: string
           estado?: string
           fecha_entrega?: string
           id?: string
+          motivo_cancelacion?: string | null
           notas?: string | null
           organization_id?: string
           ruta_id?: string | null

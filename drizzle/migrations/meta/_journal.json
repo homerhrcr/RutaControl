@@ -120,6 +120,13 @@
       "when": 1792688876685,
       "tag": "0016_cierre_global_ruta",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792713593813,
+      "tag": "0017_blindaje_mermas_camion",
+      "breakpoints": true
     }
   ]
 }

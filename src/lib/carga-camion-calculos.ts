@@ -8,7 +8,7 @@ export function disponibleCamion(d: ExistenciaCamion) {
   return Math.max(0, enCamion(d) - Number(d.reservado ?? 0));
 }
 export function estadoStockCamion(disponible: number) {
-  return disponible <= 0 ? "agotado" : disponible <= 5 ? "bajo" : "disponible";
+  return disponible <= 0 ? "agotado" : disponible <= 3 ? "bajo" : "disponible";
 }
 export function validarMermaCamion(cantidad: number, abordo: number, motivo: string) {
   return Number.isFinite(cantidad) && cantidad > 0 && cantidad <= abordo && motivo.trim().length > 0;

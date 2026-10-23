@@ -50,10 +50,10 @@ test("merma sin justificación o mayor a bordo se rechaza", () => {
   expect(validarMermaCamion(NaN, 4, "Empaque roto")).toBe(false);
   expect(validarMermaCamion(3, 4, "Empaque roto")).toBe(true);
 });
-test("agotado a cero y alerta baja hasta cinco unidades", () => {
+test("agotado a cero y alerta roja hasta tres unidades", () => {
   expect(estadoStockCamion(0)).toBe("agotado");
-  expect(estadoStockCamion(5)).toBe("bajo");
-  expect(estadoStockCamion(6)).toBe("disponible");
+  expect(estadoStockCamion(3)).toBe("bajo");
+  expect(estadoStockCamion(4)).toBe("disponible");
 });
 test("producto reservado para pedido no se puede vender directo", () => {
   const pedidos = [{ id: "p1", estado: "cargado", pedidos_detalle: [{ producto_id: "a", cantidad: 3 }] }];

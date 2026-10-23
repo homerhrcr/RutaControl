@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { creditosDeRuta, limitarCreditos, rutaDeCredito } from "./cobranza-rutas";
+import { creditosDeRuta, limitarCreditos, rutaDeCredito, resumirCreditoPorRuta } from "./cobranza-rutas";
 
 test("cada ruta muestra solo sus saldos aunque el cliente compre en ambas", () => {
   const cliente = { ruta_id: "jueves", cliente_rutas: [{ ruta_id: "jueves" }, { ruta_id: "sabado" }] };
@@ -27,4 +27,17 @@ test("abonar o pagar todo solo puede seleccionar créditos de la ruta abierta", 
   expect(limitarCreditos(creditos, ["jueves"])).toEqual([{ id: "jueves", saldo: 10000 }]);
   expect(limitarCreditos(creditos, [])).toEqual([]);
   expect(limitarCreditos(creditos)).toEqual(creditos);
+});
+
+test("fichas del dashboard suman crédito global y de clientes sin duplicar ni contar pagados", () => {
+  const resumen = resumirCreditoPorRuta([
+    { id: "global", ruta_id: "miercoles", saldo: 156100 },
+    { id: "cliente", ventas: { ruta_id: "jueves" }, clientes: { ruta_id: "sabado" }, saldo: 124000 },
+    { id: "pagado", ruta_id: "sabado", saldo: 0 },
+    { id: "legado", saldo: 5000 },
+  ], [{ id: "miercoles", nombre: "Ruta Miércoles" }, { id: "jueves", nombre: "Ruta Jueves" }, { id: "sabado", nombre: "Ruta Sábado" }]);
+  expect(resumen.map((r) => [r.id, r.saldo, r.creditos])).toEqual([
+    ["miercoles", 156100, 1], ["jueves", 124000, 1], ["sabado", 0, 0], ["sin-ruta", 5000, 1],
+  ]);
+  expect(resumen.reduce((s, r) => s + r.saldo, 0)).toBe(285100);
 });

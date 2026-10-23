@@ -23,3 +23,20 @@ export function limitarCreditos<T extends { id: string }>(creditos: T[], ids?: s
   const permitidos = new Set(ids);
   return creditos.filter((c) => permitidos.has(c.id));
 }
+
+export function resumirCreditoPorRuta(
+  creditos: (CreditoRuta & { saldo: number | string })[],
+  rutas: { id: string; nombre: string }[],
+) {
+  const resumen = new Map(rutas.map((r) => [r.id, { ...r, saldo: 0, creditos: 0 }]));
+  for (const c of creditos) {
+    const saldo = Number(c.saldo);
+    if (saldo <= 0) continue;
+    const id = rutaDeCredito(c);
+    const fila = resumen.get(id) ?? { id, nombre: "Sin ruta asignada", saldo: 0, creditos: 0 };
+    fila.saldo += saldo;
+    fila.creditos += 1;
+    resumen.set(id, fila);
+  }
+  return [...resumen.values()];
+}

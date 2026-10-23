@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { formatCRC } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { resumirCreditoPorRuta } from "@/lib/cobranza-rutas";
 import {
   BarChart,
   Bar,
@@ -85,7 +86,7 @@ export function DashboardPage() {
 
       const [ventas, creditos, detalle, rutas, clientes, clienteRutas, gastosAll, pedidos, devoluciones] = await Promise.all([
         supabase.from("ventas").select("id, total, fecha, ruta_id, cliente_id").gte("fecha", startMonth.toISOString()),
-        supabase.from("creditos").select("saldo, estado, fecha_limite").gt("saldo", 0),
+        supabase.from("creditos").select("id, saldo, estado, fecha_limite, ruta_id, ventas(ruta_id), clientes(ruta_id, cliente_rutas(ruta_id))").gt("saldo", 0),
         supabase.from("detalle_ventas").select("nombre_producto, cantidad, ventas!inner(fecha)").gte("ventas.fecha", startMonth.toISOString()),
         supabase.from("rutas").select("id, nombre").order("nombre"),
         supabase.from("clientes").select("id, ruta_id"),
@@ -103,7 +104,10 @@ export function DashboardPage() {
       const gastosHoy = g.filter((x) => new Date(x.fecha) >= startDay).reduce((s, x) => s + Number(x.monto), 0);
       const gastosMes = g.reduce((s, x) => s + Number(x.monto), 0);
 
+      if (creditos.error) throw creditos.error;
+      if (rutas.error) throw rutas.error;
       const cred = creditos.data ?? [];
+      const creditoPorRuta = resumirCreditoPorRuta(cred, rutas.data ?? []);
       const creditoActivo = cred.reduce((s, c) => s + Number(c.saldo), 0);
       const creditoVencido = cred
         .filter((c) => c.fecha_limite && new Date(c.fecha_limite) < now)
@@ -163,7 +167,7 @@ export function DashboardPage() {
       const merma = valorL(lineas.filter((l) => l.destino === "merma"));
 
       return {
-        hoy, mes, gastosHoy, gastosMes, creditoActivo, creditoVencido, topProductos, porRuta, rutasDetalle,
+        hoy, mes, gastosHoy, gastosMes, creditoActivo, creditoVencido, creditoPorRuta, topProductos, porRuta, rutasDetalle,
         tendPedidos, tendDevol,
         pedidosAbiertos: pedidosAbiertos.length, montoPreventa, entregados,
         totalDev, merma, nDev: dev.length,
@@ -188,6 +192,22 @@ export function DashboardPage() {
           <Stat icon={CreditCard} label="Crédito activo" value={formatCRC(data?.creditoActivo ?? 0)} tone="warning" to="/cobranza" />
           <Stat icon={AlertTriangle} label="Crédito vencido" value={formatCRC(data?.creditoVencido ?? 0)} tone="destructive" to="/cobranza" />
         </div>
+
+        <section aria-labelledby="credito-rutas-titulo">
+          <h2 id="credito-rutas-titulo" className="mb-3 font-bold">Crédito activo por ruta</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {(data?.creditoPorRuta ?? []).map((r) => (
+              <Card key={r.id} className="p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 shrink-0 text-warning" />
+                  <h3 className="min-w-0 break-words text-sm font-semibold">{r.nombre}</h3>
+                </div>
+                <p className="break-words text-xl font-black text-warning">{formatCRC(r.saldo)}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{r.creditos} crédito{r.creditos === 1 ? "" : "s"} pendiente{r.creditos === 1 ? "" : "s"}</p>
+              </Card>
+            ))}
+          </div>
+        </section>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Link to="/productos" className="block">

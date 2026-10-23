@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { formatCRC, formatDate, daysBetween, agingBucket } from "@/lib/format";
-import { Search, HandCoins, AlertTriangle, Receipt } from "lucide-react";
+import { Search, HandCoins, AlertTriangle, Receipt, Plus } from "lucide-react";
+import { SaldoHistoricoDialog } from "@/components/SaldoHistoricoDialog";
 import { TelegramEnviar } from "@/components/TelegramCliente";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +58,7 @@ export function CobranzaPage() {
   const [q, setQ] = useState("");
   const [montos, setMontos] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [saldoHist, setSaldoHist] = useState<{ cliente: { id: string; nombre: string } | null } | null>(null);
   const opciones = (rutas ?? []).map((r) => ({ id: r.id, nombre: r.nombre }));
   for (const c of creditos ?? []) {
     const id = rutaDeCredito(c);
@@ -124,12 +126,12 @@ export function CobranzaPage() {
               {isAdmin && <div className="flex gap-2"><Input aria-label={`Monto de abono ${formatDate(c.fecha)}`} type="number" inputMode="numeric" className="h-11 min-w-0 flex-1" placeholder="₡0" value={montos[c.id] || ""} onChange={(e) => setMontos((s) => ({ ...s, [c.id]: Number(e.target.value) || 0 }))} /><Button disabled={busy !== null} onClick={() => abonarRuta(c.id, Number(c.saldo))}><HandCoins className="mr-1.5 h-4 w-4" />Abonar</Button></div>}
             </Card>)}
           </section>}
-          <h2 className="font-semibold">Deudas de clientes · {nombreRuta}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">Deudas de clientes · {nombreRuta}</h2>{isAdmin && <Button variant="outline" className="h-11 gap-1.5" onClick={() => setSaldoHist({ cliente: null })}><Plus className="h-4 w-4" />Saldo histórico</Button>}</div>
           <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="h-11 pl-9" placeholder="Buscar cliente o teléfono…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
           <div className="space-y-2.5">
             {rows.map((r) => <Card key={r.cliente.id} className="p-3">
               <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="break-words font-semibold">{r.cliente.nombre}</p><p className="text-xs text-muted-foreground">Vence: {formatDate(r.vence)}</p>{r.vence && daysBetween(r.vence, new Date()) > 0 && <Badge variant="outline" className="mt-1 border-destructive/40 text-destructive"><AlertTriangle className="mr-1 h-3 w-3" />Vencido</Badge>}</div><p className="shrink-0 text-lg font-black text-destructive">{formatCRC(r.saldo)}</p></div>
-              <div className="mt-3 flex flex-wrap gap-2"><Button className="h-11 flex-1 gap-1.5" onClick={() => setAbonoClient(r.cliente)}><HandCoins className="h-4 w-4" />Registrar abono</Button><Button variant="outline" className="h-11 flex-1 gap-1.5" onClick={() => setHistorialClient(r.cliente)}><Receipt className="h-4 w-4" />Ver detalle de deuda</Button><TelegramEnviar iconOnly clienteId={r.cliente.id} texto={`Hola ${r.cliente.nombre}, le recordamos su saldo pendiente de ${formatCRC(r.saldo)} de ${nombreRuta}${empresa?.nombre ? ` con ${empresa.nombre}` : ""}.`} /></div>
+              <div className="mt-3 flex flex-wrap gap-2"><Button className="h-11 flex-1 gap-1.5" onClick={() => setAbonoClient(r.cliente)}><HandCoins className="h-4 w-4" />Registrar abono</Button>{isAdmin && <Button variant="outline" className="h-11 gap-1.5" onClick={() => setSaldoHist({ cliente: r.cliente })}><Plus className="h-4 w-4" />Saldo histórico</Button>}<Button variant="outline" className="h-11 flex-1 gap-1.5" onClick={() => setHistorialClient(r.cliente)}><Receipt className="h-4 w-4" />Ver detalle de deuda</Button><TelegramEnviar iconOnly clienteId={r.cliente.id} texto={`Hola ${r.cliente.nombre}, le recordamos su saldo pendiente de ${formatCRC(r.saldo)} de ${nombreRuta}${empresa?.nombre ? ` con ${empresa.nombre}` : ""}.`} /></div>
             </Card>)}
             {rows.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">{q ? "Ningún cliente coincide en esta ruta" : "Sin deudas de clientes pendientes en esta ruta"}</p>}
           </div>
@@ -137,6 +139,7 @@ export function CobranzaPage() {
       </div>
       <AbonoDialog cliente={abonoClient} creditoIds={abonoClient?.creditoIds} rutaNombre={nombreRuta} open={!!abonoClient} onClose={() => setAbonoClient(null)} onDone={actualizar} />
       <HistorialCliente cliente={historialClient} creditoIds={historialClient?.creditoIds} rutaNombre={nombreRuta} open={!!historialClient} soloDeuda onClose={() => setHistorialClient(null)} />
+      <SaldoHistoricoDialog open={!!saldoHist} clienteInicial={saldoHist?.cliente} rutaId={seleccion} rutaNombre={nombreRuta} onClose={() => setSaldoHist(null)} onDone={actualizar} />
     </div>
   );
 }

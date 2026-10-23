@@ -87,7 +87,7 @@ export function RutaPage() {
   const { data: pedidosPend } = useQuery({
     queryKey: ["pedidos", "pendientes-ruta"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("pedidos").select("cliente_id").not("estado", "in", "(entregado,anulado)");
+      const { data, error } = await supabase.from("pedidos").select("cliente_id").not("estado", "in", "(entregado,anulado,cancelado)");
       if (error) throw error;
       return (data ?? []).map((p) => p.cliente_id).filter(Boolean) as string[];
     },
@@ -97,7 +97,7 @@ export function RutaPage() {
       .from("pedidos")
       .select(PEDIDO_ENTREGA_SELECT)
       .eq("cliente_id", clienteId)
-      .not("estado", "in", "(entregado,anulado)")
+      .not("estado", "in", "(entregado,anulado,cancelado)")
       .order("fecha_entrega");
     if (error) return toast.error(error.message);
     if (!data?.length) return toast.info("Este cliente ya no tiene pedidos pendientes");

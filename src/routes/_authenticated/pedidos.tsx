@@ -21,7 +21,9 @@ import { formatCRC } from "@/lib/format";
 import { toast } from "sonner";
 import { queuePedido, queuePedidoEstado } from "@/lib/offline";
 import { EntregarPedido } from "@/components/EntregarPedido";
-import { Plus, Truck, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Truck, CheckCircle2, XCircle, Pencil, Trash2 } from "lucide-react";
+import { OpcionSelect } from "@/components/OpcionSelect";
+import { useOpciones } from "@/lib/catalogos";
 import { TelegramEnviar, PedidoTelegram } from "@/components/TelegramCliente";
 import { notificarDocumentoTelegram } from "@/lib/telegram-notificar";
 import { fechaLegible } from "@/lib/telegram";
@@ -46,6 +48,7 @@ const ESTADOS: Record<string, { label: string; variant: "default" | "secondary" 
   cargado: { label: "Cargado", variant: "default" },
   entregado: { label: "Entregado", variant: "outline" },
   anulado: { label: "Anulado", variant: "destructive" },
+  cancelado: { label: "Cancelado", variant: "destructive" },
 };
 
 const norm = (s: string | null | undefined) => (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -65,6 +68,8 @@ function PedidosPage() {
   const [nuevo, setNuevo] = useState(false);
   const [entregar, setEntregar] = useState<any>(null);
   const [busqueda, setBusqueda] = useState("");
+  const [cancelar, setCancelar] = useState<any>(null);
+  const [editar, setEditar] = useState<any>(null);
 
   const { data: pedidos } = useQuery({
     queryKey: ["pedidos", fecha, ruta],
@@ -115,6 +120,18 @@ function PedidosPage() {
     invalidate(["pedidos", "pedidos-carga-consolidado"]);
   }
 
+  async function borrar(p: any) {
+    if (p.carga_id) return toast.error("El pedido ya está cargado en un camión: cancélelo en vez de borrarlo");
+    if (!navigator.onLine) return toast.error("Se necesita conexión para borrar un pedido");
+    if (!confirm(`¿Borrar definitivamente el pedido de ${p.clientes?.nombre ?? "este cliente"}? Use esto solo si se registró por error.`)) return;
+    const { error: dErr } = await supabase.from("pedidos_detalle").delete().eq("pedido_id", p.id);
+    if (dErr) return toast.error(dErr.message);
+    const { error } = await supabase.from("pedidos").delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Pedido borrado");
+    invalidate(["pedidos", "pedidos-carga-consolidado"]);
+  }
+
   return (
     <div>
       <PageHeader title="Preventa" subtitle="Pedidos previos a la entrega" action={<Button onClick={() => setNuevo(true)}><Plus className="mr-1 h-4 w-4" />Pedido</Button>} />
@@ -156,13 +173,16 @@ function PedidosPage() {
                   {p.pedidos_detalle.map((l) => <li key={l.id}>{Number(l.cantidad)} × {l.nombre_producto}</li>)}
                 </ul>
                 {p.notas && <p className="text-xs italic">{p.notas}</p>}
+                {p.estado === "cancelado" && <p className="text-xs font-medium text-destructive">Motivo de cancelación: {p.motivo_cancelacion ?? "—"}</p>}
                 {["confirmado", "cargado", "entregado"].includes(p.estado) && <PedidoTelegram pedidoId={p.id} clienteId={p.cliente_id} nombre={p.clientes?.nombre} rutaId={p.ruta_id} fechaEntrega={p.fecha_entrega} rutas={rutas ?? []} />}
                 {p.estado === "entregado" && p.venta_id && <TelegramEnviar tipo="tiquete" documentoId={p.venta_id} />}
-                {p.estado !== "entregado" && p.estado !== "anulado" && (
+                {!["entregado", "anulado", "cancelado"].includes(p.estado) && (
                   <div className="flex flex-wrap gap-2">
                     {p.estado === "borrador" && <Button size="sm" variant="secondary" onClick={() => cambiarEstado(p.id, "confirmado")}>Confirmar</Button>}
                     <Button size="sm" onClick={() => setEntregar(p)}><CheckCircle2 className="mr-1 h-4 w-4" />Entregar y facturar</Button>
-                    <Button size="sm" variant="ghost" disabled={!!p.carga_id} onClick={() => cambiarEstado(p.id, "anulado")}><XCircle className="mr-1 h-4 w-4" />Anular</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setCancelar(p)}><XCircle className="mr-1 h-4 w-4" />Cancelar pedido</Button>
+                    <Button size="sm" variant="ghost" disabled={!!p.carga_id} title={p.carga_id ? "Ya está cargado en un camión" : undefined} onClick={() => setEditar(p)}><Pencil className="mr-1 h-4 w-4" />Editar</Button>
+                    <Button size="sm" variant="ghost" disabled={!!p.carga_id} title={p.carga_id ? "Ya está cargado en un camión" : undefined} onClick={() => borrar(p)}><Trash2 className="mr-1 h-4 w-4" />Borrar</Button>
                   </div>
                 )}
               </Card>
@@ -187,19 +207,21 @@ function PedidosPage() {
         </Tabs>
       </div>
       <NuevoPedido open={nuevo} onOpenChange={setNuevo} fecha={fecha || hoy(1)} usuarioId={user?.id} />
+      {editar && <NuevoPedido key={editar.id} pedido={editar} open onOpenChange={(v) => !v && setEditar(null)} fecha={editar.fecha_entrega} usuarioId={user?.id} />}
+      {cancelar && <CancelarPedido pedido={cancelar} onClose={() => setCancelar(null)} usuarioId={user?.id} />}
       {entregar && <EntregarPedido pedido={entregar} onClose={() => setEntregar(null)} vendedorId={user?.id ?? ""} />}
     </div>
   );
 }
 
-function NuevoPedido({ open, onOpenChange, fecha, usuarioId }: { open: boolean; onOpenChange: (v: boolean) => void; fecha: string; usuarioId?: string }) {
+function NuevoPedido({ open, onOpenChange, fecha, usuarioId, pedido }: { open: boolean; onOpenChange: (v: boolean) => void; fecha: string; usuarioId?: string; pedido?: any }) {
   const { data: clientes } = useClientes();
   const invalidate = useInvalidate();
-  const [cliente, setCliente] = useState("");
+  const [cliente, setCliente] = useState(pedido?.cliente_id ?? "");
   const [f, setF] = useState(fecha);
   const [busqCli, setBusqCli] = useState("");
-  const [items, setItems] = useState<LineaItem[]>([]);
-  const [notas, setNotas] = useState("");
+  const [items, setItems] = useState<LineaItem[]>(() => (pedido?.pedidos_detalle ?? []).map((l: any) => ({ producto_id: l.producto_id, nombre: l.nombre_producto, precio: Number(l.precio_unitario), cantidad: Number(l.cantidad) })));
+  const [notas, setNotas] = useState(pedido?.notas ?? "");
   const [busy, setBusy] = useState(false);
   const total = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
@@ -208,6 +230,22 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId }: { open: boolean; 
     setBusy(true);
     const c: any = clientes?.find((x) => x.id === cliente);
     const rutaId = c?.cliente_rutas?.[0]?.ruta_id ?? c?.ruta_id ?? null;
+    if (pedido) {
+      if (!navigator.onLine) { setBusy(false); return toast.error("Se necesita conexión para editar un pedido"); }
+      const { data: actual } = await supabase.from("pedidos").select("estado, carga_id").eq("id", pedido.id).single();
+      if (!actual || actual.carga_id || ["entregado", "anulado", "cancelado"].includes(actual.estado)) { setBusy(false); return toast.error("Este pedido ya no se puede editar (cargado, entregado o cancelado)"); }
+      const { error: e1 } = await supabase.from("pedidos").update({ cliente_id: cliente, ruta_id: rutaId, fecha_entrega: f, total, notas: notas || null }).eq("id", pedido.id);
+      if (e1) { setBusy(false); return toast.error(e1.message); }
+      const { error: e2 } = await supabase.from("pedidos_detalle").delete().eq("pedido_id", pedido.id);
+      if (e2) { setBusy(false); return toast.error(e2.message); }
+      const { error: e3 } = await supabase.from("pedidos_detalle").insert(items.map((i) => ({ pedido_id: pedido.id, producto_id: i.producto_id, nombre_producto: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio })));
+      setBusy(false);
+      if (e3) return toast.error(e3.message);
+      toast.success("Pedido actualizado");
+      invalidate(["pedidos", "pedidos-carga-consolidado"]);
+      onOpenChange(false);
+      return;
+    }
     const id = crypto.randomUUID();
     const payload = { id, cliente_id: cliente, ruta_id: rutaId, fecha_entrega: f, total, notas: notas || null, usuario_id: usuarioId, items: items.map((i) => ({ producto_id: i.producto_id, nombre: i.nombre, cantidad: i.cantidad, precio: i.precio })) };
     if (!navigator.onLine) {
@@ -233,7 +271,7 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId }: { open: boolean; 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] max-w-lg overflow-y-auto">
-        <DialogHeader><DialogTitle>Nuevo pedido</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{pedido ? "Editar pedido" : "Nuevo pedido"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -255,3 +293,41 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId }: { open: boolean; 
   );
 }
 
+
+function CancelarPedido({ pedido, onClose, usuarioId }: { pedido: any; onClose: () => void; usuarioId?: string }) {
+  const invalidate = useInvalidate();
+  const { data: opciones = [] } = useOpciones("motivo_cancelacion_pedido");
+  const [motivo, setMotivo] = useState("");
+  const [detalle, setDetalle] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function confirmar() {
+    if (!motivo) return toast.error("Seleccione el motivo de la cancelación");
+    if (!navigator.onLine) return toast.error("Se necesita conexión para cancelar un pedido");
+    const etiqueta = opciones.find((o) => o.codigo === motivo)?.etiqueta ?? motivo;
+    setBusy(true);
+    const { error } = await supabase.from("pedidos").update({
+      estado: "cancelado",
+      motivo_cancelacion: detalle.trim() ? `${etiqueta} — ${detalle.trim()}` : etiqueta,
+      cancelado_por: usuarioId ?? null,
+      cancelado_en: new Date().toISOString(),
+    }).eq("id", pedido.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Pedido cancelado");
+    invalidate(["pedidos", "pedidos-carga-consolidado", "cargas-camion", "pendientes-camion", "dashboard"]);
+    onClose();
+  }
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Cancelar pedido · {pedido.clientes?.nombre}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <OpcionSelect catalogo="motivo_cancelacion_pedido" label="Motivo de cancelación" vacio="Seleccionar motivo…" value={motivo} onChange={setMotivo} />
+          <Textarea placeholder="Detalle adicional (opcional)" value={detalle} onChange={(e) => setDetalle(e.target.value)} />
+          {pedido.carga_id && <p className="text-xs text-muted-foreground">El producto reservado en el camión quedará libre para venta.</p>}
+          <Button className="w-full" variant="destructive" disabled={busy || !motivo} onClick={confirmar}>{busy ? "Cancelando…" : "Confirmar cancelación"}</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

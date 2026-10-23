@@ -127,6 +127,13 @@
       "when": 1792713593813,
       "tag": "0017_blindaje_mermas_camion",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792714477550,
+      "tag": "0018_cancelacion_pedidos",
+      "breakpoints": true
     }
   ]
 }

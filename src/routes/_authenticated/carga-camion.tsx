@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Truck, FileText, FileSpreadsheet, ArrowLeft, PackageCheck, Pencil } from "lucide-react";
+import { Plus, Truck, FileText, FileSpreadsheet, ArrowLeft, PackageCheck, Pencil, Folder } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -57,11 +59,24 @@ function CargaCamionPage() {
         {isPending && <p className="text-muted-foreground">Cargando…</p>}
         {error && <p className="text-destructive">No se pudieron leer las cargas. {error.message}</p>}
         {!isPending && !visibles.length && <div className="py-12 text-center"><Truck className="mx-auto mb-3 h-10 w-10 text-primary" /><p className="font-semibold">No hay cargas registradas</p></div>}
-        <div className="grid gap-3 lg:grid-cols-2">{visibles.map((c) => <div key={c.id} className="rounded-lg border bg-card p-4">
-          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="font-semibold">{c.rutas?.nombre}</h2><p className="text-sm text-muted-foreground">{c.fecha} · {c.vehiculo || "Sin identificación del vehículo"}</p></div><Badge variant={c.estado === "en_ruta" ? "default" : "secondary"}>{c.estado === "en_ruta" ? "En ruta" : "Cerrada"}</Badge></div>
-          <div className="my-3 flex flex-wrap gap-4 text-sm"><span>{numero(c.cargas_camion_detalle.reduce((s, d) => s + Number(d.preventa) + Number(d.extra), 0))} cargadas</span><span>{numero(c.cargas_camion_detalle.reduce((s, d) => s + Number(d.vendido), 0))} vendidas</span><span className="font-semibold text-primary">{numero(descontarPendientes(c, pendientes).reduce((s, d) => s + disponibleCamion(d), 0))} disponibles para vender</span></div>
-          <Button variant="outline" size="sm" onClick={() => setSeleccion(c.id)}>Ver carga / liquidar</Button>
-        </div>)}</div>
+        {(() => {
+          const ficha = (c: CargaCamion) => <div key={c.id} className="rounded-lg border bg-card p-4">
+            <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="font-semibold">{c.rutas?.nombre}</h2><p className="text-sm text-muted-foreground">{c.fecha} · {c.vehiculo || "Sin identificación del vehículo"}</p></div><Badge variant={c.estado === "en_ruta" ? "default" : "secondary"}>{c.estado === "en_ruta" ? "En ruta" : "Cerrada"}</Badge></div>
+            <div className="my-3 flex flex-wrap gap-4 text-sm"><span>{numero(c.cargas_camion_detalle.reduce((s, d) => s + Number(d.preventa) + Number(d.extra), 0))} cargadas</span><span>{numero(c.cargas_camion_detalle.reduce((s, d) => s + Number(d.vendido), 0))} vendidas</span>{c.estado === "en_ruta" && <span className="font-semibold text-primary">{numero(descontarPendientes(c, pendientes).reduce((s, d) => s + disponibleCamion(d), 0))} disponibles para vender</span>}</div>
+            <Button variant="outline" size="sm" onClick={() => setSeleccion(c.id)}>{c.estado === "en_ruta" ? "Ver carga / liquidar" : "Ver liquidación"}</Button>
+          </div>;
+          const activas = visibles.filter((c) => c.estado === "en_ruta");
+          const grupos = new Map<string, CargaCamion[]>();
+          for (const c of visibles) if (c.estado !== "en_ruta") grupos.set(c.fecha, [...(grupos.get(c.fecha) ?? []), c]);
+          const historico = [...grupos.entries()].sort(([a], [b]) => b.localeCompare(a));
+          return <Tabs defaultValue="activas">
+            <TabsList><TabsTrigger value="activas">En ruta ({activas.length})</TabsTrigger><TabsTrigger value="historico">Histórico ({visibles.length - activas.length})</TabsTrigger></TabsList>
+            <TabsContent value="activas">{!activas.length && <p className="text-sm text-muted-foreground">No hay camiones en ruta.</p>}<div className="grid gap-3 lg:grid-cols-2">{activas.map(ficha)}</div></TabsContent>
+            <TabsContent value="historico">{!historico.length && <p className="text-sm text-muted-foreground">No hay cargas cerradas.</p>}
+              <Accordion type="multiple">{historico.map(([fecha, cs]) => <AccordionItem key={fecha} value={fecha}><AccordionTrigger><span className="flex flex-wrap items-center gap-2"><Folder className="h-5 w-5 text-primary" />{fechaLegible(fecha)}<Badge variant="secondary">{cs.length} carga{cs.length === 1 ? "" : "s"}</Badge></span></AccordionTrigger><AccordionContent><div className="grid gap-3 lg:grid-cols-2">{cs.map(ficha)}</div></AccordionContent></AccordionItem>)}</Accordion>
+            </TabsContent>
+          </Tabs>;
+        })()}
       </>}
     </div>
     {nueva && <NuevaCarga onClose={() => setNueva(false)} onDone={(id) => { setNueva(false); setSeleccion(id); }} />}

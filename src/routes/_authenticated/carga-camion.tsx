@@ -212,12 +212,14 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     return data;
   } });
   const total = (ventas ?? []).reduce((s, v) => s + Number(v.total), 0);
-  const { data: devsMerma } = useQuery({ queryKey: ["devoluciones-carga", carga.id], queryFn: async () => {
+  const { data: devsTodas } = useQuery({ queryKey: ["devoluciones-carga", carga.id], queryFn: async () => {
     const fin = new Date(`${carga.fecha}T00:00:00`); fin.setDate(fin.getDate() + 1);
     const { data, error } = await supabase.from("devoluciones").select("devoluciones_detalle(producto_id, cantidad, destino)").eq("ruta_id", carga.ruta_id).gte("fecha", `${carga.fecha}T00:00:00`).lt("fecha", fin.toISOString());
     if (error) throw error;
-    return (data ?? []).flatMap((d) => d.devoluciones_detalle ?? []).filter((l) => l.destino === "merma");
+    return (data ?? []).flatMap((d) => d.devoluciones_detalle ?? []);
   } });
+  const devsMerma = (devsTodas ?? []).filter((l) => l.destino === "merma");
+  const devCliente = (pid: string) => (devsTodas ?? []).filter((l) => l.producto_id === pid).reduce((s, l) => s + Number(l.cantidad), 0);
   const cerrada = carga.estado !== "en_ruta";
   const costoVendido = detalle.reduce((s, d) => s + costoU(d.producto_id) * Number(d.vendido), 0);
   const perdidaMerma = detalle.reduce((s, d) => s + costoU(d.producto_id) * Number(d.merma), 0);

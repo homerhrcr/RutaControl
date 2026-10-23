@@ -16,20 +16,26 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { HandCoins } from "lucide-react";
+import { limitarCreditos } from "@/lib/cobranza-rutas";
 
 export function AbonoDialog({
   cliente,
   open,
   onClose,
   onDone,
+  creditoIds,
+  rutaNombre,
 }: {
   cliente: { id: string; nombre: string } | null;
   open: boolean;
   onClose: () => void;
   onDone: () => void;
+  creditoIds?: string[];
+  rutaNombre?: string;
 }) {
   const { user } = useAuth();
-  const { data: creditos, refetch } = useCreditosCliente(cliente?.id);
+  const { data: todosCreditos, refetch } = useCreditosCliente(cliente?.id);
+  const creditos = limitarCreditos(todosCreditos ?? [], creditoIds);
   const [monto, setMonto] = useState<number>(0);
   const [destino, setDestino] = useState<string>("todos");
   const [busy, setBusy] = useState(false);
@@ -46,6 +52,7 @@ export function AbonoDialog({
   async function abonar(montoAbono: number, forzarTodos = false) {
     if (!cliente || !user) return;
     if (montoAbono <= 0) return toast.error("Ingresa un monto");
+    if (!creditos.length) return toast.error("No hay deudas pendientes en esta ruta");
     setBusy(true);
     try {
       let restante = montoAbono;
@@ -105,6 +112,7 @@ export function AbonoDialog({
         <div className="space-y-4">
           <div className="rounded-xl bg-muted p-4 text-center">
             <p className="text-sm text-muted-foreground">{cliente?.nombre}</p>
+            {rutaNombre && <p className="text-xs text-muted-foreground">{rutaNombre}</p>}
             <p className="text-3xl font-black text-destructive">{formatCRC(saldoTotal)}</p>
             <p className="text-xs text-muted-foreground">Saldo pendiente</p>
           </div>
@@ -118,7 +126,7 @@ export function AbonoDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Más antiguo primero (todos)</SelectItem>
-                  {creditos!.map((c) => (
+                  {creditos.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       Día {formatDate(c.fecha)} · {formatCRC(c.saldo)}
                     </SelectItem>

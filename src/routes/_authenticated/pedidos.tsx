@@ -16,12 +16,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { agruparEntregados, fechaEntregaHistorico, pedidoEntregado } from "@/lib/pedidos-historico";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatCRC } from "@/lib/format";
 import { toast } from "sonner";
 import { queuePedido, queuePedidoEstado } from "@/lib/offline";
 import { EntregarPedido } from "@/components/EntregarPedido";
-import { Plus, Truck, CheckCircle2, XCircle, Pencil, Trash2 } from "lucide-react";
+import { Plus, Truck, CheckCircle2, XCircle, Pencil, Trash2, Folder } from "lucide-react";
 import { CancelarPedido } from "@/components/CancelarPedido";
 import { TelegramEnviar, PedidoTelegram } from "@/components/TelegramCliente";
 import { notificarDocumentoTelegram } from "@/lib/telegram-notificar";
@@ -31,9 +33,9 @@ export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
     meta: [
       { title: "Preventa y pedidos — Ruta Directo" },
-      { name: "description", content: "Toma de pedidos previos, carga del camión y entrega en ruta." },
+      { name: "description", content: "Preventas pendientes y pedidos entregados en un histórico por fecha, con carga y entrega en ruta." },
       { property: "og:title", content: "Preventa y pedidos — Ruta Directo" },
-      { property: "og:description", content: "Toma de pedidos previos, carga del camión y entrega en ruta." },
+      { property: "og:description", content: "Preventas pendientes y pedidos entregados en un histórico por fecha, con carga y entrega en ruta." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -73,8 +75,7 @@ function PedidosPage() {
   const { data: pedidos } = useQuery({
     queryKey: ["pedidos", fecha, ruta],
     queryFn: async () => {
-      let q = supabase.from("pedidos").select("*, clientes(nombre), rutas(nombre), pedidos_detalle(*)").order("fecha_entrega").order("created_at");
-      if (fecha) q = q.eq("fecha_entrega", fecha);
+      let q = supabase.from("pedidos").select("*, clientes(nombre), rutas(nombre), pedidos_detalle(*), ventas(fecha)").order("fecha_entrega").order("created_at");
       if (ruta !== "all") q = q.eq("ruta_id", ruta);
       const { data, error } = await q;
       if (error) throw error;
@@ -96,8 +97,14 @@ function PedidosPage() {
 
   const filtrados = useMemo(() => {
     const q = norm(busqueda.trim());
-    return (pedidos ?? []).filter((p: any) => !q || norm(p.clientes?.nombre).includes(q) || norm(p.rutas?.nombre).includes(q) || norm(p.notas).includes(q));
-  }, [pedidos, busqueda]);
+    return (pedidos ?? []).filter((p) =>
+      (!fecha || (pedidoEntregado(p) ? fechaEntregaHistorico(p) : p.fecha_entrega) === fecha) &&
+      (!q || norm(p.clientes?.nombre).includes(q) || norm(p.rutas?.nombre).includes(q) || norm(p.notas).includes(q))
+    );
+  }, [pedidos, busqueda, fecha]);
+  const pendientes = filtrados.filter((p) => !pedidoEntregado(p));
+  const historico = agruparEntregados(filtrados);
+  const entregados = historico.reduce((total, grupo) => total + grupo.pedidos.length, 0);
 
   const carga = useMemo(() => {
     const m = new Map<string, { nombre: string; cantidad: number }>();
@@ -131,37 +138,14 @@ function PedidosPage() {
     invalidate(["pedidos", "pedidos-carga-consolidado"]);
   }
 
-  return (
-    <div>
-      <PageHeader title="Preventa" subtitle="Pedidos previos a la entrega" action={<Button onClick={() => setNuevo(true)}><Plus className="mr-1 h-4 w-4" />Pedido</Button>} />
-      <div className="space-y-4 p-4 md:p-6">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1"><Label className="text-xs">Fecha de entrega (vacío = todas)</Label><div className="flex gap-1"><Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />{fecha && <Button variant="ghost" size="sm" className="h-10" onClick={() => setFecha("")}>Todas</Button>}</div></div>
-          <CatalogSelect
-            catalogo="rutas"
-            incluirInactivas
-            label="Ruta"
-            placeholder="Ruta"
-            value={ruta}
-            onChange={setRuta}
-            extraOptions={[{ value: "all", label: "Todas" }]}
-          />
-        </div>
-        <Input placeholder="Buscar cliente…" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar cliente" />
-        <Tabs defaultValue="pedidos">
-          <TabsList>
-            <TabsTrigger value="pedidos">Pedidos ({filtrados.length})</TabsTrigger>
-            <TabsTrigger value="carga">Carga del camión</TabsTrigger>
-          </TabsList>
-          <TabsContent value="pedidos" className="space-y-3">
-            {filtrados.length === 0 && <p className="text-sm text-muted-foreground">No hay pedidos que coincidan.</p>}
-            {filtrados.map((p) => (
+  function fichaPedido(p: (typeof filtrados)[number]) {
+    return (
               <Card key={p.id} className="space-y-2 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{p.clientes?.nombre}</p>
                     <p className="text-xs text-muted-foreground">{p.rutas?.nombre ?? "Sin ruta"}</p>
-                    <p className="mt-1 inline-flex items-center gap-1 rounded-md bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">📅 Entrega: {fechaLegible(p.fecha_entrega)}</p>
+                    <p className="mt-1 inline-flex items-center gap-1 rounded-md bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">📅 {pedidoEntregado(p) ? "Entregado" : "Entrega"}: {fechaLegible(pedidoEntregado(p) ? fechaEntregaHistorico(p) : p.fecha_entrega)}</p>
                   </div>
                   <div className="text-right">
                     <Badge variant={ESTADOS[p.estado].variant}>{ESTADOS[p.estado].label}</Badge>
@@ -185,7 +169,40 @@ function PedidosPage() {
                   </div>
                 )}
               </Card>
-            ))}
+    );
+  }
+
+  return (
+    <div>
+      <PageHeader title="Preventa" subtitle="Pedidos previos a la entrega" action={<Button onClick={() => setNuevo(true)}><Plus className="mr-1 h-4 w-4" />Pedido</Button>} />
+      <div className="space-y-4 p-4 md:p-6">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1"><Label className="text-xs">Fecha de entrega (vacío = todas)</Label><div className="flex gap-1"><Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />{fecha && <Button variant="ghost" size="sm" className="h-10" onClick={() => setFecha("")}>Todas</Button>}</div></div>
+          <CatalogSelect catalogo="rutas" incluirInactivas label="Ruta" placeholder="Ruta" value={ruta} onChange={setRuta} extraOptions={[{ value: "all", label: "Todas" }]} />
+        </div>
+        <Input placeholder="Buscar cliente…" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar cliente" />
+        <Tabs defaultValue="pedidos">
+          <TabsList className="h-auto flex-wrap">
+            <TabsTrigger value="pedidos">Pedidos ({pendientes.length})</TabsTrigger>
+            <TabsTrigger value="historico">Histórico ({entregados})</TabsTrigger>
+            <TabsTrigger value="carga">Carga del camión</TabsTrigger>
+          </TabsList>
+          <TabsContent value="pedidos" className="space-y-3">
+            {pendientes.length === 0 && <p className="text-sm text-muted-foreground">No hay pedidos que coincidan.</p>}
+            {pendientes.map(fichaPedido)}
+          </TabsContent>
+          <TabsContent value="historico">
+            {historico.length === 0 && <p className="text-sm text-muted-foreground">No hay pedidos entregados que coincidan.</p>}
+            <Accordion type="multiple">
+              {historico.map((grupo) => (
+                <AccordionItem key={grupo.fecha} value={grupo.fecha}>
+                  <AccordionTrigger>
+                    <span className="flex min-w-0 flex-wrap items-center gap-2"><Folder className="h-5 w-5 shrink-0 text-primary" /><span>{fechaLegible(grupo.fecha)}</span><Badge variant="secondary">{grupo.pedidos.length} entregados</Badge></span>
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3">{grupo.pedidos.map(fichaPedido)}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </TabsContent>
           <TabsContent value="carga">
             <p className="mb-2 text-xs text-muted-foreground">Consolida todos los pedidos confirmados y cargados de la ruta, sin importar la fecha de entrega.</p>

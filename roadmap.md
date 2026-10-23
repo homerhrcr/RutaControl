@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Separar preventas entregadas en Histórico con carpetas por fecha y verificar con pedidos reales.
+- [x] Separar entregadas en Histórico con carpetas por fecha real de entrega; 3 pruebas aprobadas y navegador autenticado verificó 41 entregadas, 2 pendientes, recarga y vista móvil sin errores. Publicación pendiente.
 - [x] Liberar reservas de preventas canceladas en venta/edición/cierre del servidor y refrescar cargas_camion; cancelación compartida desde Preventa y entrega en ruta. 16 pruebas aprobadas; sesión real comprobó acceso y motivo obligatorio, sin errores. No se confirmó una cancelación real para no alterar pedidos; publicación pendiente.
 - [x] Fichas de crédito activo por ruta en Dashboard, con saldo y cantidad de créditos. 11 pruebas aprobadas; sesión real y recarga: Jueves ₡124 000 (24), Miércoles ₡156 100 (1), Sábado ₡0. Sin errores; publicación pendiente.
 - [x] Separar Crédito y Cobros por ruta; totales, clientes, cierre global y créditos de abono/detalle aislados. 10 pruebas aprobadas; sesión real: Jueves ₡124 000, Miércoles ₡156 100 con abono ₡459 000, Sábado ₡0. Formularios y detalle comprobados sin registrar pagos de prueba; publicación pendiente.

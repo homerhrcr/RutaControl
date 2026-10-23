@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { editarPrecioLineaVenta } from "@/lib/precios.functions";
 import { TelegramEnviar } from "@/components/TelegramCliente";
+import { limitarCreditos } from "@/lib/cobranza-rutas";
 
 type Evento =
   | { tipo: "venta"; id: string; fecha: string; venta: any }
@@ -39,18 +40,23 @@ export function HistorialCliente({
   open,
   onClose,
   soloDeuda = false,
+  creditoIds,
+  rutaNombre,
 }: {
   cliente: { id: string; nombre: string } | null;
   open: boolean;
   onClose: () => void;
   soloDeuda?: boolean;
+  creditoIds?: string[];
+  rutaNombre?: string;
 }) {
   const { isAdmin } = useAuth();
   const { data: empresa } = useEmpresa();
   const invalidate = useInvalidate();
   const { data: ventas, isLoading: lv } = useVentasCliente(cliente?.id, 100);
   const { data: abonos, isLoading: la } = useAbonosCliente(cliente?.id, 100);
-  const { data: pendientes } = useCreditosClienteDetalle(cliente?.id);
+  const { data: todosPendientes } = useCreditosClienteDetalle(cliente?.id);
+  const pendientes = limitarCreditos(todosPendientes ?? [], creditoIds);
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
   const [borrar, setBorrar] = useState<
@@ -148,6 +154,7 @@ export function HistorialCliente({
   function lineasEstado(): string[] {
     const lineas: string[] = [];
     lineas.push("*Pendiente de pago*");
+    if (rutaNombre) lineas.push(`Ruta: ${rutaNombre}`);
     for (const c of (pendientes ?? []) as any[]) {
       lineas.push("");
       lineas.push(`*Compra ${fmtF(c.ventas?.fecha ?? c.fecha)}* — Total ${formatCRC(Number(c.monto))}`);
@@ -252,6 +259,7 @@ export function HistorialCliente({
         <DialogHeader className="border-b px-4 py-3">
           <DialogTitle className="text-base">{soloDeuda ? "Detalle de deuda" : "Historial del cliente"}</DialogTitle>
           <p className="truncate text-xs text-muted-foreground">{cliente?.nombre}</p>
+          {rutaNombre && <p className="text-xs text-muted-foreground">{rutaNombre}</p>}
         </DialogHeader>
 
         {!soloDeuda && (<div className="grid grid-cols-2 gap-2 border-b p-3">

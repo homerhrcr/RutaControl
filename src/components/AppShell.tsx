@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden w-60 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground md:flex">
         <div className="flex items-center gap-2 px-5 py-5">
           <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white">
             <img src={logo.url} alt="Ruta Directo" className="h-full w-full object-contain" />
@@ -90,7 +90,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="px-3 pb-2">
           <OrgSwitcher className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
         </div>
-        <nav className="flex-1 space-y-1 px-3 py-2">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2">
           {navItems.map((item) => {
             const active = pathname === item.to;
             return (
@@ -110,12 +110,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="mx-3 mb-3 overflow-hidden rounded-xl border border-sidebar-border shadow-[var(--glow)]">
+        <div className="mx-3 mb-3 shrink-0 overflow-hidden rounded-xl border border-sidebar-border shadow-[var(--glow)]">
           <div className="relative">
             <img src={truckImg} alt="Camión en ruta" loading="lazy" width={992} height={672} className="h-28 w-full object-cover" />
           </div>
         </div>
-        <div className="border-t border-sidebar-border p-3">
+        <div className="shrink-0 border-t border-sidebar-border p-3">
           <div className="mb-2 px-2">
             <p className="truncate text-sm font-semibold">{nombre || "Usuario"}</p>
             <p className="text-xs text-sidebar-foreground/60">{roleLabel}</p>

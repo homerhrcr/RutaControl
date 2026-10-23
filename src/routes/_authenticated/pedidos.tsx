@@ -22,8 +22,7 @@ import { toast } from "sonner";
 import { queuePedido, queuePedidoEstado } from "@/lib/offline";
 import { EntregarPedido } from "@/components/EntregarPedido";
 import { Plus, Truck, CheckCircle2, XCircle, Pencil, Trash2 } from "lucide-react";
-import { OpcionSelect } from "@/components/OpcionSelect";
-import { useOpciones } from "@/lib/catalogos";
+import { CancelarPedido } from "@/components/CancelarPedido";
 import { TelegramEnviar, PedidoTelegram } from "@/components/TelegramCliente";
 import { notificarDocumentoTelegram } from "@/lib/telegram-notificar";
 import { fechaLegible } from "@/lib/telegram";
@@ -294,40 +293,3 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId, pedido }: { open: b
 }
 
 
-function CancelarPedido({ pedido, onClose, usuarioId }: { pedido: any; onClose: () => void; usuarioId?: string }) {
-  const invalidate = useInvalidate();
-  const { data: opciones = [] } = useOpciones("motivo_cancelacion_pedido");
-  const [motivo, setMotivo] = useState("");
-  const [detalle, setDetalle] = useState("");
-  const [busy, setBusy] = useState(false);
-  async function confirmar() {
-    if (!motivo) return toast.error("Seleccione el motivo de la cancelación");
-    if (!navigator.onLine) return toast.error("Se necesita conexión para cancelar un pedido");
-    const etiqueta = opciones.find((o) => o.codigo === motivo)?.etiqueta ?? motivo;
-    setBusy(true);
-    const { error } = await supabase.from("pedidos").update({
-      estado: "cancelado",
-      motivo_cancelacion: detalle.trim() ? `${etiqueta} — ${detalle.trim()}` : etiqueta,
-      cancelado_por: usuarioId ?? null,
-      cancelado_en: new Date().toISOString(),
-    }).eq("id", pedido.id);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Pedido cancelado");
-    invalidate(["pedidos", "pedidos-carga-consolidado", "cargas-camion", "pendientes-camion", "dashboard"]);
-    onClose();
-  }
-  return (
-    <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Cancelar pedido · {pedido.clientes?.nombre}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <OpcionSelect catalogo="motivo_cancelacion_pedido" label="Motivo de cancelación" vacio="Seleccionar motivo…" value={motivo} onChange={setMotivo} />
-          <Textarea placeholder="Detalle adicional (opcional)" value={detalle} onChange={(e) => setDetalle(e.target.value)} />
-          {pedido.carga_id && <p className="text-xs text-muted-foreground">El producto reservado en el camión quedará libre para venta.</p>}
-          <Button className="w-full" variant="destructive" disabled={busy || !motivo} onClick={confirmar}>{busy ? "Cancelando…" : "Confirmar cancelación"}</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}

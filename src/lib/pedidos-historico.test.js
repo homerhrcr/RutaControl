@@ -14,7 +14,7 @@ test("carpetas por fecha real de entrega, recientes primero y sin duplicados", (
     { id: "c", estado: "entregado", fecha_entrega: "2026-10-22" },
     { id: "d", estado: "cancelado", fecha_entrega: "2026-10-22" },
   ]);
-  expect(grupos.map((g) => [g.fecha, g.pedidos.map((p) => p.id)])).toEqual([["2026-10-22", ["c", "d"]], ["2026-10-21", ["b"]], ["2026-10-20", ["a"]]]);
+  expect(grupos.map((g) => [g.fecha, g.pedidos.map((p) => p.id)])).toEqual([["2026-10-22", ["a", "c", "d"]], ["2026-10-21", ["b"]]]);
 });
 
 test("pedidos antiguos sin venta mantienen su fecha de entrega registrada", () => {

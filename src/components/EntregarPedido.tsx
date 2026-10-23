@@ -10,6 +10,8 @@ import { formatCRC } from "@/lib/format";
 import { toast } from "sonner";
 import { queueEntrega } from "@/lib/offline";
 import { Tiquete, type TiqueteData } from "@/components/Tiquete";
+import { CancelarPedido } from "@/components/CancelarPedido";
+import { XCircle } from "lucide-react";
 
 export const PEDIDO_ENTREGA_SELECT = "*, clientes(nombre), rutas(nombre), pedidos_detalle(*)";
 
@@ -22,6 +24,7 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
   );
   const [metodo, setMetodo] = useState<"contado" | "credito">("contado");
   const [busy, setBusy] = useState(false);
+  const [cancelar, setCancelar] = useState(false);
   const [tiquete, setTiquete] = useState<TiqueteData | null>(null);
   const total = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
@@ -77,6 +80,7 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
   }
 
   if (tiquete) return <Tiquete data={tiquete} open onClose={onClose} />;
+  if (cancelar) return <CancelarPedido pedido={pedido} usuarioId={vendedorId} onClose={onClose} />;
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
@@ -90,6 +94,7 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
             <Button variant={metodo === "credito" ? "default" : "outline"} onClick={() => setMetodo("credito")}>Crédito</Button>
           </div>
           <Button className="w-full" size="lg" disabled={busy} onClick={confirmar}>{busy ? "Procesando…" : `Confirmar venta · ${formatCRC(total)}`}</Button>
+          <Button className="w-full gap-2" variant="outline" disabled={busy} onClick={() => setCancelar(true)}><XCircle className="h-4 w-4" />Cancelar pedido</Button>
         </div>
       </DialogContent>
     </Dialog>

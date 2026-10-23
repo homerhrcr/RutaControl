@@ -62,3 +62,25 @@ test("producto reservado para pedido no se puede vender directo", () => {
   expect(vv(det(), [{ producto_id: "a", cantidad: 3 }])).toBe(false);
   expect(vv(det(new Set(["p1"])), [{ producto_id: "a", cantidad: 5 }])).toBe(true);
 });
+test("cancelar una preventa libera solo su reserva para venta libre sin aumentar el total físico", () => {
+  const detalle = [{ producto_id: "leche", cantidad: 3 }];
+  const otro = { id: "otro", estado: "cargado", pedidos_detalle: [{ producto_id: "leche", cantidad: 2 }] };
+  const pedido = { id: "pedido", estado: "cargado", pedidos_detalle: detalle };
+  const stock = { ...leche, preventa: 5, extra: 9, vendido: 4, merma: 1 };
+  const antes = rp([pedido, otro]).get("leche") ?? 0;
+  const despues = rp([{ ...pedido, estado: "cancelado" }, otro]).get("leche") ?? 0;
+  expect(antes).toBe(5);
+  expect(despues).toBe(2);
+  expect(enCamion(stock)).toBe(9);
+  expect(disponibleCamion({ ...stock, reservado: antes })).toBe(4);
+  expect(disponibleCamion({ ...stock, reservado: despues })).toBe(7);
+  expect(vv([{ ...stock, reservado: despues }], [{ producto_id: "leche", cantidad: 7 }])).toBe(true);
+  expect(vv([{ ...stock, reservado: despues }], [{ producto_id: "leche", cantidad: 8 }])).toBe(false);
+});
+test("releer la cancelación no duplica las unidades liberadas", () => {
+  const pedidos = [{ id: "cancelado", estado: "cancelado", pedidos_detalle: [{ producto_id: "leche", cantidad: 3 }] }];
+  const stock = { ...leche, preventa: 3, extra: 11, vendido: 10, merma: 1 };
+  for (let intento = 0; intento < 3; intento++) {
+    expect(disponibleCamion({ ...stock, reservado: rp(pedidos).get("leche") ?? 0 })).toBe(3);
+  }
+});

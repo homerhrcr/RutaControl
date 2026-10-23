@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { Plus, Search, MapPin, Phone, MessageCircle, History, Trash2 } from "lucide-react";
 import { HistorialCliente } from "@/components/HistorialCliente";
+import { SaldoHistoricoDialog } from "@/components/SaldoHistoricoDialog";
 import { ClienteUbicacion } from "@/components/ClienteUbicacion";
 import { leerCoordenadas } from "@/lib/coordenadas";
 import { DireccionCliente } from "@/components/DireccionCliente";
@@ -83,6 +84,7 @@ function ClientesPage() {
   const [busy, setBusy] = useState(false);
   const [histCliente, setHistCliente] = useState<{ id: string; nombre: string } | null>(null);
   const [delCliente, setDelCliente] = useState<{ id: string; nombre: string } | null>(null);
+  const [saldoCliente, setSaldoCliente] = useState<{ id: string; nombre: string; rutaIds: string[] } | null>(null);
 
   async function confirmarEliminar() {
     if (!delCliente) return;
@@ -250,6 +252,23 @@ function ClientesPage() {
             <DialogTitle>{editId ? "Editar cliente" : "Nuevo cliente"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {editId && (
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setHistCliente({ id: editId, nombre: form.nombre })}>
+                  <History className="h-4 w-4" /> Histórico
+                </Button>
+                {isAdmin && (
+                  <Button
+                    type="button" variant="outline" size="sm" className="gap-1.5"
+                    disabled={!form.ruta_ids.length}
+                    title={form.ruta_ids.length ? "Registrar deuda anterior" : "Asigne una ruta al cliente primero"}
+                    onClick={() => setSaldoCliente({ id: editId, nombre: form.nombre, rutaIds: form.ruta_ids })}
+                  >
+                    <Plus className="h-4 w-4" /> Saldo histórico
+                  </Button>
+                )}
+              </div>
+            )}
             <Field label="Nombre completo">
               <Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
             </Field>
@@ -319,6 +338,16 @@ function ClientesPage() {
         cliente={histCliente}
         open={!!histCliente}
         onClose={() => setHistCliente(null)}
+      />
+
+      <SaldoHistoricoDialog
+        open={!!saldoCliente}
+        clienteInicial={saldoCliente}
+        rutaId={saldoCliente?.rutaIds[0] ?? ""}
+        rutaNombre=""
+        rutasOpciones={(rutas ?? []).filter((r) => saldoCliente?.rutaIds.includes(r.id)).map((r) => ({ id: r.id, nombre: r.nombre }))}
+        onClose={() => setSaldoCliente(null)}
+        onDone={() => invalidate(["clientes", "creditos-cliente", "creditos-cliente-detalle", "creditos-pendientes", "cobranza"])}
       />
 
       <AlertDialog open={!!delCliente} onOpenChange={(o) => !o && setDelCliente(null)}>

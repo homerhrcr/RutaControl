@@ -12,11 +12,16 @@ import { formatCRC } from "@/lib/format";
 const hoyCR = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
 
 export function SaldoHistoricoDialog({
-  open, onClose, onDone, rutaId, rutaNombre, clienteInicial,
+  open, onClose, onDone, rutaId: rutaProp, rutaNombre: nombreProp, clienteInicial, rutasOpciones,
 }: {
   open: boolean; onClose: () => void; onDone: () => void;
   rutaId: string; rutaNombre: string; clienteInicial?: { id: string; nombre: string } | null;
+  /** Si se indica, permite elegir la ruta de la deuda (ficha del cliente). */
+  rutasOpciones?: { id: string; nombre: string }[];
 }) {
+  const [rutaSel, setRutaSel] = useState(rutaProp);
+  const rutaId = rutasOpciones ? rutaSel : rutaProp;
+  const rutaNombre = rutasOpciones ? (rutasOpciones.find((r) => r.id === rutaSel)?.nombre ?? "la ruta") : nombreProp;
   const valida = !!rutaId && rutaId !== "sin-ruta";
   const { data: clientes } = useClientes(valida ? rutaId : undefined);
   const [clienteId, setClienteId] = useState("");
@@ -25,11 +30,12 @@ export function SaldoHistoricoDialog({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (open) { setClienteId(clienteInicial?.id ?? ""); setMonto(0); setFecha(hoyCR()); }
-  }, [open, clienteInicial?.id]);
+    if (open) { setClienteId(clienteInicial?.id ?? ""); setMonto(0); setFecha(hoyCR()); setRutaSel(rutaProp); }
+  }, [open, clienteInicial?.id, rutaProp]);
 
   async function guardar() {
     if (!clienteId) return toast.error("Selecciona el cliente");
+    if (rutasOpciones && !valida) return toast.error("Selecciona la ruta de la deuda");
     if (!Number.isFinite(monto) || monto <= 0) return toast.error("El monto debe ser mayor a cero");
     if (!fecha || fecha > hoyCR()) return toast.error("La fecha no puede ser futura");
     setBusy(true);
@@ -52,6 +58,17 @@ export function SaldoHistoricoDialog({
         <DialogHeader><DialogTitle>Registrar saldo histórico</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">Deuda anterior (fichas de papel) de {rutaNombre}. No afecta inventario.</p>
+          {rutasOpciones && (
+            <div className="space-y-1.5">
+              <Label>Ruta de la deuda</Label>
+              <Select value={rutaSel} onValueChange={setRutaSel}>
+                <SelectTrigger className="h-11"><SelectValue placeholder="Seleccionar ruta" /></SelectTrigger>
+                <SelectContent>
+                  {rutasOpciones.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Cliente</Label>
             <Select value={clienteId} onValueChange={setClienteId}>

@@ -64,9 +64,11 @@ export function CobranzaPage() {
     const id = rutaDeCredito(c);
     if (!opciones.some((r) => r.id === id)) opciones.push({ id, nombre: "Sin ruta asignada" });
   }
-  const seleccion = opciones.some((r) => r.id === rutaId) ? rutaId : opciones[0]?.id ?? "";
+  const rutasReales = opciones.filter((r) => r.id !== "sin-ruta");
+  opciones.unshift({ id: "todas", nombre: "Todas las rutas" });
+  const seleccion = opciones.some((r) => r.id === rutaId) ? rutaId : "todas";
   const nombreRuta = opciones.find((r) => r.id === seleccion)?.nombre ?? "";
-  const deRuta = creditosDeRuta(creditos ?? [], seleccion);
+  const deRuta = seleccion === "todas" ? (creditos ?? []) : creditosDeRuta(creditos ?? [], seleccion);
   const globales = deRuta.filter((c) => !c.cliente_id);
   const map = new Map<string, { cliente: ClienteCobro; saldo: number; vence: string | null }>();
   for (const c of deRuta) {
@@ -139,7 +141,7 @@ export function CobranzaPage() {
       </div>
       <AbonoDialog cliente={abonoClient} creditoIds={abonoClient?.creditoIds} rutaNombre={nombreRuta} open={!!abonoClient} onClose={() => setAbonoClient(null)} onDone={actualizar} />
       <HistorialCliente cliente={historialClient} creditoIds={historialClient?.creditoIds} rutaNombre={nombreRuta} open={!!historialClient} soloDeuda onClose={() => setHistorialClient(null)} />
-      <SaldoHistoricoDialog open={!!saldoHist} clienteInicial={saldoHist?.cliente} rutaId={seleccion} rutaNombre={nombreRuta} onClose={() => setSaldoHist(null)} onDone={actualizar} />
+      <SaldoHistoricoDialog open={!!saldoHist} clienteInicial={saldoHist?.cliente} rutaId={seleccion === "todas" ? "" : seleccion} rutaNombre={nombreRuta} rutasOpciones={seleccion === "todas" ? rutasReales : undefined} onClose={() => setSaldoHist(null)} onDone={actualizar} />
     </div>
   );
 }

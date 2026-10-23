@@ -156,13 +156,16 @@ function PedidosPage() {
                   {p.pedidos_detalle.map((l) => <li key={l.id}>{Number(l.cantidad)} × {l.nombre_producto}</li>)}
                 </ul>
                 {p.notas && <p className="text-xs italic">{p.notas}</p>}
+                {p.estado === "cancelado" && <p className="text-xs font-medium text-destructive">Motivo de cancelación: {p.motivo_cancelacion ?? "—"}</p>}
                 {["confirmado", "cargado", "entregado"].includes(p.estado) && <PedidoTelegram pedidoId={p.id} clienteId={p.cliente_id} nombre={p.clientes?.nombre} rutaId={p.ruta_id} fechaEntrega={p.fecha_entrega} rutas={rutas ?? []} />}
                 {p.estado === "entregado" && p.venta_id && <TelegramEnviar tipo="tiquete" documentoId={p.venta_id} />}
-                {p.estado !== "entregado" && p.estado !== "anulado" && (
+                {!["entregado", "anulado", "cancelado"].includes(p.estado) && (
                   <div className="flex flex-wrap gap-2">
                     {p.estado === "borrador" && <Button size="sm" variant="secondary" onClick={() => cambiarEstado(p.id, "confirmado")}>Confirmar</Button>}
                     <Button size="sm" onClick={() => setEntregar(p)}><CheckCircle2 className="mr-1 h-4 w-4" />Entregar y facturar</Button>
-                    <Button size="sm" variant="ghost" disabled={!!p.carga_id} onClick={() => cambiarEstado(p.id, "anulado")}><XCircle className="mr-1 h-4 w-4" />Anular</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setCancelar(p)}><XCircle className="mr-1 h-4 w-4" />Cancelar pedido</Button>
+                    <Button size="sm" variant="ghost" disabled={!!p.carga_id} title={p.carga_id ? "Ya está cargado en un camión" : undefined} onClick={() => setEditar(p)}><Pencil className="mr-1 h-4 w-4" />Editar</Button>
+                    <Button size="sm" variant="ghost" disabled={!!p.carga_id} title={p.carga_id ? "Ya está cargado en un camión" : undefined} onClick={() => borrar(p)}><Trash2 className="mr-1 h-4 w-4" />Borrar</Button>
                   </div>
                 )}
               </Card>

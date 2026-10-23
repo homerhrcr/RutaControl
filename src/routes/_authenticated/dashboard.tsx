@@ -152,7 +152,7 @@ export function DashboardPage() {
       const dev = devoluciones.data ?? [];
       const tendPedidos = dias.map((d) => ({
         label: d.label,
-        valor: ped.filter((p) => new Date(p.created_at).toDateString() === d.key && p.estado !== "anulado").reduce((s, p) => s + Number(p.total), 0),
+        valor: ped.filter((p) => new Date(p.created_at).toDateString() === d.key && !["anulado","cancelado"].includes(p.estado)).reduce((s, p) => s + Number(p.total), 0),
       }));
       const tendDevol = dias.map((d) => ({
         label: d.label,

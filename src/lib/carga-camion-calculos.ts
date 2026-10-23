@@ -23,7 +23,7 @@ type PedidoCarga = { id: string; estado: string; venta_id?: string | null; pedid
 export function reservasPedidos(pedidos: PedidoCarga[], excluir: Set<string> = new Set()) {
   return sumarProductos(
     pedidos
-      .filter((p) => !["entregado", "anulado"].includes(p.estado) && !excluir.has(p.id) && !(p.venta_id && excluir.has(p.venta_id)))
+      .filter((p) => !["entregado", "anulado", "cancelado"].includes(p.estado) && !excluir.has(p.id) && !(p.venta_id && excluir.has(p.venta_id)))
       .flatMap((p) => p.pedidos_detalle ?? []),
   );
 }

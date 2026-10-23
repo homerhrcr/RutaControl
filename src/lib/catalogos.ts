@@ -7,7 +7,7 @@ export type OpcionCatalogo = {
   activo: boolean; orden: number; predeterminado: boolean; protegido: boolean;
 };
 
-export type CatalogoOpcionKey = "motivo_devolucion" | "destino_devolucion" | "tipo_identificacion" | "tarifa_iva" | "metodo_pago";
+export type CatalogoOpcionKey = "motivo_devolucion" | "destino_devolucion" | "tipo_identificacion" | "tarifa_iva" | "metodo_pago" | "motivo_cancelacion_pedido";
 export type CatalogoTablaKey = "categorias" | "categorias_gasto" | "rutas";
 
 export type DefCatalogo = {
@@ -29,6 +29,7 @@ export const DEFINICIONES: DefCatalogo[] = [
   { key: "tipo_identificacion", tipo: "opciones", titulo: "Tipos de identificación", usadoEn: "Clientes, Datos de la empresa, Facturación", restriccion: "Códigos oficiales de Hacienda: se edita el nombre, el orden y si está activo." },
   { key: "tarifa_iva", tipo: "opciones", titulo: "Tarifas de IVA", usadoEn: "Productos", restriccion: "Tarifas oficiales de Hacienda: se edita el nombre, el orden, activo y la predeterminada." },
   { key: "metodo_pago", tipo: "opciones", titulo: "Métodos de pago", usadoEn: "Ventas, tiquetes y reportes", restriccion: "El sistema calcula créditos con estos códigos: solo se edita el nombre visible." },
+  { key: "motivo_cancelacion_pedido", tipo: "opciones", titulo: "Motivos de cancelación de pedidos", usadoEn: "Preventa (cancelar pedido)" },
 ];
 
 export function useOpciones(catalogo?: CatalogoOpcionKey) {

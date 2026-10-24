@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/productos")({
   component: ProductosPage,
 });
 
-const empty = { codigo: "", nombre: "", categoria_id: "", precio: 0, costo: 0, existencia: 0, existencia_minima: 5, activo: true, cabys: "", tarifa_iva: 13 };
+const empty = { codigo: "", nombre: "", categoria_id: "", precio: 0, costo: 0, existencia: 0, existencia_minima: 5, activo: true, cabys: "", tarifa_iva: 13, codigo_barras: "" };
 
 export function ProductosPage() {
   const { data: productos } = useProductos();
@@ -84,7 +84,7 @@ export function ProductosPage() {
 
   function openNew() { setForm(empty); setEditId(null); setOpen(true); }
   function openEdit(p: any) {
-    setForm({ codigo: p.codigo, nombre: p.nombre, categoria_id: p.categoria_id ?? "", precio: Number(p.precio), costo: Number(p.costo), existencia: Number(p.existencia), existencia_minima: Number(p.existencia_minima), activo: p.activo, cabys: p.cabys ?? "", tarifa_iva: Number(p.tarifa_iva ?? 13) });
+    setForm({ codigo: p.codigo, nombre: p.nombre, categoria_id: p.categoria_id ?? "", precio: Number(p.precio), costo: Number(p.costo), existencia: Number(p.existencia), existencia_minima: Number(p.existencia_minima), activo: p.activo, cabys: p.cabys ?? "", tarifa_iva: Number(p.tarifa_iva ?? 13), codigo_barras: p.codigo_barras ?? "" });
     setEditId(p.id); setOpen(true);
   }
 

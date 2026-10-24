@@ -14,7 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { toast } from "sonner";
-import { Plus, Search, AlertTriangle, Trash2 } from "lucide-react";
+import { Plus, Search, AlertTriangle, Trash2, ScanBarcode } from "lucide-react";
+import { EscanerCamara } from "@/components/EscanerCamara";
 import { useListasPrecios, usePreciosProductos } from "@/lib/listas-precios";
 
 export const Route = createFileRoute("/_authenticated/productos")({
@@ -57,7 +58,8 @@ export function ProductosPage() {
       (productos ?? []).filter((p) => {
         const matchSearch =
           p.nombre.toLowerCase().includes(search.toLowerCase()) ||
-          p.codigo.toLowerCase().includes(search.toLowerCase());
+          p.codigo.toLowerCase().includes(search.toLowerCase()) ||
+          (p.codigo_barras ?? "").includes(search.trim());
         const matchBajo = !soloBajos || Number(p.existencia) <= Number(p.existencia_minima);
         return matchSearch && matchBajo;
       }),
@@ -106,12 +108,12 @@ export function ProductosPage() {
   async function save() {
     if (!form.codigo.trim() || !form.nombre.trim()) return toast.error("Código y nombre son obligatorios");
     setBusy(true);
-    const payload = { ...form, categoria_id: form.categoria_id || null, cabys: form.cabys || null };
+    const payload = { ...form, categoria_id: form.categoria_id || null, cabys: form.cabys || null, codigo_barras: form.codigo_barras.trim() || null };
     const { error } = editId
       ? await supabase.from("productos").update(payload).eq("id", editId)
       : await supabase.from("productos").insert(payload);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(error.code === "23505" ? "Ese código de barras ya está asignado a otro producto" : error.message);
     toast.success(editId ? "Producto actualizado" : "Producto creado");
     invalidate(["productos"]);
     setOpen(false);
@@ -182,6 +184,13 @@ export function ProductosPage() {
 
             </div>
             <F label="Nombre"><Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></F>
+            <F label="Código de barras">
+              <div className="flex gap-2">
+                <Input placeholder="Pistolee o escriba el código" value={form.codigo_barras} onKeyDown={(e) => e.key === "Enter" && e.preventDefault()} onChange={(e) => setForm({ ...form, codigo_barras: e.target.value.trim() })} />
+                <Button type="button" variant="outline" size="icon" onClick={() => setCamara(true)} aria-label="Leer con la cámara"><ScanBarcode className="h-4 w-4" /></Button>
+              </div>
+            </F>
+            <EscanerCamara open={camara} continuo={false} onClose={() => setCamara(false)} onCodigo={(c) => setForm((f) => ({ ...f, codigo_barras: c.trim() }))} />
             <F label="Costo"><Input type="number" value={form.costo || ""} onChange={(e) => setForm({ ...form, costo: Number(e.target.value) || 0 })} /></F>
             <p className="rounded-lg border border-dashed p-2 text-xs text-muted-foreground">El precio de venta se define en Administración → Precios según la clasificación de cada cliente.</p>
             <div className="grid grid-cols-2 gap-3">

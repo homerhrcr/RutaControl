@@ -24,7 +24,8 @@ export function useOnline(): boolean {
 export interface VentaParams {
   id?: string;
   carga_id?: string | null;
-  cliente_id: string;
+  cliente_id: string | null;
+  pos?: import("./pos-calculos").DatosPOS;
   cliente_nombre?: string;
   ruta_id: string | null;
   vendedor_id: string;
@@ -425,6 +426,11 @@ export async function syncQueue(): Promise<number> {
     const ops = (await allOps()).filter((o) => o.status !== "SYNCED" && o.status !== "CONFLICT");
     setProgress({ syncing: true, total: ops.length, done: 0, failed: false });
     for (const op of ops) {
+      const pos = op.entity === "ventas" ? (op.payload as VentaParams).pos : undefined;
+      if (pos) {
+        const { data: org, error } = await supabase.rpc("current_organization_id");
+        if (error || org !== pos.organization_id) continue;
+      }
       await putOp({ ...op, status: "PROCESSING" });
       try {
         if (op.entity === "ventas") await registrarVenta(op.payload as VentaParams);

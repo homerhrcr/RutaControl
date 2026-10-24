@@ -1,8 +1,11 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { enviarComprobantePorCorreo } from "@/lib/correo-comprobante.functions";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { formatCRC, formatDateTime } from "@/lib/format";
-import { Printer, MessageCircle, X, Copy } from "lucide-react";
+import { Printer, MessageCircle, X, Copy, Mail } from "lucide-react";
 import type { CartItem } from "@/lib/data";
 import { TelegramEnviar } from "@/components/TelegramCliente";
 import { useEmpresa } from "@/lib/empresa";
@@ -70,6 +73,9 @@ export function Tiquete({
   const { organizacionActiva } = useAuth();
   const nombreEmpresa = empresa?.nombre ?? organizacionActiva?.nombre ?? "Su empresa";
   const telefonoEmpresa = empresa?.telefono ?? "";
+  const enviar = useServerFn(enviarComprobantePorCorreo);
+  const [correo, setCorreo] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   if (!data) return null;
 
@@ -104,6 +110,17 @@ export function Tiquete({
     } catch {
       alert("No se pudo copiar automáticamente.");
     }
+  }
+
+  async function enviarCorreo() {
+    if (!data || !correo) return;
+    setEnviando(true);
+    try {
+      const r = await enviar({ data: { venta_id: data.venta_id, correo: correo.trim(), reenvio: true } });
+      if (r.enviado) { toast.success(`Comprobante enviado a ${correo.trim()}`); setCorreo(null); }
+      else toast.error(r.motivo === "bloqueado" ? "Ese correo no acepta mensajes" : "No se pudo enviar el correo");
+    } catch { toast.error("Revise el correo e intente de nuevo"); }
+    finally { setEnviando(false); }
   }
 
   return (
@@ -187,7 +204,18 @@ export function Tiquete({
             <Copy className="h-4 w-4" /> Copiar
           </Button>
           {!data.pos?.pendiente && data.cliente_id && <TelegramEnviar tipo="tiquete" documentoId={data.venta_id} />}
+          {!data.pos?.pendiente && correo === null && (
+            <Button variant="outline" className="gap-2" onClick={() => setCorreo(data.pos?.correo ?? "")}>
+              <Mail className="h-4 w-4" /> Correo
+            </Button>
+          )}
         </div>
+        {correo !== null && (
+          <div className="flex gap-2 border-t p-3">
+            <Input type="email" inputMode="email" placeholder="correo@cliente.com" aria-label="Correo del cliente" value={correo} onChange={(e) => setCorreo(e.target.value)} />
+            <Button disabled={enviando || !correo.trim()} onClick={enviarCorreo}>{enviando ? "Enviando…" : "Enviar"}</Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

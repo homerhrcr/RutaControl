@@ -141,6 +141,13 @@
       "when": 1792715292725,
       "tag": "0019_liberar_reservas_pedidos_cancelados",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792801820970,
+      "tag": "0020_productos_codigo_barras",
+      "breakpoints": true
     }
   ]
 }

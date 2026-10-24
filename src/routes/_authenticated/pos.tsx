@@ -138,7 +138,6 @@ function POSPage() {
   if(!loading&&!isAdmin&&!roles.includes("vendedor"))return <div><PageHeader title="Punto de Venta"/><p className="p-6 text-muted-foreground">Solo administradores y vendedores pueden operar el mostrador.</p></div>;
   return <div className="min-w-0">
     <PageHeader title="Punto de Venta" subtitle={caja?`${caja.nombre} · ${caja.modalidad==='feria'?'Feria':'Local'} · ${online?'En línea':'Sin conexión'}`:organizacionActiva?.nombre} action={caja&&<Button variant="outline" onClick={()=>setCerrar(true)}><LockKeyhole className="mr-2 h-4 w-4"/>Cerrar caja</Button>}/>
-    <div className="border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground">Comprobantes internos · Hacienda: pendiente de conexión · Correo automático: pendiente de configurar</div>
     <Tabs defaultValue="venta" className="min-w-0 p-4 md:p-5"><TabsList><TabsTrigger value="venta"><Store className="mr-2 h-4 w-4"/>Mostrador</TabsTrigger><TabsTrigger value="historico"><History className="mr-2 h-4 w-4"/>Histórico de caja</TabsTrigger></TabsList>
       <TabsContent value="venta">
       {cajasError&&<p role="alert" className="text-destructive">No se pudieron cargar las cajas.</p>}

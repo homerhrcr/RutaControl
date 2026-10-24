@@ -3,8 +3,10 @@ import { useProductosCliente } from "@/lib/listas-precios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCRC } from "@/lib/format";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, ScanBarcode } from "lucide-react";
 import { toast } from "sonner";
+import { buscarPorCodigo, useLectorPistola, avisoLectura } from "@/lib/codigo-barras";
+import { EscanerCamara } from "@/components/EscanerCamara";
 
 export interface LineaItem {
   producto_id: string;
@@ -34,6 +36,15 @@ export function ItemsEditor<T extends LineaItem>({
 }) {
   const { data: productos, listo, listaNombre } = useProductosCliente(clienteId, rutaId);
   const [sel, setSel] = useState("");
+  const [camara, setCamara] = useState(false);
+
+  function sumar(p: NonNullable<typeof productos>[number]) {
+    if (!listo) return;
+    if (!p.precioInfo.valido && !permitirSinPrecio) return toast.error(`${p.nombre}: ${p.precioInfo.mensaje}`);
+    const idx = items.findIndex((x) => x.producto_id === p.id);
+    if (idx >= 0) onChange(items.map((x, i) => (i === idx ? { ...x, cantidad: x.cantidad + 1 } : x)));
+    else onChange([...items, nuevo({ producto_id: p.id, nombre: p.nombre, precio: p.precioInfo.valido ? Number(p.precio) : 0, cantidad: 1 })]);
+  }
 
   function agregar() {
     const p = productos?.find((x) => x.id === sel);
@@ -42,6 +53,14 @@ export function ItemsEditor<T extends LineaItem>({
     onChange([...items, nuevo({ producto_id: p.id, nombre: p.nombre, precio: p.precioInfo.valido ? Number(p.precio) : 0, cantidad: 1 })]);
     setSel("");
   }
+
+  function porCodigo(codigo: string) {
+    const p = buscarPorCodigo((productos ?? []) as any[], codigo) as NonNullable<typeof productos>[number] | undefined;
+    if (!p) { avisoLectura(false); return toast.error(`Código ${codigo} no está registrado en ningún producto`); }
+    avisoLectura(true);
+    sumar(p);
+  }
+  useLectorPistola(listo && !camara, porCodigo);
 
   return (
     <div className="space-y-2">
@@ -53,8 +72,10 @@ export function ItemsEditor<T extends LineaItem>({
             <option key={p.id} value={p.id}>{p.nombre} — {p.precioInfo.valido ? `${formatCRC(Number(p.precio))} · ${p.precioInfo.mensaje}` : "sin precio"}</option>
           ))}
         </select>
+        <Button type="button" size="icon" variant="outline" onClick={() => setCamara(true)} disabled={!listo} aria-label="Leer código con la cámara"><ScanBarcode className="h-4 w-4" /></Button>
         <Button type="button" size="icon" onClick={agregar} disabled={!sel || !listo} aria-label="Agregar producto"><Plus className="h-4 w-4" /></Button>
       </div>
+      <EscanerCamara open={camara} onClose={() => setCamara(false)} onCodigo={porCodigo} />
       {items.map((it, idx) => {
         const set = (patch: Partial<T>) => onChange(items.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
         return (

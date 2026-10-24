@@ -2,6 +2,11 @@ import { beforeEach, expect, mock, test } from "bun:test";
 
 let tables;
 const client = {
+  async rpc(name, args) {
+    if (name !== "pos_registrar_venta") throw new Error("Unexpected RPC");
+    if (!tables.ventas.some(v => v.id === args.p.id)) tables.ventas.push({ id: args.p.id, pos_datos: args.p.pos, total: 2500 });
+    return { data: tables.ventas.find(v => v.id === args.p.id), error: null };
+  },
   from(table) {
     let action = "select";
     let payload;
@@ -68,4 +73,11 @@ test("reintentar la entrega no vuelve a descontar las 5 leches ni duplica el crÃ
   expect(tables.ventas).toHaveLength(1);
   expect(tables.detalle_ventas).toHaveLength(3);
   expect(tables.creditos).toHaveLength(1);
+});
+test("POS reintenta por el RPC atÃ³mico y conserva cliente nulo y datos de cobro", async () => {
+  const p = { ...pedido, id: "pos-unica", cliente_id: null, metodo: "contado", pos: { caja_id: "caja", organization_id: "empresa", recibido: 5000, medio: "efectivo" } };
+  await registrarVenta(p); await registrarVenta(p);
+  expect(tables.ventas).toHaveLength(1);
+  expect(tables.ventas[0].pos_datos.recibido).toBe(5000);
+  expect(tables.movimientos_inventario).toHaveLength(0);
 });

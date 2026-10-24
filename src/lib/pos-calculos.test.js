@@ -6,3 +6,4 @@ test("consumidor final no necesita datos personales", () => { expect(validarRece
 test("comprobante con nombre requiere nombre", () => { expect(validarReceptorPOS("nombre",receptorVacio)).not.toBeNull(); expect(validarReceptorPOS("nombre",{...receptorVacio,nombre:"Ana"})).toBeNull(); });
 test("correo inválido se rechaza", () => { expect(validarReceptorPOS("nombre",{...receptorVacio,nombre:"Ana",correo:"mal"})).not.toBeNull(); });
 test("sin conexión fiscal no se declara factura emitida", () => { expect(validarReceptorPOS("electronica",{...receptorVacio,nombre:"Ana"})).not.toBeNull(); });
+test("cantidades fraccionadas conservan dos decimales en total y vuelto", () => { expect(totalPOS([{precio:23.45,cantidad:0.3}])).toBe(7.04); expect(vueltoPOS(7.04,10)).toBe(2.96); });

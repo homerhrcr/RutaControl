@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Punto de Venta: mostrador feria/local, caja, cobro, cliente express, comprobantes y ventas sin conexión.
+- [x] Punto de Venta: feria/local, inventario de carga o existencias locales, lista vigente, caja, efectivo/tarjeta/SINPE, cliente express y tiquetes. Venta online y offline con reconexión verificadas en empresa DEMO; cierres sin diferencia y una venta por UUID. Pendiente prueba física de lector/cámara e impresión.
 - [ ] Correo automático de comprobantes POS — requiere configurar y verificar dominio remitente.
 - [ ] Facturación electrónica POS — requiere certificado/PIN/credenciales de Hacienda e integración fiscal.
 - [x] Separar entregadas en Histórico con carpetas por fecha real de entrega; 3 pruebas aprobadas y navegador autenticado verificó 41 entregadas, 2 pendientes, recarga y vista móvil sin errores. Publicación pendiente.

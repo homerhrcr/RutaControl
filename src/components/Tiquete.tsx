@@ -119,7 +119,7 @@ export function Tiquete({
         <div className="max-h-[60vh] overflow-y-auto bg-muted/30 p-4">
           <div
             ref={printRef}
-            className="mx-auto max-w-[280px] rounded-md bg-white p-4 font-mono text-[12px] leading-tight text-black shadow"
+            className="mx-auto max-w-[280px] rounded-md bg-white p-4 font-mono text-[12px] leading-tight text-black shadow [&_.row]:flex [&_.row]:justify-between [&_.row]:gap-2 [&_.c]:text-center [&_.b]:font-bold [&_.big]:text-[15px] [&_.sep]:my-2 [&_.sep]:border-t [&_.sep]:border-dashed [&_.sep]:border-border [&_.row>span]:min-w-0 [&_.row>span]:break-words"
           >
             <div className="c">
               <div className="b big">{nombreEmpresa}</div>

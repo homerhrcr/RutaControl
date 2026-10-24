@@ -184,7 +184,8 @@ export interface CartItem {
 export async function registrarVenta(params: {
   id?: string;
   carga_id?: string | null;
-  cliente_id: string;
+  cliente_id: string | null;
+  pos?: import("./pos-calculos").DatosPOS;
   ruta_id: string | null;
   vendedor_id: string;
   items: CartItem[];
@@ -194,6 +195,11 @@ export async function registrarVenta(params: {
   lat?: number | null;
   lng?: number | null;
 }) {
+  if (params.pos) {
+    const { data, error } = await supabase.rpc("pos_registrar_venta", { p: params as never });
+    if (error) throw error;
+    return data as unknown as { id: string; fecha: string; total: number; carga_id: string | null };
+  }
   if (params.carga_id) {
     const { data, error } = await supabase.rpc("vender_desde_camion", { p: { ...params, id: params.id ?? crypto.randomUUID() } as never });
     if (error) throw error;

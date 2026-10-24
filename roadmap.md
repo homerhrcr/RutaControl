@@ -1,4 +1,7 @@
 # Roadmap
+- [x] Punto de Venta: feria/local, inventario de carga o existencias locales, lista vigente, caja, efectivo/tarjeta/SINPE, cliente express y tiquetes. Venta online y offline con reconexión verificadas en empresa DEMO; cierres sin diferencia y una venta por UUID. Pendiente prueba física de lector/cámara e impresión.
+- [ ] Correo automático de comprobantes POS — requiere configurar y verificar dominio remitente.
+- [ ] Facturación electrónica POS — requiere certificado/PIN/credenciales de Hacienda e integración fiscal.
 - [x] Separar entregadas en Histórico con carpetas por fecha real de entrega; 3 pruebas aprobadas y navegador autenticado verificó 41 entregadas, 2 pendientes, recarga y vista móvil sin errores. Publicación pendiente.
 - [x] Liberar reservas de preventas canceladas en venta/edición/cierre del servidor y refrescar cargas_camion; cancelación compartida desde Preventa y entrega en ruta. 16 pruebas aprobadas; sesión real comprobó acceso y motivo obligatorio, sin errores. No se confirmó una cancelación real para no alterar pedidos; publicación pendiente.
 - [x] Fichas de crédito activo por ruta en Dashboard, con saldo y cantidad de créditos. 11 pruebas aprobadas; sesión real y recarga: Jueves ₡124 000 (24), Miércoles ₡156 100 (1), Sábado ₡0. Sin errores; publicación pendiente.

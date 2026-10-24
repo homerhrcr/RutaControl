@@ -58,6 +58,16 @@ export function EmpresasAdmin() {
           <Plus className="mr-1 h-4 w-4" /> Nueva empresa
         </Button>
       </div>
+      <Card className="flex flex-wrap items-center gap-3 p-4">
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">Dossier comercial de Ruta Directo</p>
+          <p className="text-xs text-muted-foreground">PDF para presentar el sistema a nuevos clientes. Solo visible para el SuperAdmin.</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={async () => {
+          const { default: url } = await import("@/assets/dossier-comercial.pdf?url");
+          window.open(url, "_blank");
+        }}>Ver / descargar PDF</Button>
+      </Card>
       {isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
       <div className="grid gap-3 md:grid-cols-2">
         {data.map((e) => (

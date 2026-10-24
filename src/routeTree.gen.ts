@@ -40,6 +40,7 @@ import { Route as AuthenticatedVentasRouteImport } from './routes/_authenticated
 import { Route as TelegramCatalogoRouteImport } from './routes/telegram.catalogo'
 import { Route as ApiPublicTelegramCatalogoRouteImport } from './routes/api/public/telegram/catalogo'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -201,6 +202,12 @@ const ApiPublicTelegramWebhookRoute =
     path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/telegram/catalogo': typeof TelegramCatalogoRoute
   '/api/public/telegram/catalogo': typeof ApiPublicTelegramCatalogoRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -265,6 +273,7 @@ export interface FileRoutesByTo {
   '/telegram/catalogo': typeof TelegramCatalogoRoute
   '/api/public/telegram/catalogo': typeof ApiPublicTelegramCatalogoRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -299,6 +308,7 @@ export interface FileRoutesById {
   '/telegram/catalogo': typeof TelegramCatalogoRoute
   '/api/public/telegram/catalogo': typeof ApiPublicTelegramCatalogoRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/telegram/catalogo'
     | '/api/public/telegram/catalogo'
     | '/api/public/telegram/webhook'
+    | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/telegram/catalogo'
     | '/api/public/telegram/catalogo'
     | '/api/public/telegram/webhook'
+    | '/lovable/email/transactional/preview'
   id:
     | '__root__'
     | '/'
@@ -398,6 +410,7 @@ export interface FileRouteTypes {
     | '/telegram/catalogo'
     | '/api/public/telegram/catalogo'
     | '/api/public/telegram/webhook'
+    | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -408,6 +421,7 @@ export interface RootRouteChildren {
   TelegramCatalogoRoute: typeof TelegramCatalogoRoute
   ApiPublicTelegramCatalogoRoute: typeof ApiPublicTelegramCatalogoRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -629,6 +643,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -697,6 +718,7 @@ const rootRouteChildren: RootRouteChildren = {
   TelegramCatalogoRoute: TelegramCatalogoRoute,
   ApiPublicTelegramCatalogoRoute: ApiPublicTelegramCatalogoRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -47,6 +47,7 @@ export function ProductosPage() {
   const invalidate = useInvalidate();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [camara, setCamara] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(empty);
   const [busy, setBusy] = useState(false);

@@ -1,0 +1,2 @@
+ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS codigo_barras text;
+CREATE UNIQUE INDEX IF NOT EXISTS productos_org_codigo_barras_uniq ON public.productos (organization_id, codigo_barras) WHERE codigo_barras IS NOT NULL AND codigo_barras <> '';

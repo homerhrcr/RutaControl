@@ -1504,6 +1504,7 @@ export type Database = {
           cabys: string | null
           categoria_id: string | null
           codigo: string
+          codigo_barras: string | null
           costo: number
           created_at: string
           existencia: number
@@ -1520,6 +1521,7 @@ export type Database = {
           cabys?: string | null
           categoria_id?: string | null
           codigo: string
+          codigo_barras?: string | null
           costo?: number
           created_at?: string
           existencia?: number
@@ -1536,6 +1538,7 @@ export type Database = {
           cabys?: string | null
           categoria_id?: string | null
           codigo?: string
+          codigo_barras?: string | null
           costo?: number
           created_at?: string
           existencia?: number

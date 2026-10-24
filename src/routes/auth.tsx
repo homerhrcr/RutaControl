@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import logo from "@/assets/logo-ruta-directo.jpg.asset.json";
+import logo from "@/assets/logo-ruta-directo-2026.jpg.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

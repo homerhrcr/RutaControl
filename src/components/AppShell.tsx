@@ -9,7 +9,7 @@ import { OrgSwitcher } from "@/components/OrgSwitcher";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import truckImg from "@/assets/sidebar-truck.jpg";
-import logo from "@/assets/logo-ruta-directo.jpg.asset.json";
+import logo from "@/assets/logo-ruta-directo-2026.jpg.asset.json";
 import {
   LayoutDashboard,
   Truck,
@@ -79,8 +79,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground md:flex">
         <div className="flex items-center gap-2 px-5 py-5">
-          <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white">
-            <img src={logo.url} alt="Ruta Directo" className="h-full w-full object-contain" />
+          <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl">
+            <img src={logo.url} alt="Ruta Directo" className="h-full w-full object-cover" />
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold leading-tight">Ruta Directo</p>
@@ -141,7 +141,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="flex items-center justify-between gap-2 border-b bg-card px-4 py-3 md:hidden">
           <div className="flex min-w-0 items-center gap-2">
             <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg bg-white">
-              <img src={logo.url} alt="Ruta Directo" className="h-full w-full object-contain" />
+              <img src={logo.url} alt="Ruta Directo" className="h-full w-full object-cover" />
             </div>
             <span className="truncate text-sm font-bold">Ruta Directo</span>
           </div>

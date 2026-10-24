@@ -169,6 +169,13 @@
       "when": 1792805876659,
       "tag": "0023_pos_validar_importes_y_redondeo",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792872075724,
+      "tag": "0024_pedidos_estado_cancelado",
+      "breakpoints": true
     }
   ]
 }

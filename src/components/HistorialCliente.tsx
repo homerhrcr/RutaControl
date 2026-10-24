@@ -30,6 +30,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { editarPrecioLineaVenta } from "@/lib/precios.functions";
 import { TelegramEnviar } from "@/components/TelegramCliente";
 import { limitarCreditos } from "@/lib/cobranza-rutas";
+import { EditarCreditoDialog } from "@/components/EditarCreditoDialog";
 
 type Evento =
   | { tipo: "venta"; id: string; fecha: string; venta: any }
@@ -492,6 +493,8 @@ export function HistorialCliente({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <EditarCreditoDialog credito={credEdit?.c ?? null} modo={credEdit?.modo ?? "editar"} onClose={() => setCredEdit(null)}
+        onDone={() => invalidate(["creditos-cliente", "creditos-cliente-detalle", "creditos-pendientes", "creditos-ruta", "saldos-map", "resumen-dia"])} />
     </Dialog>
   );
 }

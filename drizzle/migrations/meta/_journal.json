@@ -162,6 +162,13 @@
       "when": 1792805613496,
       "tag": "0022_pos_consumidor_final_sin_cliente_ficticio",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792805876659,
+      "tag": "0023_pos_validar_importes_y_redondeo",
+      "breakpoints": true
     }
   ]
 }

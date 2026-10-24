@@ -11,7 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tiquete, type TiqueteData } from "@/components/Tiquete";
 import { toast } from "sonner";
-import { Plus, Minus, Search, Repeat, X, Banknote, CreditCard, Star, Pencil } from "lucide-react";
+import { Plus, Minus, Search, Repeat, X, Banknote, CreditCard, Star, Pencil, ScanBarcode } from "lucide-react";
+import { buscarPorCodigo, useLectorPistola, avisoLectura } from "@/lib/codigo-barras";
+import { EscanerCamara } from "@/components/EscanerCamara";
 import { cn } from "@/lib/utils";
 import { useCargasCamion, usePendientesCamion, descontarPendientes, disponibleCamion } from "@/lib/carga-camion";
 import { validarVentaRuta, estadoStockCamion } from "@/lib/carga-camion-calculos";
@@ -115,6 +117,15 @@ export function QuickSale({
       return copy;
     });
   }
+
+  const [camara, setCamara] = useState(false);
+  function porCodigo(codigo: string) {
+    const p = buscarPorCodigo(productos ?? [], codigo);
+    if (!p) { avisoLectura(false); return toast.error(`Código ${codigo} no está registrado en ningún producto`); }
+    avisoLectura(true);
+    add(p as any, 1);
+  }
+  useLectorPistola(open && !!carga && !confirmOpen && !editPrecio, porCodigo);
 
   function repeatLast() {
     if (!carga) return toast.error(sinCamion);
@@ -265,16 +276,23 @@ export function QuickSale({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar producto…"
+              placeholder="Buscar o pistolear código…"
               className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && search.trim() && buscarPorCodigo(productos ?? [], search)) { e.preventDefault(); porCodigo(search); setSearch(""); }
+              }}
             />
           </div>
+          <Button variant="outline" size="icon" disabled={!carga} onClick={() => setCamara(true)} className="shrink-0" aria-label="Leer código con la cámara">
+            <ScanBarcode className="h-4 w-4" />
+          </Button>
           <Button variant="secondary" disabled={!carga} onClick={repeatLast} className="shrink-0 gap-1.5">
             <Repeat className="h-4 w-4" /> Repetir
           </Button>
         </div>
+        <EscanerCamara open={camara} onClose={() => setCamara(false)} onCodigo={porCodigo} />
 
         <div className="grid flex-1 grid-cols-2 gap-2 overflow-y-auto p-3 sm:grid-cols-3">
           {!preciosListos && <p className="col-span-full text-sm text-muted-foreground">{preciosError ? "No se pudieron cargar los precios del cliente." : "Cargando precios…"}</p>}

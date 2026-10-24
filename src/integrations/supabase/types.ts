@@ -2058,6 +2058,20 @@ export type Database = {
     Functions: {
       abonar_credito_ruta: { Args: { p: Json }; Returns: undefined }
       abrir_carga_camion: { Args: { p: Json }; Returns: string }
+      admin_editar_credito: {
+        Args: {
+          p_fecha: string
+          p_fecha_limite: string
+          p_id: string
+          p_monto: number
+          p_motivo: string
+        }
+        Returns: undefined
+      }
+      admin_eliminar_credito: {
+        Args: { p_id: string; p_motivo: string }
+        Returns: undefined
+      }
       anular_venta_camion: { Args: { p_venta: string }; Returns: undefined }
       cambios_desde: {
         Args: { p_desde: string }

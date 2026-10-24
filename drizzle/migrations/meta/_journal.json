@@ -176,6 +176,13 @@
       "when": 1792872075724,
       "tag": "0024_pedidos_estado_cancelado",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792872946104,
+      "tag": "0025_admin_editar_eliminar_creditos",
+      "breakpoints": true
     }
   ]
 }

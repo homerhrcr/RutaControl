@@ -30,6 +30,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { editarPrecioLineaVenta } from "@/lib/precios.functions";
 import { TelegramEnviar } from "@/components/TelegramCliente";
 import { limitarCreditos } from "@/lib/cobranza-rutas";
+import { EditarCreditoDialog } from "@/components/EditarCreditoDialog";
 
 type Evento =
   | { tipo: "venta"; id: string; fecha: string; venta: any }
@@ -67,6 +68,7 @@ export function HistorialCliente({
   const [nuevoPrecio, setNuevoPrecio] = useState("");
   const [motivoPrecio, setMotivoPrecio] = useState("");
   const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+  const [credEdit, setCredEdit] = useState<{ c: any; modo: "editar" | "borrar" } | null>(null);
 
   async function confirmarPrecio() {
     if (!editLinea) return;
@@ -295,8 +297,15 @@ export function HistorialCliente({
                             })
                           : "—"}
                       </span>
-                      <span className="font-semibold text-destructive">Saldo {formatCRC(Number(c.saldo))}</span>
+                      <span className="flex items-center gap-1">
+                        <span className="font-semibold text-destructive">Saldo {formatCRC(Number(c.saldo))}</span>
+                        {isAdmin && <>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Editar crédito" onClick={() => setCredEdit({ c, modo: "editar" })}><Pencil className="h-3.5 w-3.5" /></Button>
+                          {!c.venta_id && abonosDe(c).length === 0 && <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" aria-label="Borrar crédito" onClick={() => setCredEdit({ c, modo: "borrar" })}><Trash2 className="h-3.5 w-3.5" /></Button>}
+                        </>}
+                      </span>
                     </div>
+                    {!c.venta_id && <p className="mb-1 text-xs text-muted-foreground">Saldo histórico del {fmtF(c.fecha)}</p>}
                     <div className="space-y-1">
                       {(c.ventas?.detalle_ventas ?? []).map((d: any) => (
                         <LineaDetalle key={d.id} d={d} bloqueada={!!c.ventas?.carga_id} />
@@ -484,6 +493,8 @@ export function HistorialCliente({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <EditarCreditoDialog credito={credEdit?.c ?? null} modo={credEdit?.modo ?? "editar"} onClose={() => setCredEdit(null)}
+        onDone={() => invalidate(["creditos-cliente", "creditos-cliente-detalle", "creditos-pendientes", "creditos-ruta", "saldos-map", "resumen-dia"])} />
     </Dialog>
   );
 }

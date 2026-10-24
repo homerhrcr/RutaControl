@@ -1372,6 +1372,76 @@ export type Database = {
           },
         ]
       }
+      pos_cajas: {
+        Row: {
+          apertura: string
+          carga_id: string | null
+          cierre: string | null
+          diferencia: number | null
+          efectivo_contado: number | null
+          estado: string
+          fondo: number
+          id: string
+          lista_id: string | null
+          modalidad: string
+          nombre: string
+          organization_id: string
+          usuario_id: string
+        }
+        Insert: {
+          apertura?: string
+          carga_id?: string | null
+          cierre?: string | null
+          diferencia?: number | null
+          efectivo_contado?: number | null
+          estado?: string
+          fondo?: number
+          id?: string
+          lista_id?: string | null
+          modalidad?: string
+          nombre: string
+          organization_id?: string
+          usuario_id?: string
+        }
+        Update: {
+          apertura?: string
+          carga_id?: string | null
+          cierre?: string | null
+          diferencia?: number | null
+          efectivo_contado?: number | null
+          estado?: string
+          fondo?: number
+          id?: string
+          lista_id?: string | null
+          modalidad?: string
+          nombre?: string
+          organization_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_cajas_carga_id_fkey"
+            columns: ["carga_id"]
+            isOneToOne: false
+            referencedRelation: "cargas_camion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_cajas_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "listas_precios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_cajas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       precios_especiales: {
         Row: {
           activo: boolean
@@ -1900,6 +1970,8 @@ export type Database = {
           longitud: number | null
           metodo_pago: Database["public"]["Enums"]["metodo_pago"]
           organization_id: string
+          pos_caja_id: string | null
+          pos_datos: Json | null
           ruta_id: string | null
           subtotal: number
           total: number
@@ -1916,6 +1988,8 @@ export type Database = {
           longitud?: number | null
           metodo_pago?: Database["public"]["Enums"]["metodo_pago"]
           organization_id?: string
+          pos_caja_id?: string | null
+          pos_datos?: Json | null
           ruta_id?: string | null
           subtotal?: number
           total?: number
@@ -1932,6 +2006,8 @@ export type Database = {
           longitud?: number | null
           metodo_pago?: Database["public"]["Enums"]["metodo_pago"]
           organization_id?: string
+          pos_caja_id?: string | null
+          pos_datos?: Json | null
           ruta_id?: string | null
           subtotal?: number
           total?: number
@@ -1957,6 +2033,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ventas_pos_caja_id_fkey"
+            columns: ["pos_caja_id"]
+            isOneToOne: false
+            referencedRelation: "pos_cajas"
             referencedColumns: ["id"]
           },
           {
@@ -1999,6 +2082,9 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _uid?: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      pos_abrir_caja: { Args: { p: Json }; Returns: string }
+      pos_cerrar_caja: { Args: { p: Json }; Returns: Json }
+      pos_registrar_venta: { Args: { p: Json }; Returns: Json }
       registrar_devolucion: { Args: { p: Json }; Returns: string }
       registrar_merma_camion: { Args: { p: Json }; Returns: string }
       sembrar_catalogo_opciones: { Args: { p_org: string }; Returns: undefined }

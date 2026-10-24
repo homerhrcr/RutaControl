@@ -1,0 +1,2 @@
+ALTER TABLE public.pedidos DROP CONSTRAINT pedidos_estado_check;
+ALTER TABLE public.pedidos ADD CONSTRAINT pedidos_estado_check CHECK (estado IN ('borrador','confirmado','cargado','entregado','anulado','cancelado'));

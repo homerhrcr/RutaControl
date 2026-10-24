@@ -44,6 +44,7 @@ function POSPage() {
   const caja = cajas.find(c=>c.estado==="abierta");
   const [verCaja,setVerCaja]=useState<string>();
   const { data:ventas=[] } = useVentasPOS(verCaja ?? caja?.id);
+  const { data:ventasAbiertas=[] } = useVentasPOS(caja?.id);
   const { data:cargas=[] } = useCargasCamion();
   const { data:pendientesCamion=[] } = usePendientesCamion();
   const { data:clientes=[] } = useClientes();
@@ -83,15 +84,16 @@ function POSPage() {
   const mostrador=useMemo(()=>productos.map(p=>{
     const info=caja?.carga_id ? p.precioInfo : resolverPrecio({producto:p,clienteId:clienteId||null,rutaId:null,listas,precios,listaClienteId:caja?.lista_id,fecha:fechaComercial()});
     // useProductosCliente already resolves general specials; a POS list replaces only its non-special fallback.
-    const precioInfo=!caja?.carga_id && p.precioInfo.fuente==="especial_general" ? p.precioInfo : info;
+    const resuelto=!caja?.carga_id && ["especial_general","conflicto"].includes(p.precioInfo.fuente) ? p.precioInfo : info;
+    const precioInfo=!caja?.carga_id && !["especial_general","conflicto"].includes(resuelto.fuente) && (resuelto.fuente==="general" || !listaVigente(listas.find(l=>l.id===caja?.lista_id),fechaComercial())) ? {...resuelto,valido:false,mensaje:"Sin precio vigente en la lista del mostrador"} : resuelto;
     const reservadoLocal=pendientes.filter(v=>!v.carga_id&&v.pos?.organization_id===organizacionActiva?.id).flatMap(v=>v.items).filter(i=>i.producto_id===p.id).reduce((s,i)=>s+i.cantidad,0);
-    const libre=caja?.carga_id ? disponibleCamion(stockCamion.find(d=>d.producto_id===p.id) ?? {preventa:0,extra:0,vendido:0,merma:0,devuelto:0}) : Math.max(0,Number(p.existencia)-reservadoLocal);
+    const libre=caja?.carga_id ? disponibleCamion(stockCamion.find(d=>d.producto_id===p.id) ?? {producto_id:p.id,preventa:0,extra:0,vendido:0,merma:0,devuelto:0}) : Math.max(0,Number(p.existencia)-reservadoLocal);
     return {...p,precio:precioInfo.precio,precioInfo,libre};
   }),[productos,caja,clienteId,listas,precios,stockCamion,pendientes,organizacionActiva?.id]);
   useEffect(()=>{
     if(!listo) return;
-    setCart(prev=>Object.fromEntries(Object.entries(prev).flatMap(([id,i])=>{const p=mostrador.find(x=>x.id===id);return p?.precioInfo.valido ? [[id,{...i,precio:p.precio}]] : [];})));
-  },[productos,clienteId,caja?.lista_id,listo]);
+    setCart(prev=>{let cambio=false;const next=Object.fromEntries(Object.entries(prev).flatMap(([id,i])=>{const p=mostrador.find(x=>x.id===id);if(!p?.precioInfo.valido){cambio=true;return [];}if(p.precio!==i.precio)cambio=true;return [[id,{...i,precio:p.precio}]];}));return cambio?next:prev;});
+  },[productos,clienteId,caja?.lista_id,listo,listas,precios]);
   const categorias=[...new Set(productos.map(p=>p.categorias?.nombre).filter((s):s is string=>!!s))];
   function add(id:string,delta:number) {
     const p=mostrador.find(p=>p.id===id); if(!p||!caja) return;
@@ -103,8 +105,9 @@ function POSPage() {
   function leer(codigo:string){ const p=buscarPorCodigo(mostrador,codigo); avisoLectura(!!p); if(!p) return toast.error("Código no registrado"); add(p.id,1); setSearch(""); }
   useLectorPistola(!!caja&&!cobrar&&!clienteDialog&&!tiquete&&!busy,leer);
   const efectivo=ventas.filter(v=>(v.pos_datos as unknown as DatosPOS)?.medio==="efectivo").reduce((s,v)=>s+Number(v.total),0);
-  const esperado=Number(caja?.fondo??0)+efectivo;
-  const ventaValida=items.length>0&&items.every(i=>{const p=mostrador.find(x=>x.id===i.producto_id);return p&&p.precioInfo.valido&&i.cantidad<=p.libre;});
+  const efectivoAbierto=ventasAbiertas.filter(v=>(v.pos_datos as unknown as DatosPOS)?.medio==="efectivo").reduce((s,v)=>s+Number(v.total),0);
+  const esperado=Number(caja?.fondo??0)+efectivoAbierto;
+  const ventaValida=items.length>0&&items.every(i=>{const p=mostrador.find(x=>x.id===i.producto_id);return p&&p.precioInfo.valido&&i.precio===p.precio&&i.cantidad<=p.libre;});
   async function abrir(){ if(!online) return toast.error("Necesita conexión para abrir caja");setBusy(true);try{
     const {error}=await supabase.rpc("pos_abrir_caja",{p:{nombre:nombreCaja,modalidad,carga_id:fuente==="camion"?fuenteId:null,lista_id:fuente==="local"?listaId:null,fondo:Number(fondo)} });if(error) throw error;
     invalidate(["pos-cajas"]);setVerCaja(undefined);

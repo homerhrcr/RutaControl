@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Send,
   Truck,
+  Store,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/menu")({
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/_authenticated/menu")({
 });
 
 const ITEMS = [
+  { to: "/pos", label: "Punto de Venta", icon: Store },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
   { to: "/carga-camion", label: "Carga de Camión", icon: Truck },
   { to: "/productos", label: "Productos", icon: Package },

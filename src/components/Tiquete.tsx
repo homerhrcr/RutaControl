@@ -22,6 +22,7 @@ export interface TiqueteData {
   total: number;
   metodo: "contado" | "credito";
   fecha_limite?: string | null;
+  pos?: import("@/lib/pos-calculos").DatosPOS & { vuelto: number; pendiente: boolean };
 }
 
 function consecutivo(id: string) {
@@ -38,12 +39,16 @@ function buildTexto(t: TiqueteData, nombre: string, telefono: string) {
     `Tiquete #${consecutivo(t.venta_id)}`,
     formatDateTime(t.fecha),
     `Cliente: ${t.cliente_nombre}`,
+    t.pos?.receptor.identificacion ? `Identificación: ${t.pos.receptor.identificacion}` : null,
     "--------------------------------",
     ...lineas,
     "--------------------------------",
     t.descuento > 0 ? `Descuento: -${formatCRC(t.descuento)}` : null,
     `*TOTAL: ${formatCRC(t.total)}*`,
-    `Pago: ${t.metodo === "contado" ? "Contado" : "Crédito"}`,
+    `Pago: ${t.pos ? t.pos.medio.toUpperCase() : t.metodo === "contado" ? "Contado" : "Crédito"}`,
+    t.pos?.medio === "efectivo" ? `Recibido: ${formatCRC(t.pos.recibido)} · Vuelto: ${formatCRC(t.pos.vuelto)}` : null,
+    t.pos ? "Comprobante interno. No es factura electrónica autorizada por Hacienda." : null,
+    t.pos?.pendiente ? "Pendiente de sincronización" : null,
     "",
     "¡Gracias por su compra!",
   ]
@@ -139,6 +144,7 @@ export function Tiquete({
                 <span>{data.vendedor}</span>
               </div>
             )}
+            {data.pos?.receptor.identificacion && <div className="row"><span>Identificación</span><span>{data.pos.receptor.identificacion}</span></div>}
             <div className="sep" />
             {data.items.map((i) => (
               <div key={i.producto_id} className="mb-1">
@@ -164,8 +170,10 @@ export function Tiquete({
             </div>
             <div className="row">
               <span>Pago</span>
-              <span>{data.metodo === "contado" ? "Contado" : "Crédito"}</span>
+              <span>{data.pos ? data.pos.medio.toUpperCase() : data.metodo === "contado" ? "Contado" : "Crédito"}</span>
             </div>
+            {data.pos?.medio === "efectivo" && <><div className="row"><span>Recibido</span><span>{formatCRC(data.pos.recibido)}</span></div><div className="row"><span>Vuelto</span><span>{formatCRC(data.pos.vuelto)}</span></div></>}
+            {data.pos && <p className="mt-3 text-center text-[10px]">Comprobante interno. No es factura electrónica autorizada por Hacienda.{data.pos.pendiente ? " Pendiente de sincronización." : ""}</p>}
             <div className="sep" />
             <div className="c">¡Gracias por su compra!</div>
           </div>
@@ -178,7 +186,7 @@ export function Tiquete({
           <Button variant="outline" className="gap-2" onClick={copiar}>
             <Copy className="h-4 w-4" /> Copiar
           </Button>
-          <TelegramEnviar tipo="tiquete" documentoId={data.venta_id} />
+          {!data.pos?.pendiente && data.cliente_id && <TelegramEnviar tipo="tiquete" documentoId={data.venta_id} />}
         </div>
       </DialogContent>
     </Dialog>

@@ -167,6 +167,7 @@ export type Database = {
       cargas_camion_detalle: {
         Row: {
           carga_id: string
+          costo_unitario: number | null
           devuelto: number
           extra: number
           id: string
@@ -179,6 +180,7 @@ export type Database = {
         }
         Insert: {
           carga_id: string
+          costo_unitario?: number | null
           devuelto?: number
           extra?: number
           id?: string
@@ -191,6 +193,7 @@ export type Database = {
         }
         Update: {
           carga_id?: string
+          costo_unitario?: number | null
           devuelto?: number
           extra?: number
           id?: string
@@ -744,6 +747,7 @@ export type Database = {
       detalle_ventas: {
         Row: {
           cantidad: number
+          costo_unitario: number | null
           id: string
           modificado_en: string | null
           modificado_por: string | null
@@ -759,6 +763,7 @@ export type Database = {
         }
         Insert: {
           cantidad?: number
+          costo_unitario?: number | null
           id?: string
           modificado_en?: string | null
           modificado_por?: string | null
@@ -774,6 +779,7 @@ export type Database = {
         }
         Update: {
           cantidad?: number
+          costo_unitario?: number | null
           id?: string
           modificado_en?: string | null
           modificado_por?: string | null
@@ -2086,8 +2092,21 @@ export type Database = {
       }
       cerrar_carga_camion: { Args: { p: Json }; Returns: string }
       cierre_global_ruta: { Args: { p: Json }; Returns: string }
+      costo_producto_ruta: {
+        Args: { p_producto: string; p_ruta: string }
+        Returns: number
+      }
       current_organization_id: { Args: never; Returns: string }
       editar_carga_camion: { Args: { p: Json }; Returns: string }
+      editar_costo_carga: {
+        Args: {
+          p_carga: string
+          p_costo: number
+          p_motivo: string
+          p_producto: string
+        }
+        Returns: undefined
+      }
       guardar_orden_ruta: { Args: { p_items: Json }; Returns: number }
       has_role: {
         Args: {

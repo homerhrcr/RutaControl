@@ -1521,6 +1521,7 @@ export type Database = {
       }
       precios_productos: {
         Row: {
+          costo: number | null
           id: string
           lista_id: string
           organization_id: string
@@ -1529,6 +1530,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          costo?: number | null
           id?: string
           lista_id: string
           organization_id?: string
@@ -1537,6 +1539,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          costo?: number | null
           id?: string
           lista_id?: string
           organization_id?: string

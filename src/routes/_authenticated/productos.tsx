@@ -192,8 +192,7 @@ export function ProductosPage() {
               </div>
             </F>
             <EscanerCamara open={camara} continuo={false} onClose={() => setCamara(false)} onCodigo={(c) => setForm((f) => ({ ...f, codigo_barras: c.trim() }))} />
-            <F label="Costo"><Input type="number" value={form.costo || ""} onChange={(e) => setForm({ ...form, costo: Number(e.target.value) || 0 })} /></F>
-            <p className="rounded-lg border border-dashed p-2 text-xs text-muted-foreground">El precio de venta se define en Administración → Precios según la clasificación de cada cliente.</p>
+            <p className="rounded-lg border border-dashed p-2 text-xs text-muted-foreground">El costo y el precio de venta se definen por ruta en Administración → Listas de precios.</p>
             <div className="grid grid-cols-2 gap-3">
               <F label="Existencia"><Input type="number" value={form.existencia || ""} onChange={(e) => setForm({ ...form, existencia: Number(e.target.value) || 0 })} /></F>
               <F label="Mínimo"><Input type="number" value={form.existencia_minima || ""} onChange={(e) => setForm({ ...form, existencia_minima: Number(e.target.value) || 0 })} /></F>

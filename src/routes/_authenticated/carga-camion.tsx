@@ -1,3 +1,4 @@
+import { costoProductoRuta } from "@/lib/costos";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,7 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { useRutas, useProductos } from "@/lib/data";
 import { useCargasCamion, usePendientesCamion, descontarPendientes, enCamion, type CargaCamion } from "@/lib/carga-camion";
 import { useEmpresa } from "@/lib/empresa";
-import { useProductosCliente } from "@/lib/listas-precios";
+import { useProductosCliente, usePreciosProductos } from "@/lib/listas-precios";
 import { estimarCarga } from "@/lib/carga-estimacion";
 import { descargarReporteExcel, verReportePdf, type Reporte } from "@/lib/reporte-export";
 import { PageHeader } from "@/components/PageHeader";
@@ -184,8 +185,10 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const { data: preciosRuta, listo: preciosListos, listaNombre, error: errorPrecios } = useProductosCliente(undefined, carga.ruta_id);
   const detalle = descontarPendientes(carga, pendientes);
   const cargado = (d: (typeof detalle)[number]) => Number(d.preventa) + Number(d.extra);
-  const costoU = (pid: string) => Number(productosTodos?.find((x) => x.id === pid)?.costo ?? 0);
-  const estimacion = estimarCarga(detalle, productosTodos ?? [], preciosRuta ?? []);
+  const { data: rutasCosto = [] } = useRutas();
+  const { data: preciosLista = [] } = usePreciosProductos();
+  const costoU = (pid: string) => costoProductoRuta({ productoId: pid, rutaId: carga.ruta_id, rutas: rutasCosto, precios: preciosLista, costoBase: productosTodos?.find((x) => x.id === pid)?.costo });
+  const estimacion = estimarCarga(detalle, (productosTodos ?? []).map((p) => ({ id: p.id, costo: costoU(p.id) })), preciosRuta ?? []);
   const { costoTotal, ventaTotal } = estimacion;
   const valorLinea = (pid: string) => estimacion.filas.find((f) => f.producto_id === pid);
   const monedaEstimada = (n: number | null) => n === null ? "Pendiente de precio" : `₡${numero(n)}`;

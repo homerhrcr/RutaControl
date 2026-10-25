@@ -183,6 +183,13 @@
       "when": 1792872946104,
       "tag": "0025_admin_editar_eliminar_creditos",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792887446807,
+      "tag": "0026_costo_por_lista_precios",
+      "breakpoints": true
     }
   ]
 }

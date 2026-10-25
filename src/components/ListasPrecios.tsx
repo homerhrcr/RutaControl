@@ -47,7 +47,7 @@ export function ListasPrecios() {
       const { data, error } = await q.select("id").single();
       if (error) throw error;
       if (dialogo === "duplicar" && lista) {
-        const copia = (precios ?? []).filter((p) => p.lista_id === lista.id).map((p) => ({ lista_id: data.id, producto_id: p.producto_id, precio: p.precio }));
+        const copia = (precios ?? []).filter((p) => p.lista_id === lista.id).map((p) => ({ lista_id: data.id, producto_id: p.producto_id, precio: p.precio, costo: p.costo }));
         if (copia.length) { const { error: e2 } = await supabase.from("precios_productos").insert(copia); if (e2) throw e2; }
       }
       setSeleccion(data.id);
@@ -100,10 +100,10 @@ export function ListasPrecios() {
       <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Buscar producto por código o nombre…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
       <div className="flex flex-wrap items-end gap-2"><div className="space-y-1"><Label htmlFor="ajuste-masivo" className="text-xs">Ajuste masivo (%) a los productos mostrados</Label><Input id="ajuste-masivo" type="number" className="w-32" placeholder="Ej. 5" value={masivo} onChange={(e) => setMasivo(e.target.value)} /></div><Button size="sm" variant="secondary" disabled={busy || !masivo} onClick={ajusteMasivo}>Aplicar</Button></div>
       <div className="overflow-x-auto"><table className="w-full text-sm">
-        <thead><tr className="border-b text-left text-muted-foreground"><th className="py-2 pr-3">Código</th><th className="py-2 pr-3">Producto</th><th className="px-2 py-2">Precio de lista</th><th className="w-10" /></tr></thead>
+        <thead><tr className="border-b text-left text-muted-foreground"><th className="py-2 pr-3">Código</th><th className="py-2 pr-3">Producto</th><th className="px-2 py-2">Costo</th><th className="px-2 py-2">Precio de venta</th><th className="px-2 py-2">Utilidad</th><th className="w-10" /></tr></thead>
         <tbody>{precios !== undefined && filtrados.map((p) => {
           const fijo = precios.find((x) => x.lista_id === lista.id && x.producto_id === p.id);
-          return <PrecioFila key={`${lista.id}-${p.id}-${fijo?.updated_at ?? "base"}`} listaId={lista.id} producto={p} precio={fijo?.precio} />;
+          return <PrecioFila key={`${lista.id}-${p.id}-${fijo?.updated_at ?? "base"}`} listaId={lista.id} producto={p} precio={fijo?.precio} costo={fijo?.costo ?? undefined} />;
         })}</tbody>
       </table></div>
     </> : !error && <p className="text-sm text-muted-foreground">Sin listas de precios.</p>}
@@ -119,26 +119,35 @@ export function ListasPrecios() {
   </div>;
 }
 
-function PrecioFila({ listaId, producto, precio }: { listaId: string; producto: { id: string; codigo: string; nombre: string; precio: number }; precio?: number }) {
-  const [valor, setValor] = useState(precio === undefined ? "" : String(precio));
+function PrecioFila({ listaId, producto, precio, costo }: { listaId: string; producto: { id: string; codigo: string; nombre: string; precio: number }; precio?: number; costo?: number }) {
+  const ini = (n?: number | null) => (n === undefined || n === null ? "" : String(n));
+  const [valor, setValor] = useState(ini(precio));
+  const [valorCosto, setValorCosto] = useState(ini(costo));
   const [busy, setBusy] = useState(false);
   const qc = useQueryClient();
+  const cambiado = valor !== ini(precio) || valorCosto !== ini(costo);
+  const util = valor !== "" && valorCosto !== "" ? Number(valor) - Number(valorCosto) : null;
   async function guardar() {
     setBusy(true);
     try {
       const n = validarPrecio(valor);
+      const c = valorCosto === "" ? null : validarPrecio(valorCosto);
+      if (valorCosto !== "" && c === null) throw new Error("Costo inválido");
+      if (n === null && c !== null) throw new Error("Indique el precio de venta para guardar el costo");
       const { error } = n === null
         ? await supabase.from("precios_productos").delete().eq("lista_id", listaId).eq("producto_id", producto.id)
-        : await supabase.from("precios_productos").upsert({ lista_id: listaId, producto_id: producto.id, precio: n }, { onConflict: "lista_id,producto_id" });
+        : await supabase.from("precios_productos").upsert({ lista_id: listaId, producto_id: producto.id, precio: n, costo: c }, { onConflict: "lista_id,producto_id" });
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["precios_productos"] });
-      toast.success("Precio guardado");
+      toast.success("Precio y costo guardados");
     } catch (e) { toast.error(e instanceof Error ? e.message : "No se pudo guardar el precio"); }
     finally { setBusy(false); }
   }
   return <tr className="border-b border-border/50">
     <td className="py-2 pr-3 text-xs text-muted-foreground">{producto.codigo}</td><td className="min-w-32 py-2 pr-3 font-medium">{producto.nombre}</td>
-    <td className="px-2 py-2"><Input type="number" min="0" step="0.01" className="w-32" aria-label={`Precio de ${producto.nombre}`} placeholder="Sin precio" value={valor} onChange={(e) => setValor(e.target.value)} /></td>
-    <td><Button size="icon" variant="ghost" aria-label={`Guardar precio de ${producto.nombre}`} title="Guardar precio" disabled={busy || valor === (precio === undefined ? "" : String(precio))} onClick={guardar}><Save className="h-4 w-4" /></Button></td>
+    <td className="px-2 py-2"><Input type="number" min="0" step="0.01" className="w-28" aria-label={`Costo de ${producto.nombre}`} placeholder="Sin costo" value={valorCosto} onChange={(e) => setValorCosto(e.target.value)} /></td>
+    <td className="px-2 py-2"><Input type="number" min="0" step="0.01" className="w-28" aria-label={`Precio de ${producto.nombre}`} placeholder="Sin precio" value={valor} onChange={(e) => setValor(e.target.value)} /></td>
+    <td className={`px-2 py-2 text-right text-xs ${util !== null && util < 0 ? "text-destructive" : "text-muted-foreground"}`}>{util === null ? "—" : `₡${util.toLocaleString("es-CR")}${Number(valor) > 0 ? ` (${Math.round((util / Number(valor)) * 100)}%)` : ""}`}</td>
+    <td><Button size="icon" variant="ghost" aria-label={`Guardar precio de ${producto.nombre}`} title="Guardar" disabled={busy || !cambiado} onClick={guardar}><Save className="h-4 w-4" /></Button></td>
   </tr>;
 }

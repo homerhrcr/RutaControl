@@ -1,3 +1,4 @@
+import { costoProductoRuta } from "@/lib/costos";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -104,8 +105,8 @@ function ReportesPage() {
       const a = new Date(`${ini}T00:00:00`).toISOString();
       const b = new Date(`${fin}T23:59:59.999`).toISOString();
       const hace90 = new Date(Date.now() - 90 * 86_400_000).toISOString();
-      const [rutas, clientes, ventas, detalles, gastos, abonos, creditos, devoluciones, productos, historial] = await Promise.all([
-        todo<any>((f, t) => supabase.from("rutas").select("id,nombre").range(f, t)),
+      const [rutas, clientes, ventas, detalles, gastos, abonos, creditos, devoluciones, productos, historial, preciosLista] = await Promise.all([
+        todo<any>((f, t) => supabase.from("rutas").select("id,nombre,lista_precio_id").range(f, t)),
         todo<any>((f, t) => supabase.from("clientes").select("id,nombre,activo,cliente_rutas(rutas(nombre))").range(f, t)),
         todo<any>((f, t) => supabase.from("ventas").select("id,fecha,total,metodo_pago,cliente_id,ruta_id").gte("fecha", a).lte("fecha", b).order("fecha").range(f, t)),
         todo<any>((f, t) => supabase.from("detalle_ventas").select("producto_id,nombre_producto,cantidad,total_linea,productos(costo,categorias(nombre)),ventas!inner(fecha,ruta_id,cliente_id)").gte("ventas.fecha", a).lte("ventas.fecha", b).range(f, t)),
@@ -115,9 +116,10 @@ function ReportesPage() {
         todo<any>((f, t) => supabase.from("devoluciones").select("fecha,total,cliente_id,ruta_id,devoluciones_detalle(nombre_producto,cantidad,precio_unitario,motivo,destino)").gte("fecha", a).lte("fecha", b).range(f, t)),
         todo<any>((f, t) => supabase.from("productos").select("id,nombre,existencia,costo,activo,categorias(nombre)").range(f, t)),
         todo<any>((f, t) => supabase.from("ventas").select("fecha,total,cliente_id").gte("fecha", hace90).range(f, t)),
+        todo<any>((f, t) => supabase.from("precios_productos").select("lista_id,producto_id,costo").range(f, t)),
       ]);
       // Última compra histórica de clientes sin compras en 90 días
-      return { rutas, clientes, ventas, detalles, gastos, abonos, creditos, devoluciones, productos, historial };
+      return { rutas, clientes, ventas, detalles, gastos, abonos, creditos, devoluciones, productos, historial, preciosLista };
     },
   });
 
@@ -151,7 +153,7 @@ function ReportesPage() {
       ventas: data.ventas.map((v: any) => ({ fecha: v.fecha, total: Number(v.total), metodo: v.metodo_pago, clienteId: v.cliente_id, cliente: cliNom.get(v.cliente_id) ?? "—", ruta: rutaDe(v.ruta_id, v.cliente_id) })).filter((v) => ok(v.ruta)),
       detalles: data.detalles.map((x: any) => ({
         productoId: x.producto_id, producto: x.nombre_producto, categoria: x.productos?.categorias?.nombre ?? "Sin categoría",
-        cantidad: Number(x.cantidad), total: Number(x.total_linea), costo: Number(x.cantidad) * Number(x.productos?.costo ?? 0),
+        cantidad: Number(x.cantidad), total: Number(x.total_linea), costo: Number(x.cantidad) * costoProductoRuta({ productoId: x.producto_id, rutaId: x.ventas?.ruta_id, rutas: data.rutas, precios: data.preciosLista, costoBase: x.productos?.costo }),
         ruta: rutaDe(x.ventas?.ruta_id, x.ventas?.cliente_id),
       })).filter((x) => ok(x.ruta)),
       gastos: data.gastos.map((g: any) => ({ fecha: g.fecha, monto: Number(g.monto), categoria: g.categoria, descripcion: g.descripcion ?? "", ruta: (g.ruta_id && rutaNom.get(g.ruta_id)) || "General" })).filter((g) => ok(g.ruta)),

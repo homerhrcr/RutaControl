@@ -130,7 +130,7 @@ export function rentabilidadRutas(d: DatosReportes): Reporte {
           ruta: "TOTAL", n: tot("n"), clientes: new Set(d.ventas.map((v) => v.clienteId)).size, ventas, costo: tot("costo"), bruta: tot("bruta"),
           gastos: tot("gastos"), devol: tot("devol"), neta: tot("neta"), margen: div(tot("neta"), ventas), costoMil: div(tot("gastos"), ventas) * 1000, ticket: div(ventas, tot("n")),
         },
-        nota: "Costo de mercadería según el costo registrado de cada producto.",
+        nota: "Costo de mercadería según el costo de la lista de precios de cada ruta.",
       },
       {
         titulo: "Gastos por categoría",

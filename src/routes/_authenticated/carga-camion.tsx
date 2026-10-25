@@ -178,6 +178,9 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     return data;
   } });
   const [editar, setEditar] = useState(false);
+  const [ajCostos, setAjCostos] = useState(false);
+  const [costosEd, setCostosEd] = useState<Record<string, string>>({});
+  const [motivoCosto, setMotivoCosto] = useState("");
   const [extras, setExtras] = useState<Record<string, number>>({});
   const [vehiculoEd, setVehiculoEd] = useState("");
   const [agregarId, setAgregarId] = useState("");
@@ -187,7 +190,8 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const cargado = (d: (typeof detalle)[number]) => Number(d.preventa) + Number(d.extra);
   const { data: rutasCosto = [] } = useRutas();
   const { data: preciosLista = [] } = usePreciosProductos();
-  const costoU = (pid: string) => costoProductoRuta({ productoId: pid, rutaId: carga.ruta_id, rutas: rutasCosto, precios: preciosLista, costoBase: productosTodos?.find((x) => x.id === pid)?.costo });
+  const congelado = (pid: string) => { const d = carga.estado !== "en_ruta" ? carga.cargas_camion_detalle.find((x) => x.producto_id === pid) : undefined; return d?.costo_unitario != null ? Number(d.costo_unitario) : null; };
+  const costoU = (pid: string) => congelado(pid) ?? costoProductoRuta({ productoId: pid, rutaId: carga.ruta_id, rutas: rutasCosto, precios: preciosLista, costoBase: productosTodos?.find((x) => x.id === pid)?.costo });
   const estimacion = estimarCarga(detalle, (productosTodos ?? []).map((p) => ({ id: p.id, costo: costoU(p.id) })), preciosRuta ?? []);
   const { costoTotal, ventaTotal } = estimacion;
   const valorLinea = (pid: string) => estimacion.filas.find((f) => f.producto_id === pid);
@@ -254,6 +258,18 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     if (!empresa) return toast.error("Todavía no se han cargado los datos de la empresa");
     try { await (tipo === "pdf" ? verReportePdf : descargarReporteExcel)(reporte, empresa, { periodo: carga.fecha, ruta: carga.rutas?.nombre ?? "", usuario: nombre }); } catch { toast.error("No se pudo generar el documento"); }
   }
+  async function guardarCostos() {
+    if (!motivoCosto.trim()) return toast.error("Indique el motivo del ajuste");
+    const cambios = Object.entries(costosEd).filter(([pid, v]) => v !== "" && Number(v) !== costoU(pid));
+    if (cambios.some(([, v]) => !Number.isFinite(Number(v)) || Number(v) < 0)) return toast.error("Costo inválido");
+    if (!cambios.length) return setAjCostos(false);
+    setBusy(true);
+    try {
+      for (const [pid, v] of cambios) { const { error } = await supabase.rpc("editar_costo_carga", { p_carga: carga.id, p_producto: pid, p_costo: Number(v), p_motivo: motivoCosto }); if (error) throw error; }
+      await qc.invalidateQueries({ queryKey: ["cargas_camion"] });
+      setAjCostos(false); toast.success("Costos de esta liquidación actualizados");
+    } catch (e) { toast.error(String((e as { message?: string }).message ?? "No se pudo ajustar")); } finally { setBusy(false); }
+  }
   async function liquidar() {
     if (!navigator.onLine) return toast.error("El cierre necesita conexión");
     const ops = await allOps();
@@ -279,6 +295,12 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     {cerrada && <div className="grid gap-3 md:grid-cols-2">
       {([["Sobrantes devueltos a bodega", "devuelto", "Producto en buen estado: decida si reasignarlo a otra ruta, promocionarlo o controlar su vencimiento."], ["Productos en merma", "merma", "Producto dañado, vencido o perdido: no regresa a bodega."]] as const).map(([t, k, ayuda]) => { const filas = detalle.filter((d) => Number(d[k]) > 0); return <div key={k} className="rounded-md border p-3"><h3 className="font-semibold">{t} ({numero(filas.reduce((s, d) => s + Number(d[k]), 0))} u.)</h3><p className="mb-2 text-xs text-muted-foreground">{ayuda}</p>{filas.length ? <ul className="space-y-1 text-sm">{filas.map((d) => <li key={d.id} className="flex justify-between gap-3 border-b py-1"><span>{d.nombre_producto}</span><span className="font-bold">{numero(Number(d[k]))}</span></li>)}</ul> : <p className="text-sm text-muted-foreground">Sin {k === "devuelto" ? "sobrantes" : "mermas"}.</p>}</div>; })}
     </div>}
+    {cerrada && isAdmin && <Button variant="outline" size="sm" disabled={!online} onClick={() => { setCostosEd(Object.fromEntries(detalle.map((d) => [d.producto_id, String(costoU(d.producto_id))]))); setMotivoCosto(""); setAjCostos(true); }}><Pencil className="mr-2 h-4 w-4" />Ajustar costos de esta liquidación</Button>}
+    <Dialog open={ajCostos} onOpenChange={(o) => !busy && setAjCostos(o)}><DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto"><DialogHeader><DialogTitle>Ajustar costos de esta liquidación</DialogTitle><DialogDescription>Solo cambia esta carga cerrada ({carga.fecha}). La lista de precios vigente y las demás rutas no se modifican.</DialogDescription></DialogHeader>
+      <table className="w-full text-sm"><thead><tr className="border-b"><th className="py-2 text-left">Producto</th><th>Costo unitario</th></tr></thead><tbody>{detalle.map((d) => <tr key={d.id} className="border-b"><td className="py-2">{d.nombre_producto}</td><td className="p-2"><Input aria-label={`Costo ${d.nombre_producto}`} type="number" inputMode="decimal" min={0} step="0.01" className="w-28" value={costosEd[d.producto_id] ?? ""} onChange={(e) => setCostosEd((s) => ({ ...s, [d.producto_id]: e.target.value }))} /></td></tr>)}</tbody></table>
+      <div className="space-y-1"><Label htmlFor="motivo-costo">Motivo</Label><Input id="motivo-costo" value={motivoCosto} onChange={(e) => setMotivoCosto(e.target.value)} placeholder="Ej. Factura del proveedor de ese día" /></div>
+      <Button disabled={busy} onClick={guardarCostos}>{busy ? "Guardando…" : "Guardar costos"}</Button>
+    </DialogContent></Dialog>
     {carga.notas && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{carga.notas}</p>}
     {carga.estado === "en_ruta" && <div className="flex flex-wrap gap-3"><Button variant="outline" asChild><Link to="/ruta"><Truck className="mr-2 h-4 w-4" />Ventas en ruta</Link></Button>{isAdmin && <Button variant="outline" disabled={!online} onClick={abrirEdicion}><Pencil className="mr-2 h-4 w-4" />Editar carga</Button>}{(isAdmin || carga.vendedor_id === user?.id) && <Button disabled={!online || locales.length > 0} onClick={() => setCerrar(true)}><PackageCheck className="mr-2 h-4 w-4" />Liquidar y registrar sobrantes</Button>}{(isAdmin || carga.vendedor_id === user?.id) && <Button variant="outline" disabled={!online || locales.length > 0} onClick={() => setRegistrarMerma(true)}>Registrar merma</Button>}{isAdmin && <Button variant="secondary" disabled={!online || locales.length > 0} onClick={() => setCierreGlobal(true)}><PackageCheck className="mr-2 h-4 w-4" />Cierre global de ruta</Button>}</div>}
     <Dialog open={editar} onOpenChange={(o) => !busy && setEditar(o)}><DialogContent className="max-h-[90dvh] max-w-xl overflow-y-auto"><DialogHeader><DialogTitle>Editar carga</DialogTitle><DialogDescription>Ajuste el producto extra a bordo. La diferencia se descuenta o regresa a bodega.</DialogDescription></DialogHeader>

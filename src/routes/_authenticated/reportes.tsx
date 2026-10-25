@@ -109,7 +109,7 @@ function ReportesPage() {
         todo<any>((f, t) => supabase.from("rutas").select("id,nombre,lista_precio_id").range(f, t)),
         todo<any>((f, t) => supabase.from("clientes").select("id,nombre,activo,cliente_rutas(rutas(nombre))").range(f, t)),
         todo<any>((f, t) => supabase.from("ventas").select("id,fecha,total,metodo_pago,cliente_id,ruta_id").gte("fecha", a).lte("fecha", b).order("fecha").range(f, t)),
-        todo<any>((f, t) => supabase.from("detalle_ventas").select("producto_id,nombre_producto,cantidad,total_linea,productos(costo,categorias(nombre)),ventas!inner(fecha,ruta_id,cliente_id)").gte("ventas.fecha", a).lte("ventas.fecha", b).range(f, t)),
+        todo<any>((f, t) => supabase.from("detalle_ventas").select("producto_id,nombre_producto,cantidad,total_linea,costo_unitario,productos(costo,categorias(nombre)),ventas!inner(fecha,ruta_id,cliente_id)").gte("ventas.fecha", a).lte("ventas.fecha", b).range(f, t)),
         todo<any>((f, t) => supabase.from("gastos").select("fecha,monto,categoria,descripcion,ruta_id").gte("fecha", a).lte("fecha", b).order("fecha").range(f, t)),
         todo<any>((f, t) => supabase.from("abonos").select("fecha,monto,cliente_id,creditos(cliente_id,ruta_id,ventas(ruta_id))").gte("fecha", a).lte("fecha", b).range(f, t)),
         todo<any>((f, t) => supabase.from("creditos").select("saldo,fecha,cliente_id,ruta_id,ventas(ruta_id)").gt("saldo", 0).range(f, t)),
@@ -153,7 +153,7 @@ function ReportesPage() {
       ventas: data.ventas.map((v: any) => ({ fecha: v.fecha, total: Number(v.total), metodo: v.metodo_pago, clienteId: v.cliente_id, cliente: cliNom.get(v.cliente_id) ?? "—", ruta: rutaDe(v.ruta_id, v.cliente_id) })).filter((v) => ok(v.ruta)),
       detalles: data.detalles.map((x: any) => ({
         productoId: x.producto_id, producto: x.nombre_producto, categoria: x.productos?.categorias?.nombre ?? "Sin categoría",
-        cantidad: Number(x.cantidad), total: Number(x.total_linea), costo: Number(x.cantidad) * costoProductoRuta({ productoId: x.producto_id, rutaId: x.ventas?.ruta_id, rutas: data.rutas, precios: data.preciosLista, costoBase: x.productos?.costo }),
+        cantidad: Number(x.cantidad), total: Number(x.total_linea), costo: Number(x.cantidad) * (x.costo_unitario != null ? Number(x.costo_unitario) : costoProductoRuta({ productoId: x.producto_id, rutaId: x.ventas?.ruta_id, rutas: data.rutas, precios: data.preciosLista, costoBase: x.productos?.costo })),
         ruta: rutaDe(x.ventas?.ruta_id, x.ventas?.cliente_id),
       })).filter((x) => ok(x.ruta)),
       gastos: data.gastos.map((g: any) => ({ fecha: g.fecha, monto: Number(g.monto), categoria: g.categoria, descripcion: g.descripcion ?? "", ruta: (g.ruta_id && rutaNom.get(g.ruta_id)) || "General" })).filter((g) => ok(g.ruta)),

@@ -1,4 +1,4 @@
-import { test, expect } from "vitest";
+import { test, expect } from "bun:test";
 import { costoProductoRuta } from "./costos";
 
 const rutas = [{ id: "mie", lista_precio_id: "L1" }, { id: "jue", lista_precio_id: "L2" }, { id: "sab", lista_precio_id: null }];

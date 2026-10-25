@@ -1,5 +1,4 @@
 import { costoProductoRuta } from "@/lib/costos";
-import { usePreciosProductos } from "@/lib/listas-precios";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { useRutas, useProductos } from "@/lib/data";
 import { useCargasCamion, usePendientesCamion, descontarPendientes, enCamion, type CargaCamion } from "@/lib/carga-camion";
 import { useEmpresa } from "@/lib/empresa";
-import { useProductosCliente } from "@/lib/listas-precios";
+import { useProductosCliente, usePreciosProductos } from "@/lib/listas-precios";
 import { estimarCarga } from "@/lib/carga-estimacion";
 import { descargarReporteExcel, verReportePdf, type Reporte } from "@/lib/reporte-export";
 import { PageHeader } from "@/components/PageHeader";

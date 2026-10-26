@@ -197,6 +197,13 @@
       "when": 1792888106385,
       "tag": "0027_congelar_costos_historicos",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793039960813,
+      "tag": "0028_orden_productos",
+      "breakpoints": true
     }
   ]
 }

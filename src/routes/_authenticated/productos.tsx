@@ -14,7 +14,9 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { toast } from "sonner";
-import { Plus, Search, AlertTriangle, Trash2, ScanBarcode } from "lucide-react";
+import { Plus, Search, AlertTriangle, Trash2, ScanBarcode, ArrowUpDown, Save, X } from "lucide-react";
+import { OrdenRuta } from "@/components/OrdenRuta";
+import { moverAPosicion } from "@/lib/orden-ruta";
 import { EscanerCamara } from "@/components/EscanerCamara";
 import { useListasPrecios, usePreciosProductos } from "@/lib/listas-precios";
 
@@ -53,6 +55,21 @@ export function ProductosPage() {
   const [busy, setBusy] = useState(false);
 
   const [soloBajos, setSoloBajos] = useState(false);
+  const [ordenLista, setOrdenLista] = useState<{ id: string; nombre: string; direccion: string }[] | null>(null);
+  const [guardandoOrden, setGuardandoOrden] = useState(false);
+
+  async function guardarOrden() {
+    if (!ordenLista) return;
+    setGuardandoOrden(true);
+    const items = ordenLista.map((p, i) => ({ id: p.id, orden: i + 1 }));
+    const { data, error } = await supabase.rpc("guardar_orden_productos", { p_items: items });
+    setGuardandoOrden(false);
+    if (error) return toast.error(error.message);
+    if (typeof data === "number" && data < items.length) return toast.error("No se guardaron todas las posiciones; intente de nuevo");
+    toast.success("Orden de productos guardado");
+    invalidate(["productos"]);
+    setOrdenLista(null);
+  }
 
   const filtered = useMemo(
     () =>
@@ -128,7 +145,7 @@ export function ProductosPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar producto…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant={soloBajos ? "outline" : "default"} size="sm" onClick={() => setSoloBajos(false)}>
             Todos
           </Button>
@@ -136,8 +153,22 @@ export function ProductosPage() {
             <AlertTriangle className="h-4 w-4" />
             Stock bajo ({bajosCount})
           </Button>
+          {isAdmin && (ordenLista ? (
+            <>
+              <Button size="sm" className="gap-1.5" disabled={guardandoOrden} onClick={guardarOrden}><Save className="h-4 w-4" />Guardar orden</Button>
+              <Button size="sm" variant="outline" disabled={guardandoOrden} onClick={() => setOrdenLista(null)}><X className="h-4 w-4" />Cancelar</Button>
+            </>
+          ) : (
+            <Button size="sm" variant="outline" className="ml-auto gap-1.5" onClick={() => setOrdenLista((productos ?? []).map((p) => ({ id: p.id, nombre: p.nombre, direccion: p.codigo })))}>
+              <ArrowUpDown className="h-4 w-4" />Ordenar
+            </Button>
+          ))}
         </div>
-        <div className="space-y-6">
+        {ordenLista && (
+          <OrdenRuta clientes={ordenLista} disabled={guardandoOrden}
+            onMove={(id, pos) => setOrdenLista((l) => (l ? moverAPosicion(l, id, pos) : l))} />
+        )}
+        <div className={ordenLista ? "hidden" : "space-y-6"}>
           {grupos.map((g) => (
             <div key={g.nombre}>
               <div className="mb-2 flex items-center gap-2">

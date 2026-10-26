@@ -6,7 +6,7 @@ export function useProductos(soloActivos = false) {
   return useQuery({
     queryKey: ["productos", soloActivos],
     queryFn: async () => {
-      let q = supabase.from("productos").select("*, categorias(nombre)").order("nombre");
+      let q = supabase.from("productos").select("*, categorias(nombre)").order("orden").order("nombre");
       if (soloActivos) q = q.eq("activo", true);
       const { data, error } = await q;
       if (error) throw error;

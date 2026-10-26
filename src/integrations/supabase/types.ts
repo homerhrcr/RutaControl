@@ -1590,6 +1590,7 @@ export type Database = {
           existencia_minima: number
           id: string
           nombre: string
+          orden: number
           organization_id: string
           precio: number
           tarifa_iva: number
@@ -1607,6 +1608,7 @@ export type Database = {
           existencia_minima?: number
           id?: string
           nombre: string
+          orden?: number
           organization_id?: string
           precio?: number
           tarifa_iva?: number
@@ -1624,6 +1626,7 @@ export type Database = {
           existencia_minima?: number
           id?: string
           nombre?: string
+          orden?: number
           organization_id?: string
           precio?: number
           tarifa_iva?: number
@@ -2107,6 +2110,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      guardar_orden_productos: { Args: { p_items: Json }; Returns: number }
       guardar_orden_ruta: { Args: { p_items: Json }; Returns: number }
       has_role: {
         Args: {

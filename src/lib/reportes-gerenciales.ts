@@ -4,7 +4,7 @@ import type { Fila } from "@/lib/reporte-formato";
 
 export type DatosReportes = {
   ventas: { fecha: string; total: number; metodo: string; clienteId: string | null; cliente: string; ruta: string }[];
-  detalles: { productoId: string | null; producto: string; categoria: string; cantidad: number; total: number; costo: number; ruta: string }[];
+  detalles: { productoId: string | null; producto: string; categoria: string; cantidad: number; total: number; costo: number; ruta: string; fecha?: string }[];
   gastos: { fecha: string; monto: number; categoria: string; descripcion: string; ruta: string }[];
   abonos: { fecha: string; monto: number }[];
   creditos: { cliente: string; ruta: string; saldo: number; fecha: string }[];
@@ -447,6 +447,116 @@ export function detalleGastos(d: DatosReportes): Reporte {
       filas: d.gastos,
       totales: { fecha: "TOTAL", monto: total },
     }],
+  };
+}
+
+/** Lunes (YYYY-MM-DD) de la semana de una fecha, en hora local. */
+export function inicioSemana(fecha: string): string {
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return "";
+  const dia = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - dia);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export function costosGastos(d: DatosReportes): Reporte {
+  const costoProd = suma(d.detalles, (x) => x.costo);
+  const gastos = suma(d.gastos, (g) => g.monto);
+  const rutas = new Set([...d.detalles.map((x) => x.ruta), ...d.gastos.map((g) => g.ruta)]);
+  const porRuta: Fila[] = [...rutas].map((ruta) => {
+    const c = suma(d.detalles.filter((x) => x.ruta === ruta), (x) => x.costo);
+    const g = suma(d.gastos.filter((x) => x.ruta === ruta), (x) => x.monto);
+    return { ruta, costo: c, gastos: g, total: c + g, pct: div(c + g, costoProd + gastos) };
+  }).sort((a, b) => Number(b.total) - Number(a.total));
+
+  const semanas: Fila[] = [...agrupar(d.detalles, (x) => `${inicioSemana(x.fecha ?? "")}|${x.ruta}`)].map(([k, xs]) => {
+    const [semana, ruta] = k.split("|");
+    return { semana: semana ? semana + "T12:00:00" : "—", ruta, unidades: suma(xs, (x) => x.cantidad), costo: suma(xs, (x) => x.costo) };
+  }).sort((a, b) => String(a.semana).localeCompare(String(b.semana)) || String(a.ruta).localeCompare(String(b.ruta)));
+
+  const semanaGeneral: Fila[] = [...agrupar(d.detalles, (x) => inicioSemana(x.fecha ?? ""))].map(([s, xs]) => ({
+    semana: s ? s + "T12:00:00" : "—", unidades: suma(xs, (x) => x.cantidad), costo: suma(xs, (x) => x.costo),
+  })).sort((a, b) => String(a.semana).localeCompare(String(b.semana)));
+
+  const productos: Fila[] = [...agrupar(d.detalles, (x) => `${x.producto}|${x.ruta}`)].map(([k, xs]) => {
+    const [producto, ruta] = k.split("|");
+    const u = suma(xs, (x) => x.cantidad), c = suma(xs, (x) => x.costo);
+    return { producto, ruta, unidades: u, unit: div(c, u), costo: c };
+  }).sort((a, b) => Number(b.costo) - Number(a.costo));
+
+  const meses: Fila[] = [...agrupar(d.gastos, (g) => `${g.fecha.slice(0, 7)}|${g.categoria}`)].map(([k, gs]) => {
+    const [mes, categoria] = k.split("|");
+    return { mes, categoria, n: gs.length, monto: suma(gs, (g) => g.monto) };
+  }).sort((a, b) => String(a.mes).localeCompare(String(b.mes)) || Number(b.monto) - Number(a.monto));
+
+  return {
+    titulo: "Costos y gastos",
+    descripcion: "Costo de productos vendidos por semana, por ruta y general, y gastos operativos del mes por categoría.",
+    indicadores: [
+      { label: "Costo de productos", valor: costoProd, tipo: "moneda" },
+      { label: "Gastos operativos", valor: gastos, tipo: "moneda" },
+      { label: "Total costos + gastos", valor: costoProd + gastos, tipo: "moneda" },
+      { label: "Rutas", valor: rutas.size, tipo: "entero" },
+    ],
+    secciones: [
+      {
+        titulo: "Costos totales por ruta",
+        columnas: [
+          { key: "ruta", titulo: "Ruta", tipo: "texto" },
+          { key: "costo", titulo: "Costo productos", tipo: "moneda" },
+          { key: "gastos", titulo: "Gastos", tipo: "moneda" },
+          { key: "total", titulo: "Total", tipo: "moneda" },
+          { key: "pct", titulo: "% del total", tipo: "pct" },
+        ],
+        filas: porRuta,
+        totales: { ruta: "TOTAL", costo: costoProd, gastos, total: costoProd + gastos, pct: porRuta.length ? 1 : 0 },
+      },
+      {
+        titulo: "Gastos del mes por categoría",
+        columnas: [
+          { key: "mes", titulo: "Mes", tipo: "texto" },
+          { key: "categoria", titulo: "Categoría", tipo: "texto" },
+          { key: "n", titulo: "Registros", tipo: "entero" },
+          { key: "monto", titulo: "Monto", tipo: "moneda" },
+        ],
+        filas: meses,
+        totales: { mes: "TOTAL", n: d.gastos.length, monto: gastos },
+      },
+      {
+        titulo: "Costo de productos por semana (general)",
+        columnas: [
+          { key: "semana", titulo: "Semana del", tipo: "fecha" },
+          { key: "unidades", titulo: "Unidades", tipo: "numero" },
+          { key: "costo", titulo: "Costo", tipo: "moneda" },
+        ],
+        filas: semanaGeneral,
+        totales: { semana: "TOTAL", unidades: suma(d.detalles, (x) => x.cantidad), costo: costoProd },
+      },
+      {
+        titulo: "Costo de productos por semana y ruta",
+        columnas: [
+          { key: "semana", titulo: "Semana del", tipo: "fecha" },
+          { key: "ruta", titulo: "Ruta", tipo: "texto" },
+          { key: "unidades", titulo: "Unidades", tipo: "numero" },
+          { key: "costo", titulo: "Costo", tipo: "moneda" },
+        ],
+        filas: semanas,
+        totales: { semana: "TOTAL", unidades: suma(d.detalles, (x) => x.cantidad), costo: costoProd },
+      },
+      {
+        titulo: "Costo por producto y ruta",
+        columnas: [
+          { key: "producto", titulo: "Producto", tipo: "texto" },
+          { key: "ruta", titulo: "Ruta", tipo: "texto" },
+          { key: "unidades", titulo: "Unidades", tipo: "numero" },
+          { key: "unit", titulo: "Costo unit. prom.", tipo: "moneda" },
+          { key: "costo", titulo: "Costo total", tipo: "moneda" },
+        ],
+        filas: productos,
+        totales: { producto: "TOTAL", unidades: suma(d.detalles, (x) => x.cantidad), costo: costoProd },
+        nota: "Costo congelado al momento de la venta (o el de la lista de la ruta para ventas anteriores).",
+      },
+    ],
   };
 }
 

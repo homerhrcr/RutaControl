@@ -18,7 +18,7 @@ import { atribuirCobranza, incluirCobranza } from "@/lib/cobranza-reportes";
 import { esNumerica, formatoValor, tieneDecimales } from "@/lib/reporte-formato";
 import { descargarReporteExcel, verReportePdf, type Reporte } from "@/lib/reporte-export";
 import {
-  carteraCobranza, clientesRiesgo, detalleGastos, detalleVentas, mermasDevoluciones,
+  carteraCobranza, clientesRiesgo, costosGastos, detalleGastos, detalleVentas, mermasDevoluciones,
   productosRotacion, rentabilidadRutas, resumenEjecutivo, type DatosReportes,
 } from "@/lib/reportes-gerenciales";
 
@@ -85,6 +85,7 @@ const REPORTES = [
   { key: "productos", label: "Productos", fn: productosRotacion },
   { key: "ventas", label: "Ventas", fn: detalleVentas },
   { key: "gastos", label: "Gastos", fn: detalleGastos },
+  { key: "costos", label: "Costos y gastos", fn: costosGastos },
 ] as const;
 
 function ReportesPage() {
@@ -154,7 +155,7 @@ function ReportesPage() {
       detalles: data.detalles.map((x: any) => ({
         productoId: x.producto_id, producto: x.nombre_producto, categoria: x.productos?.categorias?.nombre ?? "Sin categoría",
         cantidad: Number(x.cantidad), total: Number(x.total_linea), costo: Number(x.cantidad) * (x.costo_unitario != null ? Number(x.costo_unitario) : costoProductoRuta({ productoId: x.producto_id, rutaId: x.ventas?.ruta_id, rutas: data.rutas, precios: data.preciosLista, costoBase: x.productos?.costo })),
-        ruta: rutaDe(x.ventas?.ruta_id, x.ventas?.cliente_id),
+        ruta: rutaDe(x.ventas?.ruta_id, x.ventas?.cliente_id), fecha: x.ventas?.fecha ?? "",
       })).filter((x) => ok(x.ruta)),
       gastos: data.gastos.map((g: any) => ({ fecha: g.fecha, monto: Number(g.monto), categoria: g.categoria, descripcion: g.descripcion ?? "", ruta: (g.ruta_id && rutaNom.get(g.ruta_id)) || "General" })).filter((g) => ok(g.ruta)),
        abonos: data.abonos.filter((x: any) => incluirCobranza(ruta, atribuirCobranza(x.creditos, x.cliente_id, rutaNom, cliRutas))).map((x: any) => ({ fecha: x.fecha, monto: Number(x.monto) })),

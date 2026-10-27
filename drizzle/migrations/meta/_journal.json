@@ -204,6 +204,13 @@
       "when": 1793039960813,
       "tag": "0028_orden_productos",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793115440711,
+      "tag": "0029_orden_productos_nuevos_al_final",
+      "breakpoints": true
     }
   ]
 }

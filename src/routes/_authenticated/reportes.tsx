@@ -36,19 +36,43 @@ export const Route = createFileRoute("/_authenticated/reportes")({
   component: ReportesPage,
 });
 
-type Preset = "hoy" | "semana" | "mes" | "mes_ant" | "90" | "custom";
+type Preset = "hoy" | "semana" | "mes" | "mes_ant" | "90" | "semana_cal" | "custom";
 const PRESETS: { key: Preset; label: string }[] = [
   { key: "hoy", label: "Hoy" },
   { key: "semana", label: "Esta semana" },
   { key: "mes", label: "Este mes" },
   { key: "mes_ant", label: "Mes anterior" },
   { key: "90", label: "90 días" },
-  { key: "custom", label: "Personalizado" },
+  { key: "semana_cal", label: "Escoger semana" },
+  { key: "custom", label: "De fecha a fecha" },
 ];
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-function rango(p: Preset, desde: string, hasta: string): [string, string] {
+/** Semana ISO ("2026-W44") de una fecha. */
+function semanaISO(f: Date): string {
+  const d = new Date(Date.UTC(f.getFullYear(), f.getMonth(), f.getDate()));
+  const dia = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dia);
+  const y = d.getUTCFullYear();
+  const n = Math.ceil(((d.getTime() - Date.UTC(y, 0, 1)) / 86_400_000 + 1) / 7);
+  return `${y}-W${String(n).padStart(2, "0")}`;
+}
+
+/** Lunes y domingo de una semana ISO. */
+function rangoSemana(s: string): [string, string] | null {
+  const m = /^(\d{4})-W(\d{2})$/.exec(s);
+  if (!m) return null;
+  const ene4 = new Date(Number(m[1]), 0, 4);
+  const lunes = new Date(ene4);
+  lunes.setDate(ene4.getDate() - ((ene4.getDay() + 6) % 7) + (Number(m[2]) - 1) * 7);
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 6);
+  return [iso(lunes), iso(domingo)];
+}
+
+function rango(p: Preset, desde: string, hasta: string, semana = ""): [string, string] {
   const h = new Date();
+  if (p === "semana_cal") return rangoSemana(semana) ?? [iso(h), iso(h)];
   if (p === "hoy") return [iso(h), iso(h)];
   if (p === "semana") {
     const d = new Date(h);

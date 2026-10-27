@@ -119,10 +119,11 @@ function ReportesPage() {
   const [preset, setPreset] = useState<Preset>("mes");
   const [desde, setDesde] = useState(hoy);
   const [hasta, setHasta] = useState(hoy);
+  const [semana, setSemana] = useState(() => semanaISO(new Date()));
   const [ruta, setRuta] = useState("all");
   const [tab, setTab] = useState<(typeof REPORTES)[number]["key"]>("resumen");
   const [busy, setBusy] = useState<"" | "pdf" | "xlsx">("");
-  const [ini, fin] = rango(preset, desde, hasta);
+  const [ini, fin] = rango(preset, desde, hasta, semana);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["reportes-gerenciales", ini, fin],
@@ -236,6 +237,12 @@ function ReportesPage() {
               </Button>
             ))}
           </div>
+          {preset === "semana_cal" && (
+            <div className="flex items-center gap-2">
+              <Input type="week" aria-label="Semana" value={semana} onChange={(e) => e.target.value && setSemana(e.target.value)} className="h-9 w-44" />
+              <span className="text-sm text-muted-foreground">lunes a domingo</span>
+            </div>
+          )}
           {preset === "custom" && (
             <div className="flex items-center gap-2">
               <Input type="date" aria-label="Desde" value={desde} max={hasta} onChange={(e) => setDesde(e.target.value)} className="h-9 w-40" />

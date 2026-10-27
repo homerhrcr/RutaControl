@@ -526,7 +526,7 @@ export function costosGastos(d: DatosReportes): Reporte {
         titulo: "Costo de productos por semana (general)",
         columnas: [
           { key: "semana", titulo: "Semana del", tipo: "fecha" },
-          { key: "unidades", titulo: "Unidades", tipo: "numero" },
+          { key: "unidades", titulo: "Unidades", tipo: "decimal" },
           { key: "costo", titulo: "Costo", tipo: "moneda" },
         ],
         filas: semanaGeneral,
@@ -537,7 +537,7 @@ export function costosGastos(d: DatosReportes): Reporte {
         columnas: [
           { key: "semana", titulo: "Semana del", tipo: "fecha" },
           { key: "ruta", titulo: "Ruta", tipo: "texto" },
-          { key: "unidades", titulo: "Unidades", tipo: "numero" },
+          { key: "unidades", titulo: "Unidades", tipo: "decimal" },
           { key: "costo", titulo: "Costo", tipo: "moneda" },
         ],
         filas: semanas,
@@ -548,7 +548,7 @@ export function costosGastos(d: DatosReportes): Reporte {
         columnas: [
           { key: "producto", titulo: "Producto", tipo: "texto" },
           { key: "ruta", titulo: "Ruta", tipo: "texto" },
-          { key: "unidades", titulo: "Unidades", tipo: "numero" },
+          { key: "unidades", titulo: "Unidades", tipo: "decimal" },
           { key: "unit", titulo: "Costo unit. prom.", tipo: "moneda" },
           { key: "costo", titulo: "Costo total", tipo: "moneda" },
         ],

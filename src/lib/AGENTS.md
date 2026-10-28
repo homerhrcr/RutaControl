@@ -2,3 +2,4 @@
 - Return inspection AI uses authenticated server functions and server-only Responses helpers; evidence uses the existing photo outbox and inspection text is stored in return notes — recommendations never mutate inventory until the user confirms a return.
 - Client administrative addresses use a bundled territorial catalog and shared cascade helpers, storing names in the existing columns — keeps dependent options available without network access and preserves the existing data format.
 - Route ordering: use the shared one-based move helper for numeric positions, arrows and dnd-kit sorting, then persist through guardarOrdenRuta — all inputs keep the same sequential order used by the map.
+- Product presentation uses ordenarSegunCatalogo with the ordered useProductos catalog in route sales and truck views; never sort by hardcoded favorites or reservation quantities, so saved manual positions remain consistent.

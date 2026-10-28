@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Respetar orden manual de Productos en venta en ruta y en creación/detalle/edición de Carga de Camión; quitar favoritos fijos y verificar con pruebas y sesión real.
 - [x] Punto de Venta: feria/local, inventario de carga o existencias locales, lista vigente, caja, efectivo/tarjeta/SINPE, cliente express y tiquetes. Venta online y offline con reconexión verificadas en empresa DEMO; cierres sin diferencia y una venta por UUID. Pendiente prueba física de lector/cámara e impresión.
 - [ ] Correo automático de comprobantes POS — requiere configurar y verificar dominio remitente.
 - [ ] Facturación electrónica POS — requiere certificado/PIN/credenciales de Hacienda e integración fiscal.

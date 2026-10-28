@@ -11,18 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tiquete, type TiqueteData } from "@/components/Tiquete";
 import { toast } from "sonner";
-import { Plus, Minus, Search, Repeat, X, Banknote, CreditCard, Star, Pencil, ScanBarcode } from "lucide-react";
+import { Plus, Minus, Search, Repeat, X, Banknote, CreditCard, Pencil, ScanBarcode } from "lucide-react";
 import { buscarPorCodigo, useLectorPistola, avisoLectura } from "@/lib/codigo-barras";
 import { EscanerCamara } from "@/components/EscanerCamara";
 import { cn } from "@/lib/utils";
 import { useCargasCamion, usePendientesCamion, descontarPendientes, disponibleCamion } from "@/lib/carga-camion";
 import { validarVentaRuta, estadoStockCamion } from "@/lib/carga-camion-calculos";
-
-const FAVORITOS = ["Queso Semiduro", "Queso Ratón", "Leche Fresca", "Yogurt", "Natilla", "Cuajada"];
-
-function isFavorite(nombre: string) {
-  return FAVORITOS.some((f) => nombre.toLowerCase().includes(f.toLowerCase()));
-}
+import { ordenarSegunCatalogo } from "@/lib/orden-productos";
 
 export function QuickSale({
   cliente,
@@ -88,7 +83,7 @@ export function QuickSale({
     const arr = (productos ?? []).filter((p) =>
       p.nombre.toLowerCase().includes(search.toLowerCase()),
     );
-    return arr.sort((a, b) => Number(isFavorite(b.nombre)) - Number(isFavorite(a.nombre)));
+    return ordenarSegunCatalogo(arr, productos ?? [], (p) => p.id);
   }, [productos, search]);
 
   const items = Object.values(cart);
@@ -312,7 +307,6 @@ export function QuickSale({
                   onClick={() => add(p, 1)}
                   className="h-auto flex flex-1 flex-col items-start whitespace-normal p-0 text-left"
                 >
-                  {isFavorite(p.nombre) && <Star className="mb-1 h-3.5 w-3.5 fill-warning text-warning" />}
                   <span className="line-clamp-2 text-sm font-semibold leading-tight">{p.nombre}</span>
                   <span className="mt-1 text-sm font-bold text-primary">{p.precioInfo.valido ? formatCRC(p.precio) : "Sin precio"}</span>
                   <span className="text-[10px] leading-tight text-muted-foreground" title={p.precioInfo.mensaje}>{p.precioInfo.mensaje}</span>

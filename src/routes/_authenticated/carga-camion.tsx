@@ -25,6 +25,7 @@ import { useOnline, allOps } from "@/lib/offline";
 import { MermaCamion } from "@/components/MermaCamion";
 import { disponibleCamion, estadoStockCamion, validarMermaCamion } from "@/lib/carga-camion-calculos";
 import { fechaLegible } from "@/lib/telegram";
+import { ordenarSegunCatalogo } from "@/lib/orden-productos";
 
 export const Route = createFileRoute("/_authenticated/carga-camion")({
   head: () => ({ meta: [
@@ -123,7 +124,7 @@ function NuevaCarga({ onClose, onDone }: { onClose: () => void; onDone: (id: str
     for (const p of pedidos ?? []) if (seleccionados.includes(p.id)) for (const d of p.pedidos_detalle) get(d.producto_id, d.nombre_producto).preventa += Number(d.cantidad);
     for (const p of productos ?? []) get(p.id, p.nombre);
     for (const pid of adicionales) get(pid, "Producto");
-    return [...m.values()].map((r) => { const total = totales[r.id] ?? r.preventa; return { ...r, total, libre: total - r.preventa }; });
+    return ordenarSegunCatalogo([...m.values()], productos ?? [], (r) => r.id).map((r) => { const total = totales[r.id] ?? r.preventa; return { ...r, total, libre: total - r.preventa }; });
   }, [pedidos, seleccionados, adicionales, totales, productos]);
   async function guardar() {
     if (!navigator.onLine) return toast.error("Se necesita conexión para registrar la carga");
@@ -186,7 +187,7 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const [agregarId, setAgregarId] = useState("");
   const { data: productosTodos } = useProductos();
   const { data: preciosRuta, listo: preciosListos, listaNombre, error: errorPrecios } = useProductosCliente(undefined, carga.ruta_id);
-  const detalle = descontarPendientes(carga, pendientes);
+  const detalle = ordenarSegunCatalogo(descontarPendientes(carga, pendientes), productosTodos ?? [], (d) => d.producto_id);
   const cargado = (d: (typeof detalle)[number]) => Number(d.preventa) + Number(d.extra);
   const { data: rutasCosto = [] } = useRutas();
   const { data: preciosLista = [] } = usePreciosProductos();

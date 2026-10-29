@@ -7,7 +7,7 @@ export type OpcionCatalogo = {
   activo: boolean; orden: number; predeterminado: boolean; protegido: boolean;
 };
 
-export type CatalogoOpcionKey = "motivo_devolucion" | "destino_devolucion" | "tipo_identificacion" | "tarifa_iva" | "metodo_pago" | "motivo_cancelacion_pedido";
+export type CatalogoOpcionKey = "motivo_devolucion" | "destino_devolucion" | "tipo_identificacion" | "tarifa_iva" | "metodo_pago" | "motivo_cancelacion_pedido" | "categoria_gasto_planta";
 export type CatalogoTablaKey = "categorias" | "categorias_gasto" | "rutas";
 
 export type DefCatalogo = {
@@ -30,6 +30,7 @@ export const DEFINICIONES: DefCatalogo[] = [
   { key: "tarifa_iva", tipo: "opciones", titulo: "Tarifas de IVA", usadoEn: "Productos", restriccion: "Tarifas oficiales de Hacienda: se edita el nombre, el orden, activo y la predeterminada." },
   { key: "metodo_pago", tipo: "opciones", titulo: "Métodos de pago", usadoEn: "Ventas, tiquetes y reportes", restriccion: "El sistema calcula créditos con estos códigos: solo se edita el nombre visible." },
   { key: "motivo_cancelacion_pedido", tipo: "opciones", titulo: "Motivos de cancelación de pedidos", usadoEn: "Preventa (cancelar pedido)" },
+  { key: "categoria_gasto_planta", tipo: "opciones", titulo: "Categorías de gasto de Operaciones / Planta", usadoEn: "Operaciones / Planta (gastos)" },
 ];
 
 export function useOpciones(catalogo?: CatalogoOpcionKey) {

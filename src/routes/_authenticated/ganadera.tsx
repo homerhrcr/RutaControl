@@ -151,6 +151,7 @@ function NuevoGasto({ onSaved }: { onSaved: () => void }) {
   const [monto, setMonto] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [busy, setBusy] = useState(false);
+  const { data: cats = [] } = useOpciones("categoria_gasto_planta");
   async function guardar() {
     const m = Number(monto);
     if (!(m > 0)) return toast.error("Escriba un monto mayor a cero");
@@ -164,10 +165,7 @@ function NuevoGasto({ onSaved }: { onSaved: () => void }) {
   return (
     <Card className="grid gap-3 p-3 sm:grid-cols-5">
       <div><Label>Fecha</Label><Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></div>
-      <div><Label>Categoría</Label>
-        <select className="h-10 w-full rounded-md border bg-background px-2 text-sm" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-          {CATEGORIAS.map((c) => <option key={c}>{c}</option>)}
-        </select></div>
+      <OpcionSelect catalogo="categoria_gasto_planta" label="Categoría" vacio="Seleccione…" value={categoria} onChange={setCategoria} />
       <div><Label>Monto ₡</Label><Input inputMode="decimal" value={monto} onChange={(e) => setMonto(e.target.value)} /></div>
       <div><Label>Detalle</Label><Input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Opcional" /></div>
       <div className="flex items-end"><Button className="w-full" disabled={busy} onClick={guardar}><Plus className="mr-1 h-4 w-4" />Agregar gasto</Button></div>

@@ -218,6 +218,13 @@
       "when": 1793308561461,
       "tag": "0030_ganadera_san_bosco",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793309097332,
+      "tag": "0031_categorias_gasto_planta",
+      "breakpoints": true
     }
   ]
 }

@@ -993,6 +993,133 @@ export type Database = {
         }
         Relationships: []
       }
+      finca_gastos: {
+        Row: {
+          categoria: string
+          created_at: string
+          descripcion: string | null
+          fecha: string
+          id: string
+          monto: number
+          organization_id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          monto: number
+          organization_id?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string
+          id?: string
+          monto?: number
+          organization_id?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finca_gastos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finca_produccion: {
+        Row: {
+          cantidad: number
+          created_at: string
+          fecha: string
+          id: string
+          organization_id: string
+          precio_unitario: number
+          producto_id: string
+        }
+        Insert: {
+          cantidad: number
+          created_at?: string
+          fecha?: string
+          id?: string
+          organization_id?: string
+          precio_unitario: number
+          producto_id: string
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          fecha?: string
+          id?: string
+          organization_id?: string
+          precio_unitario?: number
+          producto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finca_produccion_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finca_produccion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "finca_productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finca_productos: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nombre: string
+          orden: number
+          organization_id: string
+          precio: number
+          unidad: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+          orden?: number
+          organization_id?: string
+          precio?: number
+          unidad?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
+          orden?: number
+          organization_id?: string
+          precio?: number
+          unidad?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finca_productos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gastos: {
         Row: {
           categoria: string

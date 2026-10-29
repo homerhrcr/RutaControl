@@ -211,6 +211,13 @@
       "when": 1793115440711,
       "tag": "0029_orden_productos_nuevos_al_final",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793308561461,
+      "tag": "0030_ganadera_san_bosco",
+      "breakpoints": true
     }
   ]
 }

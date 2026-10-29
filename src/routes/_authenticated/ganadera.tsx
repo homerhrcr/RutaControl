@@ -13,6 +13,7 @@ import { formatCRC } from "@/lib/format";
 import { semanaDe, moverSemana, balanceFinca } from "@/lib/finca";
 import { toast } from "sonner";
 import { OpcionSelect } from "@/components/OpcionSelect";
+import { useOpciones } from "@/lib/catalogos";
 import { ChevronLeft, ChevronRight, Trash2, Plus, Save } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ganadera")({

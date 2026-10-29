@@ -52,6 +52,7 @@ const NAV: NavItem[] = [
   { to: "/cobranza", label: "Crédito y Cobros", icon: HandCoins, mobile: true },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/gastos", label: "Gastos", icon: Wallet },
+  { to: "/ganadera", label: "Ganadera San Bosco", icon: Wallet, adminOnly: true },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
   { to: "/sincronizacion", label: "Sincronización", icon: RefreshCw },
   { to: "/telegram", label: "Telegram", icon: Send },

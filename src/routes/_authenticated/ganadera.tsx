@@ -154,9 +154,11 @@ function NuevoGasto({ onSaved }: { onSaved: () => void }) {
   const { data: cats = [] } = useOpciones("categoria_gasto_planta");
   async function guardar() {
     const m = Number(monto);
+    if (!categoria) return toast.error("Seleccione una categoría");
     if (!(m > 0)) return toast.error("Escriba un monto mayor a cero");
+    const etiqueta = cats.find((c) => c.codigo === categoria)?.etiqueta ?? categoria;
     setBusy(true);
-    const { error } = await supabase.from("finca_gastos").insert({ fecha, categoria, monto: m, descripcion: descripcion || null });
+    const { error } = await supabase.from("finca_gastos").insert({ fecha, categoria: etiqueta, monto: m, descripcion: descripcion || null });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Gasto registrado");

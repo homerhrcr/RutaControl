@@ -12,15 +12,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCRC } from "@/lib/format";
 import { semanaDe, moverSemana, balanceFinca } from "@/lib/finca";
 import { toast } from "sonner";
+import { OpcionSelect } from "@/components/OpcionSelect";
+import { useOpciones } from "@/lib/catalogos";
 import { ChevronLeft, ChevronRight, Trash2, Plus, Save } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ganadera")({
   head: () => ({
     meta: [
-      { title: "Ganadera San Bosco — Ruta Directo" },
-      { name: "description", content: "Gastos de finca, precios de productos y balance semanal de Ganadera San Bosco." },
-      { property: "og:title", content: "Ganadera San Bosco — Ruta Directo" },
-      { property: "og:description", content: "Gastos de finca, precios de productos y balance semanal." },
+      { title: "Operaciones / Planta — Ruta Directo" },
+      { name: "description", content: "Gastos de operación, precios de productos y balance semanal de la planta." },
+      { property: "og:title", content: "Operaciones / Planta — Ruta Directo" },
+      { property: "og:description", content: "Gastos de operación, precios de productos y balance semanal." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -28,7 +30,6 @@ export const Route = createFileRoute("/_authenticated/ganadera")({
   component: GanaderaPage,
 });
 
-const CATEGORIAS = ["Alimentos / Concentrado", "Pastos", "Peón / Salarios", "Electricidad", "Agua", "Veterinario", "Medicinas", "Insumos de quesería", "Mantenimiento", "Combustible", "Otros"];
 
 function hoy() {
   const d = new Date();
@@ -75,11 +76,11 @@ function GanaderaPage() {
   const balance = useMemo(() => balanceFinca(gastos.data ?? [], produccion.data ?? []), [gastos.data, produccion.data]);
   const nombreProd = new Map((productos.data ?? []).map((p) => [p.id, p]));
 
-  if (!isAdmin) return <div className="p-6 text-muted-foreground">Solo los administradores pueden ver Ganadera San Bosco.</div>;
+  if (!isAdmin) return <div className="p-6 text-muted-foreground">Solo los administradores pueden ver Operaciones / Planta.</div>;
 
   return (
     <div className="space-y-4 p-4 md:p-6">
-      <PageHeader title="Ganadera San Bosco" subtitle="Gastos de la finca, precios de sus productos y balance por semana." />
+      <PageHeader title="Operaciones / Planta" subtitle="Gastos de operación, precios de sus productos y balance por semana." />
 
       <Card className="flex flex-wrap items-center justify-between gap-3 p-3">
         <div className="flex items-center gap-2">
@@ -92,7 +93,7 @@ function GanaderaPage() {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="p-4"><p className="text-xs text-muted-foreground">Producido (a precio de venta)</p><p className="text-xl font-bold">{formatCRC(balance.totalProducido)}</p></Card>
-        <Card className="p-4"><p className="text-xs text-muted-foreground">Gastos de la finca</p><p className="text-xl font-bold text-destructive">{formatCRC(balance.totalGastos)}</p></Card>
+        <Card className="p-4"><p className="text-xs text-muted-foreground">Gastos de operación</p><p className="text-xl font-bold text-destructive">{formatCRC(balance.totalGastos)}</p></Card>
         <Card className="p-4"><p className="text-xs text-muted-foreground">Resultado de la semana</p><p className={`text-xl font-bold ${balance.utilidad >= 0 ? "text-primary" : "text-destructive"}`}>{formatCRC(balance.utilidad)}</p></Card>
       </div>
 
@@ -147,15 +148,18 @@ function GanaderaPage() {
 
 function NuevoGasto({ onSaved }: { onSaved: () => void }) {
   const [fecha, setFecha] = useState(hoy());
-  const [categoria, setCategoria] = useState(CATEGORIAS[0]);
+  const [categoria, setCategoria] = useState("");
   const [monto, setMonto] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [busy, setBusy] = useState(false);
+  const { data: cats = [] } = useOpciones("categoria_gasto_planta");
   async function guardar() {
     const m = Number(monto);
+    if (!categoria) return toast.error("Seleccione una categoría");
     if (!(m > 0)) return toast.error("Escriba un monto mayor a cero");
+    const etiqueta = cats.find((c) => c.codigo === categoria)?.etiqueta ?? categoria;
     setBusy(true);
-    const { error } = await supabase.from("finca_gastos").insert({ fecha, categoria, monto: m, descripcion: descripcion || null });
+    const { error } = await supabase.from("finca_gastos").insert({ fecha, categoria: etiqueta, monto: m, descripcion: descripcion || null });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Gasto registrado");
@@ -164,10 +168,7 @@ function NuevoGasto({ onSaved }: { onSaved: () => void }) {
   return (
     <Card className="grid gap-3 p-3 sm:grid-cols-5">
       <div><Label>Fecha</Label><Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></div>
-      <div><Label>Categoría</Label>
-        <select className="h-10 w-full rounded-md border bg-background px-2 text-sm" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-          {CATEGORIAS.map((c) => <option key={c}>{c}</option>)}
-        </select></div>
+      <OpcionSelect catalogo="categoria_gasto_planta" label="Categoría" vacio="Seleccione…" value={categoria} onChange={setCategoria} />
       <div><Label>Monto ₡</Label><Input inputMode="decimal" value={monto} onChange={(e) => setMonto(e.target.value)} /></div>
       <div><Label>Detalle</Label><Input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Opcional" /></div>
       <div className="flex items-end"><Button className="w-full" disabled={busy} onClick={guardar}><Plus className="mr-1 h-4 w-4" />Agregar gasto</Button></div>

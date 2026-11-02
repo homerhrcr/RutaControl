@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { sesionSigueVigente, tipoDispositivo, limpiarTokenLocal } from "@/lib/sesion-unica";
 
 export type AppRole = "administrador" | "vendedor" | "cobrador";
 
@@ -106,9 +108,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Sesión única: si otro equipo del mismo tipo entró con esta cuenta, este se desconecta.
+  const uid = user?.id;
+  useEffect(() => {
+    if (!uid) return;
+    let activo = true;
+    const revisar = async () => {
+      if (!activo) return;
+      const vigente = await sesionSigueVigente();
+      if (!vigente && activo) {
+        activo = false;
+        const tipo = tipoDispositivo() === "movil" ? "otro dispositivo móvil" : "otra computadora";
+        toast.warning(`Su sesión se cerró porque se inició sesión en ${tipo}.`, { duration: 10000 });
+        localStorage.removeItem(CACHE_KEY);
+        limpiarTokenLocal();
+        await supabase.auth.signOut({ scope: "local" });
+      }
+    };
+    void revisar();
+    const id = setInterval(revisar, 60_000);
+    const alVolver = () => { if (document.visibilityState === "visible") void revisar(); };
+    document.addEventListener("visibilitychange", alVolver);
+    window.addEventListener("online", revisar);
+    return () => {
+      activo = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", alVolver);
+      window.removeEventListener("online", revisar);
+    };
+  }, [uid]);
+
   async function signOut() {
     localStorage.removeItem(CACHE_KEY);
-    await supabase.auth.signOut();
+    limpiarTokenLocal();
+    // Solo este equipo: no cerrar la sesión del otro tipo de dispositivo.
+    await supabase.auth.signOut({ scope: "local" });
   }
 
   async function refreshProfile() {

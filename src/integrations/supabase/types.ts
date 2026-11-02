@@ -2076,6 +2076,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_active_sessions: {
+        Row: {
+          created_at: string
+          device_token: string
+          tipo_dispositivo: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_token: string
+          tipo_dispositivo: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_token?: string
+          tipo_dispositivo?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2252,9 +2279,17 @@ export type Database = {
       pos_abrir_caja: { Args: { p: Json }; Returns: string }
       pos_cerrar_caja: { Args: { p: Json }; Returns: Json }
       pos_registrar_venta: { Args: { p: Json }; Returns: Json }
+      reclamar_sesion: {
+        Args: { p_tipo: string; p_token: string; p_user_agent?: string }
+        Returns: undefined
+      }
       registrar_devolucion: { Args: { p: Json }; Returns: string }
       registrar_merma_camion: { Args: { p: Json }; Returns: string }
       sembrar_catalogo_opciones: { Args: { p_org: string }; Returns: undefined }
+      sesion_vigente: {
+        Args: { p_tipo: string; p_token: string }
+        Returns: boolean
+      }
       set_default_organization: { Args: { p_org: string }; Returns: undefined }
       telegram_recibir: {
         Args: {

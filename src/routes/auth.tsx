@@ -51,6 +51,10 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) return toast.error(error.message);
+    try {
+      const { reclamarSesion } = await import("@/lib/sesion-unica");
+      await reclamarSesion();
+    } catch { /* no bloquear el ingreso */ }
     toast.success("Bienvenido");
     navigate({ to: "/dashboard" });
   }

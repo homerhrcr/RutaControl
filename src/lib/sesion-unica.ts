@@ -1,5 +1,5 @@
 /**
- * Sesión única por tipo de equipo: máximo una sesión en computadora y una en
+ * Máximo 2 dispositivos activos por usuario (cualquier tipo); el tercero desplaza al más antiguo.
  * móvil por usuario. Entrar en otro equipo del mismo tipo desconecta al
  * anterior. Sin conexión nunca se cierra nada.
  */

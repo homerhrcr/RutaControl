@@ -3,7 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { sesionSigueVigente, tipoDispositivo, limpiarTokenLocal } from "@/lib/sesion-unica";
+import { sesionSigueVigente, limpiarTokenLocal } from "@/lib/sesion-unica";
 
 export type AppRole = "administrador" | "vendedor" | "cobrador";
 
@@ -118,8 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const vigente = await sesionSigueVigente();
       if (!vigente && activo) {
         activo = false;
-        const tipo = tipoDispositivo() === "movil" ? "otro dispositivo móvil" : "otra computadora";
-        toast.warning(`Su sesión se cerró porque se inició sesión en ${tipo}.`, { duration: 10000 });
+        toast.warning("Su sesión se cerró porque se superó el límite de 2 dispositivos activos simultáneos.", { duration: 10000 });
         localStorage.removeItem(CACHE_KEY);
         limpiarTokenLocal();
         await supabase.auth.signOut({ scope: "local" });

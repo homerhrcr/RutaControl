@@ -31,6 +31,7 @@ import {
   Undo2,
   Send,
   Store,
+  Map as MapIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -44,6 +45,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true, mobile: true },
   { to: "/ruta", label: "Iniciar Ruta", icon: Truck, mobile: true },
+  { to: "/mapa-rutas", label: "Mapa de Rutas", icon: MapIcon },
   { to: "/pos", label: "Punto de Venta", icon: Store },
   { to: "/pedidos", label: "Preventa", icon: ClipboardList, mobile: true },
   { to: "/carga-camion", label: "Carga de Camión", icon: Truck },

@@ -3,7 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { sesionSigueVigente, tipoDispositivo, limpiarTokenLocal } from "@/lib/sesion-unica";
+import { sesionSigueVigente, limpiarTokenLocal } from "@/lib/sesion-unica";
 
 export type AppRole = "administrador" | "vendedor" | "cobrador";
 

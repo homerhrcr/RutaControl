@@ -2,3 +2,4 @@
 - Client location editing uses ClienteUbicacion with validated decimal coordinates and a lazy Google Maps picker; reuse the existing SDK script/callback to avoid loading Maps twice.
 - QuickSale is exclusively a route-sale tool: require an active matching load and validate onboard availability before confirmation and submission; always send its non-null carga_id online and offline to prevent warehouse fallback.
 - Reuse CancelarPedido in Preventa and EntregarPedido so reason capture, pending-only updates and immediate truck refresh stay consistent.
+- Route finishing uses EstadoRuta: vendors move a load to pendiente_liquidacion via finalizar_ruta_carga (blocks sales/edits, liquidation still allowed) and only admins reopen via reabrir_ruta_carga with an audited reason — separates end of street work from physical truck settlement.

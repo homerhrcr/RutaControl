@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
@@ -33,6 +33,8 @@ import {
   Store,
   Map as MapIcon,
   ClipboardCheck,
+  ChevronDown,
+  Settings,
 } from "lucide-react";
 
 interface NavItem {
@@ -48,22 +50,26 @@ const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true, mobile: true },
   { to: "/ruta", label: "Iniciar ruta", icon: Truck, mobile: true, group: "Rutas" },
   { to: "/carga-camion", label: "Carga de camión", icon: Truck, group: "Rutas" },
+  { to: "/mapa-rutas", label: "Mapa de Rutas", icon: MapIcon, group: "Rutas" },
+  { to: "/pedidos", label: "Preventa", icon: ClipboardList, mobile: true, group: "Rutas" },
+  { to: "/devoluciones", label: "Devoluciones", icon: Undo2, group: "Rutas" },
   { to: "/liquidacion-ruta", label: "Liquidación de ruta", icon: ClipboardCheck, group: "Rutas" },
-  { to: "/mapa-rutas", label: "Mapa de Rutas", icon: MapIcon },
   { to: "/pos", label: "Punto de Venta", icon: Store },
-  { to: "/pedidos", label: "Preventa", icon: ClipboardList, mobile: true },
-  { to: "/devoluciones", label: "Devoluciones", icon: Undo2 },
   { to: "/clientes", label: "Clientes", icon: Users, mobile: true },
   { to: "/cobranza", label: "Crédito y Cobros", icon: HandCoins, mobile: true },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/gastos", label: "Gastos", icon: Wallet },
   { to: "/ganadera", label: "Operaciones / Planta", icon: Wallet, adminOnly: true },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
-  { to: "/sincronizacion", label: "Sincronización", icon: RefreshCw },
-  { to: "/telegram", label: "Telegram", icon: Send },
-  { to: "/administracion", label: "Administración", icon: UserCog, adminOnly: true },
-
+  { to: "/administracion", label: "Configuración", icon: UserCog, adminOnly: true, group: "Administración" },
+  { to: "/sincronizacion", label: "Sincronización", icon: RefreshCw, group: "Administración" },
+  { to: "/telegram", label: "Telegram", icon: Send, group: "Administración" },
 ];
+
+const GROUPS: Record<string, { icon: typeof LayoutDashboard }> = {
+  Rutas: { icon: Truck },
+  Administración: { icon: Settings },
+};
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { nombre, roles, isAdmin, esSuperadmin, organizacionActiva, signOut } = useAuth();
@@ -72,6 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { online, count } = useOfflineQueue();
   useIncrementalPull();
+  const [abiertos, setAbiertos] = useState<Record<string, boolean>>({});
 
   async function handleSignOut() {
     await signOut();
@@ -100,17 +107,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2">
           {navItems.map((item, i) => {
-            const active = pathname === item.to;
-            const header = item.group && navItems[i - 1]?.group !== item.group;
-            return (
-              <div key={item.to}>
-              {header && <p className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">{item.group}</p>}
+            const link = (sub: boolean) => (
               <Link
                 key={item.to}
                 to={item.to}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active
+                  sub && "pl-8 py-2",
+                  pathname === item.to
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                 )}
@@ -118,6 +122,50 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <item.icon className="h-[18px] w-[18px] shrink-0" />
                 {item.label}
               </Link>
+            );
+            if (!item.group) return link(false);
+            if (navItems[i - 1]?.group === item.group) return null;
+            const grupo = GROUPS[item.group];
+            const hijos = navItems.filter((n) => n.group === item.group);
+            const dentro = hijos.some((n) => n.to === pathname);
+            const abierto = abiertos[item.group] ?? dentro;
+            const g = item.group;
+            return (
+              <div key={g}>
+                <button
+                  type="button"
+                  onClick={() => setAbiertos((s) => ({ ...s, [g]: !abierto }))}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-sidebar-accent/60",
+                    dentro ? "text-sidebar-foreground" : "text-sidebar-foreground/75",
+                  )}
+                >
+                  <grupo.icon className="h-[18px] w-[18px] shrink-0" />
+                  <span className="flex-1 text-left">{g}</span>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", abierto && "rotate-180")} />
+                </button>
+                {abierto && (
+                  <div className="mt-1 space-y-1">
+                    {hijos.map((h) => {
+                      const Item = h;
+                      return (
+                        <Link
+                          key={Item.to}
+                          to={Item.to}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg py-2 pl-8 pr-3 text-sm font-medium transition-colors",
+                            pathname === Item.to
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                          )}
+                        >
+                          <Item.icon className="h-4 w-4 shrink-0" />
+                          {Item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}

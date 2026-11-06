@@ -279,7 +279,7 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId, pedido }: { open: b
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Pedido registrado");
-    invalidate(["pedidos"]);
+    invalidate(["pedidos", "cargas_camion"]);
     setItems([]); setCliente(""); setNotas("");
     onOpenChange(false);
   }

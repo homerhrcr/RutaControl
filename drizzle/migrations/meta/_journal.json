@@ -253,6 +253,13 @@
       "when": 1793939849911,
       "tag": "0035_preventa_reserva_camion_en_ruta",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793940429769,
+      "tag": "0036_medio_pago_referencia",
+      "breakpoints": true
     }
   ]
 }

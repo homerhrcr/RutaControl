@@ -181,7 +181,20 @@ export interface CartItem {
   motivoModificacion?: string;
 }
 
-export async function registrarVenta(params: {
+export type PagoInfo = { medio_pago?: string | null; referencia_pago?: string | null };
+
+/** Registra la venta y luego guarda la forma de pago y referencia (también al sincronizar offline). */
+export async function registrarVenta(params: Parameters<typeof registrarVentaInterna>[0] & PagoInfo) {
+  const { medio_pago, referencia_pago, ...resto } = params;
+  const venta = await registrarVentaInterna(resto);
+  if (venta?.id && (medio_pago || referencia_pago)) {
+    const { error } = await supabase.rpc("registrar_pago_venta", { p_venta: venta.id, p_medio: medio_pago ?? "", p_referencia: referencia_pago ?? "" });
+    if (error) console.error("[pago] no se guardó la forma de pago", error.message);
+  }
+  return venta;
+}
+
+async function registrarVentaInterna(params: {
   id?: string;
   carga_id?: string | null;
   cliente_id: string | null;
@@ -335,7 +348,7 @@ export async function registrarAbono(params: {
   monto: number;
   cobrador_id: string;
   saldoActual: number;
-}) {
+} & PagoInfo) {
   // Idempotencia: no duplicar un abono ya sincronizado
   if (params.id) {
     const { data: existente } = await supabase.from("abonos").select("id").eq("id", params.id).maybeSingle();
@@ -350,6 +363,8 @@ export async function registrarAbono(params: {
     cliente_id: params.cliente_id,
     monto: params.monto,
     cobrador_id: params.cobrador_id,
+    medio_pago: params.medio_pago || null,
+    referencia_pago: params.referencia_pago || null,
   });
   if (aErr) throw aErr;
 

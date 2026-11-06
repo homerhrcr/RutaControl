@@ -18,6 +18,10 @@ import { cn } from "@/lib/utils";
 import { useCargasCamion, usePendientesCamion, descontarPendientes, disponibleCamion } from "@/lib/carga-camion";
 import { validarVentaRuta, estadoStockCamion } from "@/lib/carga-camion-calculos";
 import { ordenarSegunCatalogo } from "@/lib/orden-productos";
+import { useCreditosCliente } from "@/lib/data";
+import { rutaDeCredito } from "@/lib/cobranza-rutas";
+import { PagoCampos, pagoVacio, useMedioPredeterminado, useGuardarComprobante, type PagoDatos } from "@/components/PagoCampos";
+import { AbonoEnVenta, registrarAbonosVisita } from "@/components/AbonoEnVenta";
 
 export function QuickSale({
   cliente,
@@ -51,6 +55,13 @@ export function QuickSale({
   const [editPrecio, setEditPrecio] = useState<CartItem | null>(null);
   const [nuevoPrecio, setNuevoPrecio] = useState("");
   const [motivoPrecio, setMotivoPrecio] = useState("");
+  const [pago, setPago] = useState<PagoDatos>(pagoVacio);
+  const [abonoMonto, setAbonoMonto] = useState(0);
+  const medioDefecto = useMedioPredeterminado();
+  const guardarComprobante = useGuardarComprobante();
+  const { data: creditosCliente = [] } = useCreditosCliente(cliente?.id);
+  // Solo deudas de la ruta del camión: los saldos y abonos se mantienen separados por ruta.
+  const creditosRuta = carga ? creditosCliente.filter((c) => rutaDeCredito(c) === carga.ruta_id) : [];
 
   useEffect(() => {
     setCart({});
@@ -58,6 +69,8 @@ export function QuickSale({
     setSearch("");
     setConfirmOpen(false);
     setMetodoSel("contado");
+    setPago(pagoVacio);
+    setAbonoMonto(0);
   }, [cliente?.id]);
 
   // Recalcula los precios del carrito si cambian cliente, ruta o condiciones; avisa si cambia el importe.
@@ -154,6 +167,18 @@ export function QuickSale({
     setSearch("");
     setConfirmOpen(false);
     setMetodoSel("contado");
+    setPago(pagoVacio);
+    setAbonoMonto(0);
+  }
+
+  /** Abono de la visita y comprobante adjunto: se guardan aunque no haya conexión. */
+  async function extrasVisita(ventaId: string, medio: string | null, referencia: string | null) {
+    if (!cliente || !user) return null;
+    await guardarComprobante(pago.archivo, "ventas", ventaId);
+    if (abonoMonto <= 0) return null;
+    const r = await registrarAbonosVisita({ creditos: creditosRuta, monto: abonoMonto, cliente_id: cliente.id, cobrador_id: user.id, medio_pago: medio ?? (pago.medio || medioDefecto), referencia_pago: referencia ?? (pago.referencia.trim() || null) });
+    toast.success(`Abono ${r.offline ? "guardado offline" : "registrado"} · ${formatCRC(r.aplicado)}`);
+    return r;
   }
 
   async function finalizar(metodo: "contado" | "credito") {
@@ -190,10 +215,13 @@ export function QuickSale({
           : null,
       lat,
       lng,
+      medio_pago: metodo === "contado" ? (pago.medio || medioDefecto) : null,
+      referencia_pago: metodo === "contado" ? (pago.referencia.trim() || null) : null,
     };
 
     if (!navigator.onLine) {
       await queueVenta(ventaParams);
+      await extrasVisita(ventaParams.id, ventaParams.medio_pago, ventaParams.referencia_pago);
       toast.success(`Venta ${metodo} guardada offline · ${formatCRC(total)}`, {
         description: "Se sincronizará al recuperar conexión",
       });
@@ -207,6 +235,7 @@ export function QuickSale({
     try {
       const venta = await registrarVenta(ventaParams);
       toast.success(`Venta ${metodo} registrada · ${formatCRC(total)}`);
+      const abono = await extrasVisita(venta.id, ventaParams.medio_pago, ventaParams.referencia_pago);
       setTiquete({
         venta_id: venta.id,
         cliente_id: cliente.id,
@@ -223,6 +252,9 @@ export function QuickSale({
         total,
         metodo,
         fecha_limite: ventaParams.fecha_limite,
+        medio_pago: ventaParams.medio_pago,
+        referencia_pago: ventaParams.referencia_pago,
+        abono: abono ? { monto: abono.aplicado, saldo: abono.saldo } : null,
       });
       reset();
       onDone();
@@ -234,6 +266,7 @@ export function QuickSale({
       }
       // network failure fallback → queue
       await queueVenta(ventaParams);
+      await extrasVisita(ventaParams.id, ventaParams.medio_pago, ventaParams.referencia_pago);
       toast.warning(`Sin conexión · Venta guardada offline · ${formatCRC(total)}`);
       reset();
       onDone();
@@ -431,6 +464,15 @@ export function QuickSale({
               </Button>
             </div>
           </div>
+          {(metodoSel === "contado" || abonoMonto > 0) && <div className="mt-3"><PagoCampos value={pago} onChange={setPago} /></div>}
+          <div className="mt-3"><AbonoEnVenta creditos={creditosRuta} monto={abonoMonto} onMonto={setAbonoMonto} /></div>
+          {abonoMonto > 0 && (
+            <div className="mt-3 rounded-lg bg-muted p-3 text-sm">
+              <div className="flex justify-between"><span>Compra de hoy{metodoSel === "credito" ? " (a crédito)" : ""}</span><span>{formatCRC(metodoSel === "contado" ? total : 0)}</span></div>
+              <div className="flex justify-between"><span>Abono a deuda anterior</span><span>{formatCRC(abonoMonto)}</span></div>
+              <div className="flex justify-between font-black"><span>Total a cobrar</span><span>{formatCRC((metodoSel === "contado" ? total : 0) + abonoMonto)}</span></div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 border-t p-3">

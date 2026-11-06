@@ -35,6 +35,8 @@ export interface VentaParams {
   fecha_limite?: string | null;
   lat?: number | null;
   lng?: number | null;
+  medio_pago?: string | null;
+  referencia_pago?: string | null;
 }
 
 export interface AbonoParams {
@@ -44,6 +46,8 @@ export interface AbonoParams {
   monto: number;
   cobrador_id: string;
   saldoActual: number;
+  medio_pago?: string | null;
+  referencia_pago?: string | null;
 }
 
 export interface EvidenciaParams {

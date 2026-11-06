@@ -22,8 +22,10 @@ export type Database = {
           credito_id: string
           fecha: string
           id: string
+          medio_pago: string | null
           monto: number
           organization_id: string
+          referencia_pago: string | null
         }
         Insert: {
           cliente_id?: string | null
@@ -32,8 +34,10 @@ export type Database = {
           credito_id: string
           fecha?: string
           id?: string
+          medio_pago?: string | null
           monto?: number
           organization_id?: string
+          referencia_pago?: string | null
         }
         Update: {
           cliente_id?: string | null
@@ -42,8 +46,10 @@ export type Database = {
           credito_id?: string
           fecha?: string
           id?: string
+          medio_pago?: string | null
           monto?: number
           organization_id?: string
+          referencia_pago?: string | null
         }
         Relationships: [
           {
@@ -2143,10 +2149,12 @@ export type Database = {
           id: string
           latitud: number | null
           longitud: number | null
+          medio_pago: string | null
           metodo_pago: Database["public"]["Enums"]["metodo_pago"]
           organization_id: string
           pos_caja_id: string | null
           pos_datos: Json | null
+          referencia_pago: string | null
           ruta_id: string | null
           subtotal: number
           total: number
@@ -2161,10 +2169,12 @@ export type Database = {
           id?: string
           latitud?: number | null
           longitud?: number | null
+          medio_pago?: string | null
           metodo_pago?: Database["public"]["Enums"]["metodo_pago"]
           organization_id?: string
           pos_caja_id?: string | null
           pos_datos?: Json | null
+          referencia_pago?: string | null
           ruta_id?: string | null
           subtotal?: number
           total?: number
@@ -2179,10 +2189,12 @@ export type Database = {
           id?: string
           latitud?: number | null
           longitud?: number | null
+          medio_pago?: string | null
           metodo_pago?: Database["public"]["Enums"]["metodo_pago"]
           organization_id?: string
           pos_caja_id?: string | null
           pos_datos?: Json | null
+          referencia_pago?: string | null
           ruta_id?: string | null
           subtotal?: number
           total?: number
@@ -2302,6 +2314,10 @@ export type Database = {
       }
       registrar_devolucion: { Args: { p: Json }; Returns: string }
       registrar_merma_camion: { Args: { p: Json }; Returns: string }
+      registrar_pago_venta: {
+        Args: { p_medio: string; p_referencia: string; p_venta: string }
+        Returns: undefined
+      }
       sembrar_catalogo_opciones: { Args: { p_org: string }; Returns: undefined }
       sesion_vigente: {
         Args: { p_tipo: string; p_token: string }

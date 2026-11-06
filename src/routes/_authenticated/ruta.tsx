@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRutas, useClientes, useInvalidate, guardarOrdenRuta } from "@/lib/data";
@@ -15,7 +15,7 @@ import { OrdenRuta } from "@/components/OrdenRuta";
 import { moverAPosicion } from "@/lib/orden-ruta";
 import { EvidenciaButton } from "@/components/EvidenciaButton";
 import { useCargasCamion } from "@/lib/carga-camion";
-import { FinalizarRutaButton, PendienteLiquidacionBadge } from "@/components/EstadoRuta";
+import { FinalizarRutaButton } from "@/components/EstadoRuta";
 import { useOnline } from "@/lib/offline";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,14 @@ export function RutaPage() {
   const { isAdmin } = useAuth();
   const online = useOnline();
   const { data: cargas } = useCargasCamion();
-  const misCargas = (cargas ?? []).filter((c) => c.estado !== "cerrada" && (isAdmin || c.vendedor_id === user?.id) && (rutaId === "all" || c.ruta_id === rutaId));
+  // Solo rutas con camión cargado y en curso; finalizadas o cerradas desaparecen.
+  const cargasEnRuta = (cargas ?? []).filter((c) => c.estado === "en_ruta" && (isAdmin || c.vendedor_id === user?.id));
+  const rutasActivas = (rutas ?? []).filter((r) => cargasEnRuta.some((c) => c.ruta_id === r.id));
+  const misCargas = cargasEnRuta.filter((c) => c.ruta_id === rutaId);
+  useEffect(() => {
+    if (!rutasActivas.length) return;
+    if (!rutasActivas.some((r) => r.id === rutaId)) setRutaId(rutasActivas[0].id);
+  }, [rutasActivas.map((r) => r.id).join(","), rutaId]);
   const queryClient = useQueryClient();
 
   const { data: clientes } = useClientes(rutaId === "all" ? undefined : rutaId);
@@ -247,14 +254,26 @@ export function RutaPage() {
     }
   }
 
+  if (cargas && !rutasActivas.length) {
+    return (
+      <div>
+        <PageHeader title="Iniciar Ruta" subtitle={`Vendedor: ${nombre}`} />
+        <div className="flex flex-col items-center justify-center gap-3 p-10 py-24 text-center">
+          <Package className="h-16 w-16 text-muted-foreground" />
+          <p className="text-3xl font-bold">No hay rutas pendientes</p>
+          <p className="max-w-md text-muted-foreground">Para iniciar una ruta debe existir un camión cargado. Las rutas finalizadas pasan a Liquidación de ruta.</p>
+          <div className="flex gap-2"><Button asChild><Link to="/carga-camion">Ir a Carga de camión</Link></Button><Button variant="outline" asChild><Link to="/liquidacion-ruta">Liquidación de ruta</Link></Button></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader title="Iniciar Ruta" subtitle={today ? `Hoy: ${today}` : `Vendedor: ${nombre}`} />
 
       <div className="space-y-4 p-4 md:p-6">
-        {misCargas.map((c) => c.estado === "en_ruta"
-          ? <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-primary bg-primary/10 p-3"><div className="flex items-center gap-3"><span className="relative flex h-3 w-3"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" /><span className="relative inline-flex h-3 w-3 rounded-full bg-primary" /></span><div><p className="font-bold">En ruta · {c.rutas?.nombre}</p><p className="text-xs text-muted-foreground">{c.vehiculo || "Camión"} · Carga del {c.fecha}</p></div></div><FinalizarRutaButton carga={c} disabled={!online} /></div>
-          : <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-warning bg-warning/10 p-3"><div><p className="flex flex-wrap items-center gap-2 font-bold">{c.rutas?.nombre} <PendienteLiquidacionBadge /></p><p className="text-xs text-muted-foreground">Ruta finalizada. Ventas y entregas bloqueadas hasta entregar el camión.{!isAdmin && " Si fue un error, pida a un administrador que la reabra."}</p></div><Button variant="outline" asChild><Link to="/carga-camion">Ir a liquidar</Link></Button></div>)}
+        {misCargas.map((c) => <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-primary bg-primary/10 p-3"><div className="flex items-center gap-3"><span className="relative flex h-3 w-3"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" /><span className="relative inline-flex h-3 w-3 rounded-full bg-primary" /></span><div><p className="font-bold">En ruta · {c.rutas?.nombre}</p><p className="text-xs text-muted-foreground">{c.vehiculo || "Camión"} · Carga del {c.fecha}</p></div></div><FinalizarRutaButton carga={c} disabled={!online} /></div>)}
         {/* resumen */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatCard icon={ShoppingBag} label="Ventas hoy" value={formatCRC(resumen?.totalVentas ?? 0)} />
@@ -266,18 +285,7 @@ export function RutaPage() {
 
         {/* route tabs */}
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant={rutaId === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              setRutaId("all");
-              setOrdenMode(false);
-              setOrderList(null);
-            }}
-          >
-            Todos
-          </Button>
-          {rutas?.map((r) => (
+          {rutasActivas.map((r) => (
             <Button
               key={r.id}
               variant={rutaId === r.id ? "default" : "outline"}

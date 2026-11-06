@@ -177,7 +177,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="mx-3 mb-3 shrink-0 overflow-hidden rounded-xl border [@media(max-height:560px)]:hidden border-sidebar-border shadow-[var(--glow)]">
+        <div className="mx-3 mb-3 shrink-0 overflow-hidden rounded-xl border [@media(max-height:760px)]:hidden border-sidebar-border shadow-[var(--glow)]">
           <div className="relative">
             <img src={truckImg} alt="Camión en ruta" loading="lazy" width={992} height={672} className="h-28 w-full object-cover" />
           </div>

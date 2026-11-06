@@ -246,6 +246,13 @@
       "when": 1793936921307,
       "tag": "0034_finalizar_ruta_pendiente_liquidacion",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793939849911,
+      "tag": "0035_preventa_reserva_camion_en_ruta",
+      "breakpoints": true
     }
   ]
 }

@@ -14,6 +14,10 @@ import { MapaRutas } from "@/components/MapaRutas";
 import { OrdenRuta } from "@/components/OrdenRuta";
 import { moverAPosicion } from "@/lib/orden-ruta";
 import { EvidenciaButton } from "@/components/EvidenciaButton";
+import { useCargasCamion } from "@/lib/carga-camion";
+import { FinalizarRutaButton, PendienteLiquidacionBadge } from "@/components/EstadoRuta";
+import { useOnline } from "@/lib/offline";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -76,6 +80,10 @@ export function RutaPage() {
   const [orderList, setOrderList] = useState<any[] | null>(null);
   const [saving, setSaving] = useState(false);
   const invalidate = useInvalidate();
+  const { isAdmin } = useAuth();
+  const online = useOnline();
+  const { data: cargas } = useCargasCamion();
+  const misCargas = (cargas ?? []).filter((c) => c.estado !== "cerrada" && (isAdmin || c.vendedor_id === user?.id) && (rutaId === "all" || c.ruta_id === rutaId));
   const queryClient = useQueryClient();
 
   const { data: clientes } = useClientes(rutaId === "all" ? undefined : rutaId);
@@ -244,6 +252,9 @@ export function RutaPage() {
       <PageHeader title="Iniciar Ruta" subtitle={today ? `Hoy: ${today}` : `Vendedor: ${nombre}`} />
 
       <div className="space-y-4 p-4 md:p-6">
+        {misCargas.map((c) => c.estado === "en_ruta"
+          ? <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-primary bg-primary/10 p-3"><div className="flex items-center gap-3"><span className="relative flex h-3 w-3"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" /><span className="relative inline-flex h-3 w-3 rounded-full bg-primary" /></span><div><p className="font-bold">En ruta · {c.rutas?.nombre}</p><p className="text-xs text-muted-foreground">{c.vehiculo || "Camión"} · Carga del {c.fecha}</p></div></div><FinalizarRutaButton carga={c} disabled={!online} /></div>
+          : <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-warning bg-warning/10 p-3"><div><p className="flex flex-wrap items-center gap-2 font-bold">{c.rutas?.nombre} <PendienteLiquidacionBadge /></p><p className="text-xs text-muted-foreground">Ruta finalizada. Ventas y entregas bloqueadas hasta entregar el camión.{!isAdmin && " Si fue un error, pida a un administrador que la reabra."}</p></div><Button variant="outline" asChild><Link to="/carga-camion">Ir a liquidar</Link></Button></div>)}
         {/* resumen */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatCard icon={ShoppingBag} label="Ventas hoy" value={formatCRC(resumen?.totalVentas ?? 0)} />

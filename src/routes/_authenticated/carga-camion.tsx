@@ -240,7 +240,7 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const resumen: [string, number | null][] = cerrada
     ? [["Ventas reales", total], ["Costo de lo vendido", costoVendido], ["Pérdida por merma", perdidaMerma], ["Pérdida por devoluciones", perdidaDevol], ["Sobrantes devueltos a bodega (no es pérdida)", sobrantes], ["Utilidad real de la ruta", utilidadReal]]
     : [["Costo total del producto que sale", costoTotal], ["Precio de venta estimado cargado", ventaTotal], ["Utilidad estimada", estimacion.utilidad]];
-  const reporte: Reporte = { titulo: "Carga y liquidación de camión", descripcion: `${carga.vehiculo || "Camión"} · ${cerrada ? "Cerrada" : "En ruta"}${locales.length ? " · Incluye ventas pendientes de sincronizar" : ""}`, indicadores: [
+  const reporte: Reporte = { titulo: "Carga y liquidación de camión", descripcion: `${carga.vehiculo || "Camión"} · ${cerrada ? "Cerrada" : pendienteLiq ? "Pendiente de liquidación" : "En ruta"}${locales.length ? " · Incluye ventas pendientes de sincronizar" : ""}`, indicadores: [
     ...resumen.map(([label, valor]) => ({ label, valor: valor ?? "Pendiente de precio", tipo: valor === null ? "texto" as const : "moneda" as const })),
     { label: "Unidades cargadas", valor: detalle.reduce((s, d) => s + Number(d.preventa) + Number(d.extra), 0), tipo: "entero" },
     { label: "Unidades vendidas", valor: detalle.reduce((s, d) => s + Number(d.vendido), 0), tipo: "entero" },

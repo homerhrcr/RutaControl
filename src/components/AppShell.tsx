@@ -7,6 +7,7 @@ import { useIncrementalPull } from "@/lib/sync-pull";
 import { OfflineStatus } from "@/components/OfflineStatus";
 import { OrgSwitcher } from "@/components/OrgSwitcher";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import truckImg from "@/assets/sidebar-truck.jpg";
 import logo from "@/assets/logo-ruta-directo-2026.jpg.asset.json";
@@ -35,6 +36,7 @@ import {
   ClipboardCheck,
   ChevronDown,
   Settings,
+  Menu,
 } from "lucide-react";
 
 interface NavItem {
@@ -79,6 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { online, count } = useOfflineQueue();
   useIncrementalPull();
   const [abiertos, setAbiertos] = useState<Record<string, boolean>>({});
+  const [menuMovil, setMenuMovil] = useState(false);
 
   async function handleSignOut() {
     await signOut();
@@ -89,10 +92,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navItems = NAV.filter((n) => !n.adminOnly || isAdmin);
   const mobileItems = navItems.filter((n) => n.mobile);
 
-  return (
-    <div className="flex min-h-screen bg-background">
-      {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground md:flex">
+  const panel = (movil: boolean) => (
+      <aside
+        onClick={movil ? (e) => { if ((e.target as HTMLElement).closest("a")) setMenuMovil(false); } : undefined}
+        className={cn(
+          "shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground",
+          movil ? "flex h-full w-full" : "sticky top-0 hidden h-screen w-60 md:flex",
+        )}
+      >
         <div className="flex items-center gap-2 px-5 py-5">
           <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl">
             <img src={logo.url} alt="Ruta Directo" className="h-full w-full object-cover" />
@@ -170,7 +177,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="mx-3 mb-3 shrink-0 overflow-hidden rounded-xl border border-sidebar-border shadow-[var(--glow)]">
+        <div className="mx-3 mb-3 shrink-0 overflow-hidden rounded-xl border [@media(max-height:560px)]:hidden border-sidebar-border shadow-[var(--glow)]">
           <div className="relative">
             <img src={truckImg} alt="Camión en ruta" loading="lazy" width={992} height={672} className="h-28 w-full object-cover" />
           </div>
@@ -194,12 +201,26 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </aside>
+  );
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      {panel(false)}
+      <Sheet open={menuMovil} onOpenChange={setMenuMovil}>
+        <SheetContent side="left" className="w-72 max-w-[85vw] border-sidebar-border bg-sidebar p-0 [&>button]:text-sidebar-foreground">
+          <SheetTitle className="sr-only">Menú principal</SheetTitle>
+          {panel(true)}
+        </SheetContent>
+      </Sheet>
 
       {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
         <header className="flex items-center justify-between gap-2 border-b bg-card px-4 py-3 md:hidden">
           <div className="flex min-w-0 items-center gap-2">
+            <Button variant="ghost" size="icon" className="shrink-0" aria-label="Abrir menú" onClick={() => setMenuMovil(true)}>
+              <Menu className="h-6 w-6" />
+            </Button>
             <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg bg-white">
               <img src={logo.url} alt="Ruta Directo" className="h-full w-full object-cover" />
             </div>
@@ -244,7 +265,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1 py-2.5 text-xs font-medium transition-colors",
+                  "flex min-w-0 flex-1 flex-col items-center gap-1 px-0.5 py-2 text-center text-[11px] font-medium leading-tight transition-colors",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
@@ -253,16 +274,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
-          <Link
-            to="/menu"
-            className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-2.5 text-xs font-medium transition-colors",
-              pathname === "/menu" ? "text-primary" : "text-muted-foreground",
-            )}
+          <button
+            type="button"
+            onClick={() => setMenuMovil(true)}
+            className="flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[11px] font-medium leading-tight text-muted-foreground transition-colors"
           >
-            <LayoutDashboard className="h-6 w-6" />
-            Más
-          </Link>
+            <Menu className="h-6 w-6" />
+            Menú
+          </button>
         </nav>
       </div>
     </div>

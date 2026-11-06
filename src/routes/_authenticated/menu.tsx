@@ -36,17 +36,17 @@ export const Route = createFileRoute("/_authenticated/menu")({
 });
 
 const ITEMS = [
-  { to: "/pos", label: "Punto de Venta", icon: Store },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
   { to: "/carga-camion", label: "Carga de camión", icon: Truck },
-  { to: "/liquidacion-ruta", label: "Liquidación de ruta", icon: Truck },
   { to: "/mapa-rutas", label: "Mapa de Rutas", icon: Truck },
   { to: "/devoluciones", label: "Devoluciones", icon: Truck },
-  { to: "/sincronizacion", label: "Sincronización", icon: Send },
-  { to: "/productos", label: "Productos", icon: Package },
-  { to: "/cobranza", label: "Crédito y Cobros", icon: CreditCard },
+  { to: "/liquidacion-ruta", label: "Liquidación de ruta", icon: Truck },
   { to: "/gastos", label: "Gastos", icon: Wallet },
+  { to: "/cobranza", label: "Crédito y Cobros", icon: CreditCard },
+  { to: "/productos", label: "Productos", icon: Package },
+  { to: "/pos", label: "Punto de Venta", icon: Store },
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
+  { to: "/sincronizacion", label: "Sincronización", icon: Send },
   { to: "/telegram", label: "Telegram", icon: Send },
   { to: "/usuarios", label: "Usuarios", icon: UserCog, adminOnly: true },
   { to: "/auditoria", label: "Auditoría", icon: ScrollText, adminOnly: true },

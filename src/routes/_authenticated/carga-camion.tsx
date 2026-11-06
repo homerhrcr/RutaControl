@@ -57,10 +57,10 @@ export function CargaCamionPage({ modo }: { modo: "carga" | "liquidacion" }) {
     <div className="space-y-4 p-4 md:p-6">
       {!online && <p className="text-sm text-warning">Sin conexión · Inventario guardado en el dispositivo. Cargas y cierres requieren conexión.</p>}
       {carga ? <><Button variant="ghost" onClick={() => setSeleccion(null)}><ArrowLeft className="mr-2 h-4 w-4" />Todas las cargas</Button><DetalleCarga carga={carga} pendientes={pendientes} /></> : <>
-        <div className="flex flex-wrap items-center gap-5 border-b pb-4">
+        {modo === "carga" && <div className="flex flex-wrap items-center gap-5 border-b pb-4">
           <div><p className="text-xs text-muted-foreground">Camiones en ruta</p><p className="text-2xl font-bold">{visibles.filter((c) => c.estado === "en_ruta").length}</p></div>
           <div><p className="text-xs text-muted-foreground">Disponible para venta libre</p><p className="text-2xl font-bold text-primary">{numero(visibles.filter((c) => c.estado === "en_ruta").flatMap((c) => descontarPendientes(c, pendientes)).reduce((s, d) => s + disponibleCamion(d), 0))}</p></div>
-        </div>
+        </div>}
         {isPending && <p className="text-muted-foreground">Cargando…</p>}
         {error && <p className="text-destructive">No se pudieron leer las cargas. {error.message}</p>}
         {!isPending && !visibles.length && <div className="py-12 text-center"><Truck className="mx-auto mb-3 h-10 w-10 text-primary" /><p className="font-semibold">No hay cargas registradas</p></div>}

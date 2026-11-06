@@ -25,6 +25,9 @@ export interface TiqueteData {
   total: number;
   metodo: "contado" | "credito";
   fecha_limite?: string | null;
+  medio_pago?: string | null;
+  referencia_pago?: string | null;
+  abono?: { monto: number; saldo: number } | null;
   pos?: import("@/lib/pos-calculos").DatosPOS & { vuelto: number; pendiente: boolean };
 }
 
@@ -48,7 +51,11 @@ function buildTexto(t: TiqueteData, nombre: string, telefono: string) {
     "--------------------------------",
     t.descuento > 0 ? `Descuento: -${formatCRC(t.descuento)}` : null,
     `*TOTAL: ${formatCRC(t.total)}*`,
-    `Pago: ${t.pos ? t.pos.medio.toUpperCase() : t.metodo === "contado" ? "Contado" : "Crédito"}`,
+    `Pago: ${t.pos ? t.pos.medio.toUpperCase() : t.metodo === "contado" ? (t.medio_pago || "Contado") : "Crédito"}`,
+    t.referencia_pago ? `Referencia: ${t.referencia_pago}` : null,
+    t.abono ? `Abono a crédito: ${formatCRC(t.abono.monto)}` : null,
+    t.abono ? `*Total cobrado: ${formatCRC((t.metodo === "contado" ? t.total : 0) + t.abono.monto)}*` : null,
+    t.abono ? `Saldo pendiente: ${formatCRC(t.abono.saldo)}` : null,
     t.pos?.medio === "efectivo" ? `Recibido: ${formatCRC(t.pos.recibido)} · Vuelto: ${formatCRC(t.pos.vuelto)}` : null,
     t.pos ? "Comprobante interno. No es factura electrónica autorizada por Hacienda." : null,
     t.pos?.pendiente ? "Pendiente de sincronización" : null,
@@ -187,8 +194,10 @@ export function Tiquete({
             </div>
             <div className="row">
               <span>Pago</span>
-              <span>{data.pos ? data.pos.medio.toUpperCase() : data.metodo === "contado" ? "Contado" : "Crédito"}</span>
+              <span>{data.pos ? data.pos.medio.toUpperCase() : data.metodo === "contado" ? (data.medio_pago || "Contado") : "Crédito"}</span>
             </div>
+            {data.referencia_pago && <div className="row"><span>Referencia</span><span>{data.referencia_pago}</span></div>}
+            {data.abono && <><div className="row"><span>Abono a crédito</span><span>{formatCRC(data.abono.monto)}</span></div><div className="row b"><span>Total cobrado</span><span>{formatCRC((data.metodo === "contado" ? data.total : 0) + data.abono.monto)}</span></div><div className="row"><span>Saldo pendiente</span><span>{formatCRC(data.abono.saldo)}</span></div></>}
             {data.pos?.medio === "efectivo" && <><div className="row"><span>Recibido</span><span>{formatCRC(data.pos.recibido)}</span></div><div className="row"><span>Vuelto</span><span>{formatCRC(data.pos.vuelto)}</span></div></>}
             {data.pos && <p className="mt-3 text-center text-[10px]">Comprobante interno. No es factura electrónica autorizada por Hacienda.{data.pos.pendiente ? " Pendiente de sincronización." : ""}</p>}
             <div className="sep" />

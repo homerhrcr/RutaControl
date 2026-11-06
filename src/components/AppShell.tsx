@@ -32,6 +32,7 @@ import {
   Send,
   Store,
   Map as MapIcon,
+  ClipboardCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -40,15 +41,17 @@ interface NavItem {
   icon: typeof LayoutDashboard;
   adminOnly?: boolean;
   mobile?: boolean;
+  group?: string;
 }
 
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true, mobile: true },
-  { to: "/ruta", label: "Iniciar Ruta", icon: Truck, mobile: true },
+  { to: "/ruta", label: "Iniciar ruta", icon: Truck, mobile: true, group: "Rutas" },
+  { to: "/carga-camion", label: "Carga de camión", icon: Truck, group: "Rutas" },
+  { to: "/liquidacion-ruta", label: "Liquidación de ruta", icon: ClipboardCheck, group: "Rutas" },
   { to: "/mapa-rutas", label: "Mapa de Rutas", icon: MapIcon },
   { to: "/pos", label: "Punto de Venta", icon: Store },
   { to: "/pedidos", label: "Preventa", icon: ClipboardList, mobile: true },
-  { to: "/carga-camion", label: "Carga de Camión", icon: Truck },
   { to: "/devoluciones", label: "Devoluciones", icon: Undo2 },
   { to: "/clientes", label: "Clientes", icon: Users, mobile: true },
   { to: "/cobranza", label: "Crédito y Cobros", icon: HandCoins, mobile: true },
@@ -96,9 +99,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           <OrgSwitcher className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
         </div>
         <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2">
-          {navItems.map((item) => {
+          {navItems.map((item, i) => {
             const active = pathname === item.to;
+            const header = item.group && navItems[i - 1]?.group !== item.group;
             return (
+              <div key={item.to}>
+              {header && <p className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">{item.group}</p>}
               <Link
                 key={item.to}
                 to={item.to}
@@ -112,6 +118,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <item.icon className="h-[18px] w-[18px] shrink-0" />
                 {item.label}
               </Link>
+              </div>
             );
           })}
         </nav>

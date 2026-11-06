@@ -36,12 +36,12 @@ export const Route = createFileRoute("/_authenticated/carga-camion")({
     { property: "og:description", content: "Inventario del camión, ventas en ruta y devolución de sobrantes a bodega." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),
-  component: CargaCamionPage,
+  component: () => <CargaCamionPage modo="carga" />,
 });
 const hoy = () => new Date().toLocaleDateString("en-CA");
 const numero = (n: number) => n.toLocaleString("es-CR", { maximumFractionDigits: 2 });
 
-function CargaCamionPage() {
+export function CargaCamionPage({ modo }: { modo: "carga" | "liquidacion" }) {
   const { data: cargas, isPending, error } = useCargasCamion();
   const { data: pendientes = [] } = usePendientesCamion();
   const { user, isAdmin } = useAuth();
@@ -51,20 +51,22 @@ function CargaCamionPage() {
   const carga = cargas?.find((c) => c.id === seleccion);
   const visibles = (cargas ?? []).filter((c) => isAdmin || c.vendedor_id === user?.id);
   return <div>
-    <PageHeader title="Carga de Camión" subtitle="Preventa · Producto extra · Liquidación" action={<Button disabled={!online} onClick={() => setNueva(true)}><Plus className="mr-2 h-4 w-4" />Nueva carga</Button>} />
+    {modo === "carga"
+      ? <PageHeader title="Carga de camión" subtitle="Preventa · Producto extra · Camiones en ruta" action={<Button disabled={!online} onClick={() => setNueva(true)}><Plus className="mr-2 h-4 w-4" />Nueva carga</Button>} />
+      : <PageHeader title="Liquidación de ruta" subtitle="Rutas finalizadas pendientes de liquidar · Rutas liquidadas" />}
     <div className="space-y-4 p-4 md:p-6">
       {!online && <p className="text-sm text-warning">Sin conexión · Inventario guardado en el dispositivo. Cargas y cierres requieren conexión.</p>}
       {carga ? <><Button variant="ghost" onClick={() => setSeleccion(null)}><ArrowLeft className="mr-2 h-4 w-4" />Todas las cargas</Button><DetalleCarga carga={carga} pendientes={pendientes} /></> : <>
-        <div className="flex flex-wrap items-center gap-5 border-b pb-4">
+        {modo === "carga" && <div className="flex flex-wrap items-center gap-5 border-b pb-4">
           <div><p className="text-xs text-muted-foreground">Camiones en ruta</p><p className="text-2xl font-bold">{visibles.filter((c) => c.estado === "en_ruta").length}</p></div>
           <div><p className="text-xs text-muted-foreground">Disponible para venta libre</p><p className="text-2xl font-bold text-primary">{numero(visibles.filter((c) => c.estado === "en_ruta").flatMap((c) => descontarPendientes(c, pendientes)).reduce((s, d) => s + disponibleCamion(d), 0))}</p></div>
-        </div>
+        </div>}
         {isPending && <p className="text-muted-foreground">Cargando…</p>}
         {error && <p className="text-destructive">No se pudieron leer las cargas. {error.message}</p>}
         {!isPending && !visibles.length && <div className="py-12 text-center"><Truck className="mx-auto mb-3 h-10 w-10 text-primary" /><p className="font-semibold">No hay cargas registradas</p></div>}
         {(() => {
           const ficha = (c: CargaCamion) => <div key={c.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="font-semibold">{c.rutas?.nombre}</h2><p className="text-sm text-muted-foreground">{c.fecha} · {c.vehiculo || "Sin identificación del vehículo"}</p></div>{c.estado === "pendiente_liquidacion" ? <PendienteLiquidacionBadge /> : <Badge variant={c.estado === "en_ruta" ? "default" : "secondary"}>{c.estado === "en_ruta" ? "En ruta" : "Cerrada"}</Badge>}</div>{c.estado === "pendiente_liquidacion" && c.nota_finalizacion && <p className="mt-1 text-xs text-muted-foreground">Nota: {c.nota_finalizacion}</p>}
+            <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="font-semibold">{c.rutas?.nombre}</h2><p className="text-sm text-muted-foreground">{c.fecha} · {c.vehiculo || "Sin identificación del vehículo"}</p></div>{c.estado === "pendiente_liquidacion" ? <PendienteLiquidacionBadge /> : <Badge variant={c.estado === "en_ruta" ? "default" : "secondary"}>{c.estado === "en_ruta" ? "En ruta" : "Liquidada"}</Badge>}</div>{c.estado === "pendiente_liquidacion" && c.nota_finalizacion && <p className="mt-1 text-xs text-muted-foreground">Nota: {c.nota_finalizacion}</p>}
             <div className="my-3 flex flex-wrap gap-4 text-sm"><span>{numero(c.cargas_camion_detalle.reduce((s, d) => s + Number(d.preventa) + Number(d.extra), 0))} cargadas</span><span>{numero(c.cargas_camion_detalle.reduce((s, d) => s + Number(d.vendido), 0))} vendidas</span>{c.estado === "en_ruta" && <span className="font-semibold text-primary">{numero(descontarPendientes(c, pendientes).reduce((s, d) => s + disponibleCamion(d), 0))} disponibles para vender</span>}{c.estado === "cerrada" && <><span>{numero(c.cargas_camion_detalle.reduce((s, d) => s + Number(d.devuelto), 0))} devueltas a bodega</span><span className="text-destructive">{numero(c.cargas_camion_detalle.reduce((s, d) => s + Number(d.merma), 0))} mermas</span></>}</div>
             <Button variant="outline" size="sm" onClick={() => setSeleccion(c.id)}>{c.estado === "pendiente_liquidacion" ? "Liquidar" : c.estado === "en_ruta" ? "Ver carga" : "Ver liquidación"}</Button>
           </div>;
@@ -73,11 +75,17 @@ function CargaCamionPage() {
           const grupos = new Map<string, CargaCamion[]>();
           for (const c of visibles) if (c.estado === "cerrada") grupos.set(c.fecha, [...(grupos.get(c.fecha) ?? []), c]);
           const historico = [...grupos.entries()].sort(([a], [b]) => b.localeCompare(a));
-          return <Tabs defaultValue="activas">
-            <TabsList><TabsTrigger value="activas">En ruta ({activas.length}){pendLiq.length > 0 && <span className="ml-2 animate-pulse rounded-full bg-warning px-1.5 text-xs font-bold text-warning-foreground">{pendLiq.length} por liquidar</span>}</TabsTrigger><TabsTrigger value="historico">Histórico ({visibles.length - activas.length})</TabsTrigger></TabsList>
-            <TabsContent value="activas" className="space-y-4">{!activas.length && <p className="text-sm text-muted-foreground">No hay camiones en ruta.</p>}{pendLiq.length > 0 && <section className="rounded-lg border-2 border-warning p-3"><h3 className="mb-2 flex items-center gap-2 font-bold"><PendienteLiquidacionBadge />Rutas pendientes de liquidar ({pendLiq.length})</h3><div className="grid gap-3 lg:grid-cols-2">{pendLiq.map(ficha)}</div></section>}<div className="grid gap-3 lg:grid-cols-2">{activas.filter((c) => c.estado === "en_ruta").map(ficha)}</div></TabsContent>
-            <TabsContent value="historico">{!historico.length && <p className="text-sm text-muted-foreground">No hay cargas cerradas.</p>}
-              <Accordion type="multiple">{historico.map(([fecha, cs]) => <AccordionItem key={fecha} value={fecha}><AccordionTrigger><span className="flex flex-wrap items-center gap-2"><Folder className="h-5 w-5 text-primary" />{fechaLegible(fecha)}<Badge variant="secondary">{cs.length} carga{cs.length === 1 ? "" : "s"}</Badge></span></AccordionTrigger><AccordionContent><div className="grid gap-3 lg:grid-cols-2">{cs.map(ficha)}</div></AccordionContent></AccordionItem>)}</Accordion>
+          if (modo === "carga") return <div className="space-y-4">
+            <h3 className="font-semibold">Camiones en ruta ({activas.filter((c) => c.estado === "en_ruta").length})</h3>
+            {!activas.some((c) => c.estado === "en_ruta") && <p className="text-sm text-muted-foreground">No hay camiones en ruta.</p>}
+            {pendLiq.length > 0 && <p className="text-sm"><PendienteLiquidacionBadge /> <Link to="/liquidacion-ruta" className="ml-2 underline">{pendLiq.length} ruta(s) en Liquidación de ruta</Link></p>}
+            <div className="grid gap-3 lg:grid-cols-2">{activas.filter((c) => c.estado === "en_ruta").map(ficha)}</div>
+          </div>;
+          return <Tabs defaultValue="pendientes">
+            <TabsList><TabsTrigger value="pendientes">Pendientes de liquidar ({pendLiq.length}){pendLiq.length > 0 && <span className="ml-2 h-2 w-2 animate-pulse rounded-full bg-warning" />}</TabsTrigger><TabsTrigger value="historico">Rutas liquidadas ({visibles.length - activas.length})</TabsTrigger></TabsList>
+            <TabsContent value="pendientes" className="space-y-4">{!pendLiq.length && <p className="py-10 text-center text-lg font-semibold text-muted-foreground">No hay rutas pendientes de liquidar</p>}{pendLiq.length > 0 && <section className="rounded-lg border-2 border-warning p-3"><h3 className="mb-2 flex items-center gap-2 font-bold"><PendienteLiquidacionBadge />Rutas pendientes de liquidar ({pendLiq.length})</h3><div className="grid gap-3 lg:grid-cols-2">{pendLiq.map(ficha)}</div></section>}</TabsContent>
+            <TabsContent value="historico">{!historico.length && <p className="text-sm text-muted-foreground">No hay rutas liquidadas.</p>}
+              <Accordion type="multiple">{historico.map(([fecha, cs]) => <AccordionItem key={fecha} value={fecha}><AccordionTrigger><span className="flex flex-wrap items-center gap-2"><Folder className="h-5 w-5 text-primary" />{fechaLegible(fecha)}<Badge variant="secondary">{cs.length} ruta{cs.length === 1 ? "" : "s"}</Badge></span></AccordionTrigger><AccordionContent><div className="grid gap-3 lg:grid-cols-2">{cs.map(ficha)}</div></AccordionContent></AccordionItem>)}</Accordion>
             </TabsContent>
           </Tabs>;
         })()}

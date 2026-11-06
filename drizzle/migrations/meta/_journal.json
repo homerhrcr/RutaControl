@@ -239,6 +239,13 @@
       "when": 1793819599471,
       "tag": "0033_sesiones_dos_dispositivos_flexibles",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793936921307,
+      "tag": "0034_finalizar_ruta_pendiente_liquidacion",
+      "breakpoints": true
     }
   ]
 }

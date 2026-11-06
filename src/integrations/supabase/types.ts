@@ -113,7 +113,10 @@ export type Database = {
           created_at: string
           estado: string
           fecha: string
+          finalizada_en: string | null
+          finalizada_por: string | null
           id: string
+          nota_finalizacion: string | null
           notas: string | null
           organization_id: string
           ruta_id: string
@@ -126,7 +129,10 @@ export type Database = {
           created_at?: string
           estado?: string
           fecha?: string
+          finalizada_en?: string | null
+          finalizada_por?: string | null
           id?: string
+          nota_finalizacion?: string | null
           notas?: string | null
           organization_id?: string
           ruta_id: string
@@ -139,7 +145,10 @@ export type Database = {
           created_at?: string
           estado?: string
           fecha?: string
+          finalizada_en?: string | null
+          finalizada_por?: string | null
           id?: string
+          nota_finalizacion?: string | null
           notas?: string | null
           organization_id?: string
           ruta_id?: string
@@ -2264,6 +2273,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      finalizar_ruta_carga: {
+        Args: { p_carga: string; p_nota: string }
+        Returns: undefined
+      }
       guardar_orden_productos: { Args: { p_items: Json }; Returns: number }
       guardar_orden_ruta: { Args: { p_items: Json }; Returns: number }
       has_role: {
@@ -2279,6 +2292,10 @@ export type Database = {
       pos_abrir_caja: { Args: { p: Json }; Returns: string }
       pos_cerrar_caja: { Args: { p: Json }; Returns: Json }
       pos_registrar_venta: { Args: { p: Json }; Returns: Json }
+      reabrir_ruta_carga: {
+        Args: { p_carga: string; p_motivo: string }
+        Returns: undefined
+      }
       reclamar_sesion: {
         Args: { p_tipo: string; p_token: string; p_user_agent?: string }
         Returns: undefined

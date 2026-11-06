@@ -6,7 +6,10 @@ import {
   useInvalidate,
   eliminarVenta,
   eliminarAbono,
+  useCliente,
 } from "@/lib/data";
+import { calcularEstadoCuenta, textoWhatsApp } from "@/lib/estado-cuenta";
+import { enviarEstadoCuentaPorCorreo } from "@/lib/correo-estado-cuenta.functions";
 import { useAuth } from "@/lib/auth";
 import { useEmpresa } from "@/lib/empresa";
 import { formatCRC } from "@/lib/format";
@@ -24,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Trash2, Pencil, Printer } from "lucide-react";
+import { Banknote, CreditCard, HandCoins, AlertCircle, Copy, MessageCircle, Mail, Trash2, Pencil, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { editarPrecioLineaVenta } from "@/lib/precios.functions";
@@ -69,6 +72,10 @@ export function HistorialCliente({
   const [motivoPrecio, setMotivoPrecio] = useState("");
   const [guardandoPrecio, setGuardandoPrecio] = useState(false);
   const [credEdit, setCredEdit] = useState<{ c: any; modo: "editar" | "borrar" } | null>(null);
+  const { data: clienteFicha } = useCliente(cliente?.id);
+  const enviarEC = useServerFn(enviarEstadoCuentaPorCorreo);
+  const [correoEC, setCorreoEC] = useState<string | null>(null);
+  const [enviandoEC, setEnviandoEC] = useState(false);
 
   async function confirmarPrecio() {
     if (!editLinea) return;
@@ -210,6 +217,27 @@ export function HistorialCliente({
     setTimeout(() => win.print(), 300);
   }
 
+  async function copiarWhatsApp() {
+    const ec = calcularEstadoCuenta(ventas ?? [], abonos ?? [], todosPendientes ?? [], desde || undefined, hasta || undefined);
+    try {
+      await navigator.clipboard.writeText(textoWhatsApp(ec, empresa?.nombre ?? "", cliente?.nombre ?? "", formatCRC));
+      toast.success("Estado de cuenta copiado para WhatsApp");
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  }
+
+  async function enviarCorreoEC() {
+    if (!cliente || !correoEC) return;
+    setEnviandoEC(true);
+    try {
+      const r = await enviarEC({ data: { cliente_id: cliente.id, correo: correoEC.trim(), desde, hasta } });
+      if (r.enviado) { toast.success(`Estado de cuenta enviado a ${correoEC.trim()}`); setCorreoEC(null); }
+      else toast.error(r.motivo === "bloqueado" ? "Ese correo no acepta mensajes" : "No se pudo enviar el correo");
+    } catch { toast.error("Revise el correo e intente de nuevo"); }
+    finally { setEnviandoEC(false); }
+  }
+
   async function copiarMensaje() {
     try {
       await navigator.clipboard.writeText(buildMensaje());
@@ -273,6 +301,21 @@ export function HistorialCliente({
             <label className="text-xs text-muted-foreground">Hasta</label>
             <Input type="date" className="h-9" value={hasta} onChange={(e) => setHasta(e.target.value)} />
           </div>
+          <div className="col-span-2 flex flex-wrap gap-2 pt-1">
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={copiarWhatsApp}>
+              <MessageCircle className="h-4 w-4" /> Copiar para WhatsApp
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setCorreoEC(clienteFicha?.correo_fe ?? "")}>
+              <Mail className="h-4 w-4" /> Enviar por correo
+            </Button>
+          </div>
+          {correoEC !== null && (
+            <div className="col-span-2 flex gap-2">
+              <Input type="email" inputMode="email" placeholder="correo@cliente.com" aria-label="Correo del cliente" value={correoEC} onChange={(e) => setCorreoEC(e.target.value)} />
+              <Button size="sm" className="h-10" disabled={enviandoEC || !correoEC.trim()} onClick={enviarCorreoEC}>{enviandoEC ? "Enviando…" : "Enviar"}</Button>
+              <Button size="sm" variant="ghost" className="h-10" onClick={() => setCorreoEC(null)}>Cancelar</Button>
+            </div>
+          )}
         </div>)}
 
         <div className="flex-1 overflow-y-auto p-3">

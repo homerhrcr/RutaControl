@@ -111,7 +111,7 @@ export function AbonoDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-h-[90dvh] max-w-sm overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <HandCoins className="h-5 w-5 text-accent" /> Registrar abono

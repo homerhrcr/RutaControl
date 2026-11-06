@@ -12,6 +12,10 @@ import { queueEntrega } from "@/lib/offline";
 import { Tiquete, type TiqueteData } from "@/components/Tiquete";
 import { CancelarPedido } from "@/components/CancelarPedido";
 import { XCircle } from "lucide-react";
+import { useCreditosCliente } from "@/lib/data";
+import { rutaDeCredito } from "@/lib/cobranza-rutas";
+import { PagoCampos, pagoVacio, useMedioPredeterminado, useGuardarComprobante, type PagoDatos } from "@/components/PagoCampos";
+import { AbonoEnVenta, registrarAbonosVisita } from "@/components/AbonoEnVenta";
 
 export const PEDIDO_ENTREGA_SELECT = "*, clientes(nombre), rutas(nombre), pedidos_detalle(*)";
 
@@ -27,6 +31,22 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
   const [cancelar, setCancelar] = useState(false);
   const [tiquete, setTiquete] = useState<TiqueteData | null>(null);
   const total = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  const [pago, setPago] = useState<PagoDatos>(pagoVacio);
+  const [abonoMonto, setAbonoMonto] = useState(0);
+  const medioDefecto = useMedioPredeterminado();
+  const guardarComprobante = useGuardarComprobante();
+  const { data: creditosCliente = [] } = useCreditosCliente(pedido.cliente_id);
+  const creditosRuta = pedido.ruta_id ? creditosCliente.filter((c) => rutaDeCredito(c) === pedido.ruta_id) : [];
+  const medio = metodo === "contado" ? (pago.medio || medioDefecto) : null;
+  const referencia = metodo === "contado" ? (pago.referencia.trim() || null) : null;
+
+  async function extras(ventaId: string) {
+    await guardarComprobante(pago.archivo, "ventas", ventaId);
+    if (abonoMonto <= 0) return null;
+    const r = await registrarAbonosVisita({ creditos: creditosRuta, monto: abonoMonto, cliente_id: pedido.cliente_id, cobrador_id: vendedorId, medio_pago: medio ?? (pago.medio || medioDefecto), referencia_pago: referencia ?? (pago.referencia.trim() || null) });
+    toast.success(`Abono ${r.offline ? "guardado offline" : "registrado"} · ${formatCRC(r.aplicado)}`);
+    return r;
+  }
 
   async function confirmar() {
     const entregados = items.filter((i) => i.cantidad > 0);
@@ -38,9 +58,10 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
     const cargaId = carga?.id ?? pedido.carga_id ?? null;
     if (!carga || !validarVentaRuta(carga, pedido.ruta_id ?? carga.ruta_id, descontarPendientes(carga, pendientes, pedido.venta_id ?? pedido.id), entregados)) return toast.error("No hay un camión activo de la ruta con existencias suficientes para entregar este pedido");
     setBusy(true);
-    const ventaP = { id: pedido.venta_id ?? pedido.id, carga_id: cargaId, cliente_id: pedido.cliente_id, ruta_id: pedido.ruta_id, vendedor_id: vendedorId, items: entregados, descuento: 0, metodo };
+    const ventaP = { id: pedido.venta_id ?? pedido.id, carga_id: cargaId, cliente_id: pedido.cliente_id, ruta_id: pedido.ruta_id, vendedor_id: vendedorId, items: entregados, descuento: 0, metodo, medio_pago: medio, referencia_pago: referencia };
     if (!navigator.onLine) {
       await queueEntrega(pedido.id, ventaP);
+      await extras(ventaP.id);
       setBusy(false);
       toast.info("Sin conexión: la entrega se facturará al reconectar");
       return onClose();
@@ -56,10 +77,13 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
         items: entregados,
         descuento: 0,
         metodo,
+        medio_pago: medio,
+        referencia_pago: referencia,
       });
       const { error } = await supabase.from("pedidos").update({ estado: "entregado", venta_id: venta.id }).eq("id", pedido.id);
       if (error) throw error;
       toast.success("Pedido entregado y facturado");
+      const abono = await extras(venta.id);
       invalidate(["pedidos", "ventas", "productos", "creditos", "creditos-pendientes", "cargas_camion", "ventas-camion"]);
       setTiquete({
         venta_id: venta.id,
@@ -71,6 +95,9 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
         descuento: 0,
         total: Number(venta.total),
         metodo,
+        medio_pago: medio,
+        referencia_pago: referencia,
+        abono: abono ? { monto: abono.aplicado, saldo: abono.saldo } : null,
       });
     } catch (e: any) {
       toast.error(e.message ?? "No se pudo entregar");
@@ -93,6 +120,9 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
             <Button variant={metodo === "contado" ? "default" : "outline"} onClick={() => setMetodo("contado")}>Contado</Button>
             <Button variant={metodo === "credito" ? "default" : "outline"} onClick={() => setMetodo("credito")}>Crédito</Button>
           </div>
+          {(metodo === "contado" || abonoMonto > 0) && <PagoCampos value={pago} onChange={setPago} />}
+          <AbonoEnVenta creditos={creditosRuta} monto={abonoMonto} onMonto={setAbonoMonto} />
+          {abonoMonto > 0 && <p className="text-sm font-semibold">Total a cobrar: {formatCRC((metodo === "contado" ? total : 0) + abonoMonto)}</p>}
           <Button className="w-full" size="lg" disabled={busy} onClick={confirmar}>{busy ? "Procesando…" : `Confirmar venta · ${formatCRC(total)}`}</Button>
           <Button className="w-full gap-2" variant="outline" disabled={busy} onClick={() => setCancelar(true)}><XCircle className="h-4 w-4" />Cancelar pedido</Button>
         </div>

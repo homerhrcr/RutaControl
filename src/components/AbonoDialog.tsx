@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { HandCoins } from "lucide-react";
 import { limitarCreditos } from "@/lib/cobranza-rutas";
+import { PagoCampos, pagoVacio, useMedioPredeterminado, useGuardarComprobante, type PagoDatos } from "@/components/PagoCampos";
 
 export function AbonoDialog({
   cliente,
@@ -39,6 +40,9 @@ export function AbonoDialog({
   const [monto, setMonto] = useState<number>(0);
   const [destino, setDestino] = useState<string>("todos");
   const [busy, setBusy] = useState(false);
+  const [pago, setPago] = useState<PagoDatos>(pagoVacio);
+  const medioDefecto = useMedioPredeterminado();
+  const guardarComprobante = useGuardarComprobante();
 
   const saldoTotal = (creditos ?? []).reduce((s, c) => s + Number(c.saldo), 0);
 
@@ -46,6 +50,7 @@ export function AbonoDialog({
     if (open) {
       setMonto(0);
       setDestino("todos");
+      setPago(pagoVacio);
     }
   }, [open]);
 
@@ -75,7 +80,10 @@ export function AbonoDialog({
           monto: aplicar,
           cobrador_id: user.id,
           saldoActual: Number(c.saldo),
+          medio_pago: pago.medio || medioDefecto,
+          referencia_pago: pago.referencia.trim() || null,
         };
+        if (restante === montoAbono) await guardarComprobante(pago.archivo, "abonos", abonoParams.id);
         if (!navigator.onLine) {
           await queueAbono(abonoParams);
           offline = true;
@@ -135,6 +143,8 @@ export function AbonoDialog({
               </Select>
             </div>
           )}
+
+          <PagoCampos value={pago} onChange={setPago} />
 
           <Input
             type="number"

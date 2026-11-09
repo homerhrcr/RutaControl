@@ -115,7 +115,7 @@ export function QuickSale({
     }
     setCart((prev) => {
       const cur = prev[p.id]?.cantidad ?? 0;
-      const next = cur + delta;
+      const next = Math.round((cur + delta) * 1000) / 1000;
       const copy = { ...prev };
       if (next <= 0) {
         delete copy[p.id];
@@ -350,7 +350,23 @@ export function QuickSale({
                     <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => add(p, -1)}>
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="text-base font-bold">{qty}</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="any"
+                      min={0}
+                      aria-label={`Cantidad de ${p.nombre}`}
+                      className="w-16 rounded-md border bg-background px-1 py-1 text-center text-base font-bold"
+                      key={`${p.id}-${qty}`}
+                      defaultValue={qty}
+                      onBlur={(e) => {
+                        const v = Number(e.target.value.replace(",", "."));
+                        if (!Number.isFinite(v) || v < 0) { e.target.value = String(qty); return; }
+                        if (v > libre) { toast.error(`Solo hay ${libre} disponibles en el camión`); e.target.value = String(qty); return; }
+                        add(p, v - qty);
+                      }}
+                      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                    />
                     <Button size="icon" className="h-8 w-8" disabled={restante <= 0} onClick={() => add(p, 1)}>
                       <Plus className="h-4 w-4" />
                     </Button>

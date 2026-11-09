@@ -82,7 +82,7 @@ export function ItemsEditor<T extends LineaItem>({
           <div key={idx} className="space-y-2 rounded-lg border p-2">
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate text-sm font-medium">{it.nombre}</span>
-              <Input type="number" min={0} className="w-20" value={it.cantidad || ""} onChange={(e) => set({ cantidad: Number(e.target.value) || 0 } as Partial<T>)} />
+              <Input type="number" min={0} step="any" inputMode="decimal" className="w-20" value={it.cantidad || ""} onChange={(e) => set({ cantidad: Number(e.target.value) || 0 } as Partial<T>)} />
               <span className="w-24 text-right text-sm">{formatCRC(it.precio * it.cantidad)}</span>
               <Button type="button" size="icon" variant="ghost" onClick={() => onChange(items.filter((_, i) => i !== idx))} aria-label="Quitar"><Trash2 className="h-4 w-4" /></Button>
             </div>

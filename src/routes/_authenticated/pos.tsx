@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Store, Search, ScanBarcode, Plus, Minus, Trash2, Banknote, CreditCard, Smartphone, UserRound, Receipt, LockKeyhole, History } from "lucide-react";
+import { Store, Search, ScanBarcode, Plus, Minus, Trash2, Banknote, CreditCard, Smartphone, UserRound, Receipt, LockKeyhole, History, Pencil } from "lucide-react";
+import { EditarPrecioDialog } from "@/components/EditarPrecioDialog";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -184,6 +185,7 @@ function POSPage() {
       <Button className="h-12 w-full text-base" disabled={busy||!ventaValida||(medio==='efectivo'&&Number(recibido)<total)} onClick={guardar}>{busy?'Guardando…':'Confirmar cobro'}</Button>
     </DialogContent></Dialog>
     <Dialog open={cerrar} onOpenChange={setCerrar}><DialogContent><DialogHeader><DialogTitle>Cerrar caja</DialogTitle></DialogHeader><p>Fondo inicial: <strong>{formatCRC(Number(caja?.fondo??0))}</strong></p><p>Ventas en efectivo: <strong>{formatCRC(efectivo)}</strong></p><p>Efectivo esperado: <strong>{formatCRC(esperado)}</strong></p><Label htmlFor="pos-contado">Efectivo contado</Label><Input id="pos-contado" type="number" inputMode="decimal" min="0" value={contado} onChange={e=>setContado(e.target.value)}/><p>Diferencia: <strong>{formatCRC(Number(contado)-esperado)}</strong></p>{pendientesCaja.length>0&&<p className="text-warning">Hay ventas sin sincronizar. No puede cerrar todavía.</p>}<Button disabled={busy||!online||!!pendientesCaja.length||!contado||Number(contado)<0} onClick={cerrarCaja}>Confirmar cierre</Button></DialogContent></Dialog>
+    <EditarPrecioDialog linea={editPrecio} onClose={()=>setEditPrecio(null)} onGuardar={l=>setCart(prev=>({...prev,[l.producto_id]:l}))}/>
     <Tiquete data={tiquete} open={!!tiquete} onClose={()=>setTiquete(null)}/>
   </div>;
 }

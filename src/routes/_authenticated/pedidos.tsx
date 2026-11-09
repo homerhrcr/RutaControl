@@ -236,7 +236,7 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId, pedido }: { open: b
   const [cliente, setCliente] = useState(pedido?.cliente_id ?? "");
   const [f, setF] = useState(fecha);
   const [busqCli, setBusqCli] = useState("");
-  const [items, setItems] = useState<LineaItem[]>(() => (pedido?.pedidos_detalle ?? []).map((l: any) => ({ producto_id: l.producto_id, nombre: l.nombre_producto, precio: Number(l.precio_unitario), cantidad: Number(l.cantidad) })));
+  const [items, setItems] = useState<LineaItem[]>(() => (pedido?.pedidos_detalle ?? []).map((l: any) => ({ producto_id: l.producto_id, nombre: l.nombre_producto, precio: Number(l.precio_unitario), cantidad: Number(l.cantidad), ...(l.motivo_modificacion ? { precioModificado: true, precioOriginal: l.precio_original != null ? Number(l.precio_original) : undefined, motivoModificacion: l.motivo_modificacion } : {}) })));
   const [notas, setNotas] = useState(pedido?.notas ?? "");
   const [busy, setBusy] = useState(false);
   const total = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
@@ -254,7 +254,7 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId, pedido }: { open: b
       if (e1) { setBusy(false); return toast.error(e1.message); }
       const { error: e2 } = await supabase.from("pedidos_detalle").delete().eq("pedido_id", pedido.id);
       if (e2) { setBusy(false); return toast.error(e2.message); }
-      const { error: e3 } = await supabase.from("pedidos_detalle").insert(items.map((i) => ({ pedido_id: pedido.id, producto_id: i.producto_id, nombre_producto: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio })));
+      const { error: e3 } = await supabase.from("pedidos_detalle").insert(items.map((i) => ({ pedido_id: pedido.id, producto_id: i.producto_id, nombre_producto: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio, precio_original: i.precioModificado ? (i.precioOriginal ?? null) : null, motivo_modificacion: i.precioModificado ? (i.motivoModificacion ?? null) : null })));
       setBusy(false);
       if (e3) return toast.error(e3.message);
       toast.success("Pedido actualizado");
@@ -273,7 +273,7 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId, pedido }: { open: b
     }
     const { data: ped, error } = await supabase.from("pedidos").insert({ id, cliente_id: cliente, ruta_id: rutaId, fecha_entrega: f, total, notas: notas || null, usuario_id: usuarioId }).select("id").single();
     if (!error) {
-      const { error: dErr } = await supabase.from("pedidos_detalle").insert(items.map((i) => ({ pedido_id: ped.id, producto_id: i.producto_id, nombre_producto: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio })));
+      const { error: dErr } = await supabase.from("pedidos_detalle").insert(items.map((i) => ({ pedido_id: ped.id, producto_id: i.producto_id, nombre_producto: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio, precio_original: i.precioModificado ? (i.precioOriginal ?? null) : null, motivo_modificacion: i.precioModificado ? (i.motivoModificacion ?? null) : null })));
       if (dErr) { await supabase.from("pedidos").delete().eq("id", ped.id); setBusy(false); return toast.error(dErr.message); }
     }
     setBusy(false);
@@ -300,7 +300,7 @@ function NuevoPedido({ open, onOpenChange, fecha, usuarioId, pedido }: { open: b
             </div>
             <div className="space-y-1"><Label className="text-xs">Entrega</Label><Input type="date" value={f} onChange={(e) => setF(e.target.value)} /></div>
           </div>
-          <ItemsEditor clienteId={cliente} rutaId={((clientes ?? []).find((x) => x.id === cliente) as any)?.cliente_rutas?.[0]?.ruta_id ?? (clientes ?? []).find((x) => x.id === cliente)?.ruta_id ?? null} items={items} onChange={setItems} nuevo={(b) => b} />
+          <ItemsEditor clienteId={cliente} rutaId={((clientes ?? []).find((x) => x.id === cliente) as any)?.cliente_rutas?.[0]?.ruta_id ?? (clientes ?? []).find((x) => x.id === cliente)?.ruta_id ?? null} items={items} onChange={setItems} nuevo={(b) => b} editarPrecio />
           <Textarea placeholder="Notas" value={notas} onChange={(e) => setNotas(e.target.value)} />
           <Button className="w-full" size="lg" disabled={busy} onClick={guardar}>{busy ? "Guardando…" : `Guardar · ${formatCRC(total)}`}</Button>
         </div>

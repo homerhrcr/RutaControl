@@ -406,7 +406,7 @@ async function procesarPedido(p: PedidoParams) {
   const { count } = await supabase.from("pedidos_detalle").select("id", { count: "exact", head: true }).eq("pedido_id", p.id);
   if (count) return;
   const { error: e2 } = await supabase.from("pedidos_detalle").insert(
-    p.items.map((i) => ({ pedido_id: p.id, producto_id: i.producto_id, nombre_producto: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio })),
+    p.items.map((i) => ({ pedido_id: p.id, producto_id: i.producto_id, nombre_producto: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio, precio_original: i.precioModificado ? (i.precioOriginal ?? null) : null, motivo_modificacion: i.precioModificado ? (i.motivoModificacion ?? null) : null })),
   );
   if (e2) throw e2;
 }

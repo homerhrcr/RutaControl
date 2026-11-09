@@ -14,7 +14,7 @@ import { CancelarPedido } from "@/components/CancelarPedido";
 import { XCircle } from "lucide-react";
 import { useCreditosCliente } from "@/lib/data";
 import { rutaDeCredito } from "@/lib/cobranza-rutas";
-import { PagoCampos, pagoVacio, useMedioPredeterminado, useGuardarComprobante, type PagoDatos } from "@/components/PagoCampos";
+import { PagoCampos, pagoVacio, errorPago, useMedioPredeterminado, useGuardarComprobante, type PagoDatos } from "@/components/PagoCampos";
 import { AbonoEnVenta, registrarAbonosVisita } from "@/components/AbonoEnVenta";
 
 export const PEDIDO_ENTREGA_SELECT = "*, clientes(nombre), rutas(nombre), pedidos_detalle(*)";
@@ -51,6 +51,8 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
   async function confirmar() {
     const entregados = items.filter((i) => i.cantidad > 0);
     if (!entregados.length) return toast.error("No hay productos entregados");
+    const errPago = (metodo === "contado" || abonoMonto > 0) ? errorPago(pago, (metodo === "contado" ? total : 0) + abonoMonto) : null;
+    if (errPago) return toast.error(errPago);
     // Si el pedido no quedó ligado a una carga, se usa el camión activo de su ruta.
     const carga = pedido.carga_id
       ? cargas?.find((c) => c.id === pedido.carga_id)
@@ -120,7 +122,7 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
             <Button variant={metodo === "contado" ? "default" : "outline"} onClick={() => setMetodo("contado")}>Contado</Button>
             <Button variant={metodo === "credito" ? "default" : "outline"} onClick={() => setMetodo("credito")}>Crédito</Button>
           </div>
-          {(metodo === "contado" || abonoMonto > 0) && <PagoCampos value={pago} onChange={setPago} />}
+          {(metodo === "contado" || abonoMonto > 0) && <PagoCampos value={pago} onChange={setPago} total={(metodo === "contado" ? total : 0) + abonoMonto} />}
           <AbonoEnVenta creditos={creditosRuta} monto={abonoMonto} onMonto={setAbonoMonto} />
           {abonoMonto > 0 && <p className="text-sm font-semibold">Total a cobrar: {formatCRC((metodo === "contado" ? total : 0) + abonoMonto)}</p>}
           <Button className="w-full" size="lg" disabled={busy} onClick={confirmar}>{busy ? "Procesando…" : `Confirmar venta · ${formatCRC(total)}`}</Button>

@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { HandCoins } from "lucide-react";
 import { limitarCreditos } from "@/lib/cobranza-rutas";
-import { PagoCampos, pagoVacio, useMedioPredeterminado, useGuardarComprobante, type PagoDatos } from "@/components/PagoCampos";
+import { PagoCampos, pagoVacio, errorPago, useMedioPredeterminado, useGuardarComprobante, type PagoDatos } from "@/components/PagoCampos";
 
 export function AbonoDialog({
   cliente,
@@ -58,6 +58,8 @@ export function AbonoDialog({
     if (!cliente || !user) return;
     if (montoAbono <= 0) return toast.error("Ingresa un monto");
     if (!creditos.length) return toast.error("No hay deudas pendientes en esta ruta");
+    const errPago = errorPago(pago, montoAbono);
+    if (errPago) return toast.error(errPago);
     setBusy(true);
     try {
       let restante = montoAbono;
@@ -144,7 +146,7 @@ export function AbonoDialog({
             </div>
           )}
 
-          <PagoCampos value={pago} onChange={setPago} />
+          <PagoCampos value={pago} onChange={setPago} total={monto || undefined} />
 
           <Input
             type="number"

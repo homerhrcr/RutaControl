@@ -20,7 +20,7 @@ import { validarVentaRuta, estadoStockCamion } from "@/lib/carga-camion-calculos
 import { ordenarSegunCatalogo } from "@/lib/orden-productos";
 import { useCreditosCliente } from "@/lib/data";
 import { rutaDeCredito } from "@/lib/cobranza-rutas";
-import { PagoCampos, pagoVacio, useMedioPredeterminado, useGuardarComprobante, type PagoDatos } from "@/components/PagoCampos";
+import { PagoCampos, pagoVacio, errorPago, useMedioPredeterminado, useGuardarComprobante, type PagoDatos } from "@/components/PagoCampos";
 import { AbonoEnVenta, registrarAbonosVisita } from "@/components/AbonoEnVenta";
 
 export function QuickSale({
@@ -187,6 +187,8 @@ export function QuickSale({
     if (!preciosListos) return toast.error("No se han cargado los precios del cliente");
     if (items.length === 0) return toast.error("Agrega al menos un producto");
     if (!ventaValida) return toast.error("La venta supera las existencias disponibles del camión de esta ruta");
+    const errPago = (metodo === "contado" || abonoMonto > 0) ? errorPago(pago, (metodo === "contado" ? total : 0) + abonoMonto) : null;
+    if (errPago) return toast.error(errPago);
     setBusy(true);
     let lat: number | null = null;
     let lng: number | null = null;
@@ -480,7 +482,7 @@ export function QuickSale({
               </Button>
             </div>
           </div>
-          {(metodoSel === "contado" || abonoMonto > 0) && <div className="mt-3"><PagoCampos value={pago} onChange={setPago} /></div>}
+          {(metodoSel === "contado" || abonoMonto > 0) && <div className="mt-3"><PagoCampos value={pago} onChange={setPago} total={(metodoSel === "contado" ? total : 0) + abonoMonto} /></div>}
           <div className="mt-3"><AbonoEnVenta creditos={creditosRuta} monto={abonoMonto} onMonto={setAbonoMonto} /></div>
           {abonoMonto > 0 && (
             <div className="mt-3 rounded-lg bg-muted p-3 text-sm">

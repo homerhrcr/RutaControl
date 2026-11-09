@@ -1,35 +1,31 @@
 import { expect, test } from "bun:test";
 import { aplicarPrecioManual } from "./precios";
 
-const linea = { producto_id: "queso", nombre: "Queso", precio: 3800, cantidad: 2 };
+const linea = { producto_id: "salchichon", nombre: "Salchichón", precio: 3000, cantidad: 1 };
 
-test("un vendedor no puede modificar el precio manualmente", () => {
-  expect(() => aplicarPrecioManual(linea, 3500, "Autorizado por gerencia", false)).toThrow();
-});
-
-test("un administrador modifica el precio y queda el original registrado", () => {
-  const r = aplicarPrecioManual(linea, 3500, "Autorizado por gerencia", true);
-  expect(r.precio).toBe(3500);
-  expect(r.precioOriginal).toBe(3800);
+test("un vendedor sube o baja el precio solo en la línea y queda el original registrado", () => {
+  const r = aplicarPrecioManual(linea, 2800, "Acuerdo con el cliente");
+  expect(r.precio).toBe(2800);
+  expect(r.precioOriginal).toBe(3000);
   expect(r.precioModificado).toBe(true);
-  expect(r.motivoModificacion).toBe("Autorizado por gerencia");
+  expect(r.motivoModificacion).toBe("Acuerdo con el cliente");
+  expect(aplicarPrecioManual(linea, 3200, "Corte especial").precio).toBe(3200);
 });
 
 test("el precio original se conserva en una segunda modificación", () => {
-  const r1 = aplicarPrecioManual(linea, 3500, "Primera", true);
-  const r2 = aplicarPrecioManual(r1, 3400, "Segunda", true);
-  expect(r2.precioOriginal).toBe(3800);
-  expect(r2.precio).toBe(3400);
+  const r2 = aplicarPrecioManual(aplicarPrecioManual(linea, 2800, "Primera"), 2700, "Segunda");
+  expect(r2.precioOriginal).toBe(3000);
+  expect(r2.precio).toBe(2700);
 });
 
 test("exige motivo y un precio válido (positivo o cero, máximo dos decimales)", () => {
-  expect(() => aplicarPrecioManual(linea, 3500, "  ", true)).toThrow();
-  expect(() => aplicarPrecioManual(linea, -1, "Motivo", true)).toThrow();
-  expect(() => aplicarPrecioManual(linea, 1.234, "Motivo", true)).toThrow();
+  expect(() => aplicarPrecioManual(linea, 2800, "  ")).toThrow();
+  expect(() => aplicarPrecioManual(linea, -1, "Motivo")).toThrow();
+  expect(() => aplicarPrecioManual(linea, 1.234, "Motivo")).toThrow();
 });
 
-test("la línea original no se muta: catálogo y listas quedan intactos", () => {
-  aplicarPrecioManual(linea, 3500, "Motivo", true);
-  expect(linea.precio).toBe(3800);
+test("la línea original no se muta: la lista de precios queda intacta", () => {
+  aplicarPrecioManual(linea, 2800, "Motivo");
+  expect(linea.precio).toBe(3000);
   expect(linea.precioModificado).toBeUndefined();
 });

@@ -1,0 +1,1 @@
+ALTER TABLE public.pedidos_detalle ADD COLUMN IF NOT EXISTS precio_original numeric, ADD COLUMN IF NOT EXISTS motivo_modificacion text;

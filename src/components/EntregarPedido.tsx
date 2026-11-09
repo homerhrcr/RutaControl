@@ -24,7 +24,7 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
   const { data: pendientes = [] } = usePendientesCamion();
   const invalidate = useInvalidate();
   const [items, setItems] = useState<LineaItem[]>(
-    pedido.pedidos_detalle.map((l: any) => ({ producto_id: l.producto_id, nombre: l.nombre_producto, precio: Number(l.precio_unitario), cantidad: Number(l.cantidad) })),
+    pedido.pedidos_detalle.map((l: any) => ({ producto_id: l.producto_id, nombre: l.nombre_producto, precio: Number(l.precio_unitario), cantidad: Number(l.cantidad), ...(l.motivo_modificacion ? { precioModificado: true, precioOriginal: l.precio_original != null ? Number(l.precio_original) : undefined, motivoModificacion: l.motivo_modificacion } : {}) })),
   );
   const [metodo, setMetodo] = useState<"contado" | "credito">("contado");
   const [busy, setBusy] = useState(false);
@@ -117,7 +117,7 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
         <DialogHeader><DialogTitle>Entregar a {pedido.clientes?.nombre}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">Ajuste las cantidades si se entregó menos o más de lo pedido.</p>
-          <ItemsEditor clienteId={pedido.cliente_id} rutaId={pedido.ruta_id} items={items} onChange={setItems} nuevo={(b) => b} />
+          <ItemsEditor clienteId={pedido.cliente_id} rutaId={pedido.ruta_id} items={items} onChange={setItems} nuevo={(b) => b} editarPrecio />
           <div className="grid grid-cols-2 gap-2">
             <Button variant={metodo === "contado" ? "default" : "outline"} onClick={() => setMetodo("contado")}>Contado</Button>
             <Button variant={metodo === "credito" ? "default" : "outline"} onClick={() => setMetodo("credito")}>Crédito</Button>

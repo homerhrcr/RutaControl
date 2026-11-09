@@ -1446,27 +1446,33 @@ export type Database = {
         Row: {
           cantidad: number
           id: string
+          motivo_modificacion: string | null
           nombre_producto: string
           organization_id: string
           pedido_id: string
+          precio_original: number | null
           precio_unitario: number
           producto_id: string
         }
         Insert: {
           cantidad: number
           id?: string
+          motivo_modificacion?: string | null
           nombre_producto: string
           organization_id?: string
           pedido_id: string
+          precio_original?: number | null
           precio_unitario: number
           producto_id: string
         }
         Update: {
           cantidad?: number
           id?: string
+          motivo_modificacion?: string | null
           nombre_producto?: string
           organization_id?: string
           pedido_id?: string
+          precio_original?: number | null
           precio_unitario?: number
           producto_id?: string
         }

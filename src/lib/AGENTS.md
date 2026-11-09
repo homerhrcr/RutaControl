@@ -3,3 +3,4 @@
 - Client administrative addresses use a bundled territorial catalog and shared cascade helpers, storing names in the existing columns — keeps dependent options available without network access and preserves the existing data format.
 - Route ordering: use the shared one-based move helper for numeric positions, arrows and dnd-kit sorting, then persist through guardarOrdenRuta — all inputs keep the same sequential order used by the map.
 - Product presentation uses ordenarSegunCatalogo with the ordered useProductos catalog in route sales and truck views; never sort by hardcoded favorites or reservation quantities, so saved manual positions remain consistent.
+- One-off price edits use aplicarPrecioManual + EditarPrecioDialog for any staff with a required reason; audit fields travel in sale items (detalle_ventas) and pedidos_detalle, and server RPCs accept a differing price only when flagged with a reason — price lists are never touched.

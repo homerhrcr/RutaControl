@@ -260,6 +260,20 @@
       "when": 1793940429769,
       "tag": "0036_medio_pago_referencia",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794264699651,
+      "tag": "0037_precio_manual_vendedores",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794264726610,
+      "tag": "0038_pedidos_detalle_precio_manual",
+      "breakpoints": true
     }
   ]
 }

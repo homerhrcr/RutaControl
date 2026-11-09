@@ -3,7 +3,8 @@ import { useProductosCliente } from "@/lib/listas-precios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCRC } from "@/lib/format";
-import { Trash2, Plus, ScanBarcode } from "lucide-react";
+import { Trash2, Plus, ScanBarcode, Pencil } from "lucide-react";
+import { EditarPrecioDialog } from "@/components/EditarPrecioDialog";
 import { toast } from "sonner";
 import { buscarPorCodigo, useLectorPistola, avisoLectura } from "@/lib/codigo-barras";
 import { EscanerCamara } from "@/components/EscanerCamara";
@@ -13,6 +14,9 @@ export interface LineaItem {
   nombre: string;
   precio: number;
   cantidad: number;
+  precioOriginal?: number;
+  precioModificado?: boolean;
+  motivoModificacion?: string;
 }
 
 /** Selector simple de productos con cantidad. `extra` permite campos adicionales por línea. */
@@ -24,7 +28,10 @@ export function ItemsEditor<T extends LineaItem>({
   clienteId,
   rutaId,
   permitirSinPrecio,
+  editarPrecio,
 }: {
+  /** Permite cambiar el precio de la línea solo para este pedido, con motivo. */
+  editarPrecio?: boolean;
   items: T[];
   onChange: (items: T[]) => void;
   nuevo: (base: LineaItem) => T;
@@ -37,6 +44,7 @@ export function ItemsEditor<T extends LineaItem>({
   const { data: productos, listo, listaNombre } = useProductosCliente(clienteId, rutaId);
   const [sel, setSel] = useState("");
   const [camara, setCamara] = useState(false);
+  const [editIdx, setEditIdx] = useState<number | null>(null);
 
   function sumar(p: NonNullable<typeof productos>[number]) {
     if (!listo) return;
@@ -86,10 +94,23 @@ export function ItemsEditor<T extends LineaItem>({
               <span className="w-24 text-right text-sm">{formatCRC(it.precio * it.cantidad)}</span>
               <Button type="button" size="icon" variant="ghost" onClick={() => onChange(items.filter((_, i) => i !== idx))} aria-label="Quitar"><Trash2 className="h-4 w-4" /></Button>
             </div>
+            {editarPrecio && (
+              <button type="button" className="flex items-center gap-1 text-xs text-primary" onClick={() => setEditIdx(idx)}>
+                <Pencil className="h-3 w-3" /> {formatCRC(it.precio)} c/u
+                {it.precioModificado && <span className="rounded bg-warning/20 px-1 font-semibold text-warning">Modificado</span>}
+              </button>
+            )}
             {extra?.(it, set)}
           </div>
         );
       })}
+      {editarPrecio && (
+        <EditarPrecioDialog
+          linea={editIdx !== null ? items[editIdx] ?? null : null}
+          onClose={() => setEditIdx(null)}
+          onGuardar={(l) => onChange(items.map((x, i) => (i === editIdx ? l : x)))}
+        />
+      )}
     </div>
   );
 }

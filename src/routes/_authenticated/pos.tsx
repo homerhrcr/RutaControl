@@ -59,6 +59,7 @@ function POSPage() {
   const stockCamion=carga ? descontarPendientes(carga,pendientesCamion) : [];
   const {data:pendientes=[]}=useQuery({queryKey:["pos-pendientes",organizacionActiva?.id,user?.id,count],networkMode:"always",queryFn:async()=> (await allOps()).filter(o=>o.entity==="ventas"&&(o.payload as VentaParams).pos?.organization_id===organizacionActiva?.id).map(o=>o.payload as VentaParams)});
   const [cart,setCart]=useState<Record<string,CartItem>>({});
+  const [editPrecio,setEditPrecio]=useState<CartItem|null>(null);
   const [search,setSearch]=useState("");
   const [categoria,setCategoria]=useState("todas");
   const [camara,setCamara]=useState(false);
@@ -94,7 +95,7 @@ function POSPage() {
   }),[productos,caja,clienteId,listas,precios,stockCamion,pendientes,organizacionActiva?.id]);
   useEffect(()=>{
     if(!listo) return;
-    setCart(prev=>{let cambio=false;const next=Object.fromEntries(Object.entries(prev).flatMap(([id,i])=>{const p=mostrador.find(x=>x.id===id);if(!p?.precioInfo.valido){cambio=true;return [];}if(p.precio!==i.precio)cambio=true;return [[id,{...i,precio:p.precio}]];}));return cambio?next:prev;});
+    setCart(prev=>{let cambio=false;const next=Object.fromEntries(Object.entries(prev).flatMap(([id,i])=>{const p=mostrador.find(x=>x.id===id);if(!p?.precioInfo.valido){cambio=true;return [];}if(i.precioModificado)return [[id,i]];if(p.precio!==i.precio)cambio=true;return [[id,{...i,precio:p.precio}]];}));return cambio?next:prev;});
   },[productos,clienteId,caja?.lista_id,listo,listas,precios]);
   const categorias=[...new Set(productos.map(p=>p.categorias?.nombre).filter((s):s is string=>!!s))];
   function add(id:string,delta:number) {
@@ -102,14 +103,14 @@ function POSPage() {
     if(!p.precioInfo.valido) return toast.error(p.precioInfo.mensaje);
     const qty=(cart[id]?.cantidad??0)+delta;
     if(qty>p.libre) return toast.error("No hay más unidades disponibles");
-    setCart(prev=>{const next={...prev}; if(qty<=0) delete next[id]; else next[id]={producto_id:id,nombre:p.nombre,precio:p.precio,cantidad:qty}; return next;});
+    setCart(prev=>{const next={...prev}; if(qty<=0) delete next[id]; else next[id]=prev[id]?{...prev[id],cantidad:qty}:{producto_id:id,nombre:p.nombre,precio:p.precio,cantidad:qty}; return next;});
   }
   function leer(codigo:string){ const p=buscarPorCodigo(mostrador,codigo); avisoLectura(!!p); if(!p) return toast.error("Código no registrado"); add(p.id,1); setSearch(""); }
   useLectorPistola(!!caja&&!cobrar&&!clienteDialog&&!tiquete&&!busy,leer);
   const efectivo=ventas.filter(v=>(v.pos_datos as unknown as DatosPOS)?.medio==="efectivo").reduce((s,v)=>s+Number(v.total),0);
   const efectivoAbierto=ventasAbiertas.filter(v=>(v.pos_datos as unknown as DatosPOS)?.medio==="efectivo").reduce((s,v)=>s+Number(v.total),0);
   const esperado=Number(caja?.fondo??0)+efectivoAbierto;
-  const ventaValida=items.length>0&&items.every(i=>{const p=mostrador.find(x=>x.id===i.producto_id);return p&&p.precioInfo.valido&&i.precio===p.precio&&i.cantidad<=p.libre;});
+  const ventaValida=items.length>0&&items.every(i=>{const p=mostrador.find(x=>x.id===i.producto_id);return p&&p.precioInfo.valido&&(i.precio===p.precio||!!i.precioModificado)&&i.cantidad<=p.libre;});
   async function abrir(){ if(!online) return toast.error("Necesita conexión para abrir caja");setBusy(true);try{
     const {error}=await supabase.rpc("pos_abrir_caja",{p:{nombre:nombreCaja,modalidad,carga_id:fuente==="camion"?fuenteId:null,lista_id:fuente==="local"?listaId:null,fondo:Number(fondo)} });if(error) throw error;
     invalidate(["pos-cajas"]);setVerCaja(undefined);
@@ -157,7 +158,7 @@ function POSPage() {
         </section>
         <section className="min-w-0 border-t pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0"><div className="mb-4 flex items-center justify-between"><h2 className="font-bold">Venta actual</h2><Button size="icon" variant="ghost" title="Vaciar venta" aria-label="Vaciar venta" onClick={()=>{if(items.length&&window.confirm('¿Vaciar la venta actual?'))limpiar();}}><Trash2 className="h-4 w-4"/></Button></div>
           <Button variant="outline" className="mb-4 h-auto w-full justify-start gap-2 whitespace-normal py-3 text-left" onClick={()=>setClienteDialog(true)}><UserRound className="h-4 w-4 shrink-0"/>{receptor.nombre||'Consumidor final'}</Button>
-          <div className="min-h-28 space-y-3">{!items.length&&<p className="py-6 text-center text-sm text-muted-foreground">Sin productos</p>}{items.map(i=><div key={i.producto_id} className="border-b pb-3"><div className="mb-2 flex justify-between gap-2 text-sm"><span>{i.nombre}</span><span className="shrink-0 font-bold">{formatCRC(i.precio*i.cantidad)}</span></div><div className="flex items-center gap-2"><Button size="icon" variant="outline" className="h-8 w-8" aria-label={`Quitar ${i.nombre}`} onClick={()=>add(i.producto_id,-1)}><Minus className="h-3 w-3"/></Button><Input type="number" min="0" step="0.01" inputMode="decimal" aria-label={`Cantidad ${i.nombre}`} className="h-8 w-20 text-center" value={i.cantidad} onChange={e=>{const n=Number(e.target.value);if(Number.isFinite(n)&&n>=0)add(i.producto_id,n-i.cantidad);}}/><Button size="icon" variant="outline" className="h-8 w-8" aria-label={`Agregar ${i.nombre}`} onClick={()=>add(i.producto_id,1)}><Plus className="h-3 w-3"/></Button><span className="ml-auto text-xs text-muted-foreground">{formatCRC(i.precio)} c/u</span></div></div>)}</div>
+          <div className="min-h-28 space-y-3">{!items.length&&<p className="py-6 text-center text-sm text-muted-foreground">Sin productos</p>}{items.map(i=><div key={i.producto_id} className="border-b pb-3"><div className="mb-2 flex justify-between gap-2 text-sm"><span>{i.nombre}</span><span className="shrink-0 font-bold">{formatCRC(i.precio*i.cantidad)}</span></div><div className="flex items-center gap-2"><Button size="icon" variant="outline" className="h-8 w-8" aria-label={`Quitar ${i.nombre}`} onClick={()=>add(i.producto_id,-1)}><Minus className="h-3 w-3"/></Button><Input type="number" min="0" step="0.01" inputMode="decimal" aria-label={`Cantidad ${i.nombre}`} className="h-8 w-20 text-center" value={i.cantidad} onChange={e=>{const n=Number(e.target.value);if(Number.isFinite(n)&&n>=0)add(i.producto_id,n-i.cantidad);}}/><Button size="icon" variant="outline" className="h-8 w-8" aria-label={`Agregar ${i.nombre}`} onClick={()=>add(i.producto_id,1)}><Plus className="h-3 w-3"/></Button><button type="button" aria-label={`Cambiar precio de ${i.nombre}`} onClick={()=>setEditPrecio(i)} className="ml-auto flex items-center gap-1 text-xs text-primary"><Pencil className="h-3 w-3"/>{formatCRC(i.precio)} c/u{i.precioModificado&&<span className="rounded bg-warning/20 px-1 font-semibold text-warning">Modificado</span>}</button></div></div>)}</div>
           <div className="my-5 flex justify-between text-2xl font-black"><span>Total</span><span>{formatCRC(total)}</span></div><Button className="h-14 w-full gap-2 text-lg" disabled={busy||!listo||!ventaValida} onClick={()=>{setRecibido(String(total));setCobrar(true);}}><Banknote className="h-5 w-5"/>Cobrar</Button>
           <p className="mt-3 text-xs text-muted-foreground">{carga?`${carga.rutas?.nombre} · ${carga.vehiculo}`:listas.find(l=>l.id===caja.lista_id)?.nombre}{pendientesCaja.length>0?` · ${pendientesCaja.length} ventas pendientes`:''}</p>
         </section>

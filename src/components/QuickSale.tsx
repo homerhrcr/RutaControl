@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { registrarVenta, type CartItem, useVentasCliente, useCliente } from "@/lib/data";
 import { useProductosCliente } from "@/lib/listas-precios";
-import { aplicarPrecioManual } from "@/lib/precios";
+import { EditarPrecioDialog } from "@/components/EditarPrecioDialog";
 import { queueVenta } from "@/lib/offline";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,8 +53,6 @@ export function QuickSale({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [metodoSel, setMetodoSel] = useState<"contado" | "credito">("contado");
   const [editPrecio, setEditPrecio] = useState<CartItem | null>(null);
-  const [nuevoPrecio, setNuevoPrecio] = useState("");
-  const [motivoPrecio, setMotivoPrecio] = useState("");
   const [pago, setPago] = useState<PagoDatos>(pagoVacio);
   const [abonoMonto, setAbonoMonto] = useState(0);
   const medioDefecto = useMedioPredeterminado();
@@ -433,20 +431,15 @@ export function QuickSale({
                   )}
                 </span>
                 <span className="font-semibold">{formatCRC(i.precio * i.cantidad)}</span>
-                {isAdmin && !carga && (
-                  <button
-                    type="button"
-                    className="mt-0.5 text-muted-foreground hover:text-foreground"
-                    title="Modificar precio (solo administradores)"
-                    onClick={() => {
-                      setEditPrecio(i);
-                      setNuevoPrecio(String(i.precio));
-                      setMotivoPrecio("");
-                    }}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="-mt-1 rounded p-1.5 text-primary hover:bg-muted"
+                  aria-label={`Cambiar precio de ${i.nombre}`}
+                  title="Cambiar precio solo para esta venta"
+                  onClick={() => setEditPrecio(i)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
               </div>
             ))}
           </div>
@@ -509,45 +502,11 @@ export function QuickSale({
       </DialogContent>
     </Dialog>
 
-    <Dialog open={!!editPrecio} onOpenChange={(o) => !o && setEditPrecio(null)}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="text-base">Modificar precio (administrador)</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <p className="text-sm">
-            {editPrecio?.nombre} · precio actual {formatCRC(editPrecio?.precio ?? 0)}
-          </p>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Precio unitario nuevo</label>
-            <Input type="number" min={0} step="0.01" value={nuevoPrecio} onChange={(e) => setNuevoPrecio(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Motivo de la modificación</label>
-            <Input value={motivoPrecio} onChange={(e) => setMotivoPrecio(e.target.value)} placeholder="Ej.: autorizado por gerencia" />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            El cambio aplica solo a esta venta y queda registrado en auditoría. El precio del catálogo y de las listas no cambia.
-          </p>
-          <Button
-            className="w-full"
-            onClick={() => {
-              if (!editPrecio) return;
-              try {
-                const actualizado = aplicarPrecioManual(editPrecio, Number(nuevoPrecio), motivoPrecio, isAdmin);
-                setCart((prev) => ({ ...prev, [actualizado.producto_id]: actualizado }));
-                setEditPrecio(null);
-                toast.success("Precio modificado solo para esta venta");
-              } catch (e: any) {
-                toast.error(e?.message ?? "No se pudo modificar el precio");
-              }
-            }}
-          >
-            Confirmar cambio
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <EditarPrecioDialog
+      linea={editPrecio}
+      onClose={() => setEditPrecio(null)}
+      onGuardar={(l) => setCart((prev) => ({ ...prev, [l.producto_id]: l }))}
+    />
 
     <Tiquete data={tiquete} open={!!tiquete} onClose={() => setTiquete(null)} />
     </>

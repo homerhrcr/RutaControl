@@ -76,7 +76,7 @@ export interface PedidoParams {
   total: number;
   notas: string | null;
   usuario_id?: string;
-  items: { producto_id: string; nombre: string; cantidad: number; precio: number }[];
+  items: { producto_id: string; nombre: string; cantidad: number; precio: number; precioOriginal?: number; precioModificado?: boolean; motivoModificacion?: string }[];
 }
 export interface PedidoEstadoParams { id: string; ids: string[]; estado: string }
 export interface EntregaParams { id: string; pedido_id: string; venta: VentaParams }

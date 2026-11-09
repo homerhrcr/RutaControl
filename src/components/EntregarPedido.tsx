@@ -117,7 +117,7 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
         <DialogHeader><DialogTitle>Entregar a {pedido.clientes?.nombre}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">Ajuste las cantidades si se entregó menos o más de lo pedido.</p>
-          <ItemsEditor clienteId={pedido.cliente_id} rutaId={pedido.ruta_id} items={items} onChange={setItems} nuevo={(b) => b} />
+          <ItemsEditor clienteId={pedido.cliente_id} rutaId={pedido.ruta_id} items={items} onChange={setItems} nuevo={(b) => b} editarPrecio />
           <div className="grid grid-cols-2 gap-2">
             <Button variant={metodo === "contado" ? "default" : "outline"} onClick={() => setMetodo("contado")}>Contado</Button>
             <Button variant={metodo === "credito" ? "default" : "outline"} onClick={() => setMetodo("credito")}>Crédito</Button>

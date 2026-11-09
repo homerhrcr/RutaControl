@@ -429,6 +429,7 @@ export function QuickSale({
                       Modificado
                     </span>
                   )}
+                  <span className="block text-xs text-muted-foreground">{formatCRC(i.precio)} c/u</span>
                 </span>
                 <span className="font-semibold">{formatCRC(i.precio * i.cantidad)}</span>
                 <button

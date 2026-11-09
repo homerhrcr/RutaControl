@@ -146,7 +146,7 @@ export function AbonoDialog({
             </div>
           )}
 
-          <PagoCampos value={pago} onChange={setPago} />
+          <PagoCampos value={pago} onChange={setPago} total={monto || undefined} />
 
           <Input
             type="number"

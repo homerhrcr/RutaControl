@@ -165,23 +165,33 @@ export function RutaPage() {
     [visitadosHoy],
   );
 
-  // resumen del día
+  // resumen del día: de la carga en ruta seleccionada (no del usuario conectado),
+  // así el vendedor y el administrador ven las mismas cifras reales de la ruta.
+  const cargaIds = misCargas.map((c) => c.id);
+  const vendedoresCarga = Array.from(new Set(misCargas.map((c) => c.vendedor_id).filter(Boolean))) as string[];
   const { data: resumen } = useQuery({
-    queryKey: ["resumen-dia", user?.id],
+    queryKey: ["resumen-dia", user?.id, cargaIds.join(","), rutaId],
     enabled: !!user,
     queryFn: async () => {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
-      const [{ data: ventas }, { data: abonos }, { data: gastos }] = await Promise.all([
-        supabase.from("ventas").select("total, cliente_id, metodo_pago").eq("vendedor_id", user!.id).gte("fecha", start.toISOString()),
-        supabase.from("abonos").select("monto").eq("cobrador_id", user!.id).gte("fecha", start.toISOString()),
-        supabase.from("gastos").select("monto").gte("fecha", start.toISOString()),
+      const desde = start.toISOString();
+      let qv = supabase.from("ventas").select("total, cliente_id, metodo_pago");
+      qv = cargaIds.length ? qv.in("carga_id", cargaIds) : qv.eq("vendedor_id", user!.id).gte("fecha", desde);
+      const cobradores = vendedoresCarga.length ? vendedoresCarga : [user!.id];
+      const [{ data: ventas, error: ev }, { data: abonos, error: ea }, { data: gastos }] = await Promise.all([
+        qv,
+        supabase.from("abonos").select("monto, cliente_id").in("cobrador_id", cobradores).gte("fecha", desde),
+        supabase.from("gastos").select("monto").gte("fecha", desde),
       ]);
+      if (ev) throw ev;
+      if (ea) throw ea;
       const totalVentas = (ventas ?? []).reduce((s, v) => s + Number(v.total), 0);
       const credito = (ventas ?? []).filter((v) => v.metodo_pago === "credito").reduce((s, v) => s + Number(v.total), 0);
-      const cobrado = (abonos ?? []).reduce((s, a) => s + Number(a.monto), 0);
+      const contado = totalVentas - credito;
+      const cobrado = contado + (abonos ?? []).reduce((s, a) => s + Number(a.monto), 0);
       const gastosTotal = (gastos ?? []).reduce((s, g) => s + Number(g.monto), 0);
-      const visitados = new Set((ventas ?? []).map((v) => v.cliente_id)).size;
+      const visitados = new Set([...(ventas ?? []), ...(abonos ?? [])].map((v) => v.cliente_id).filter(Boolean)).size;
       return { totalVentas, credito, cobrado, gastosTotal, visitados };
     },
   });

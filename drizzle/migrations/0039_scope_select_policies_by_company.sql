@@ -1,0 +1,3 @@
+ALTER POLICY "Autenticados pueden ver categorias de gasto" ON public.categorias_gasto USING (organization_id = public.current_organization_id());
+ALTER POLICY "Usuarios autenticados pueden ver asignaciones de rutas" ON public.cliente_rutas USING (organization_id = public.current_organization_id());
+ALTER POLICY "Leer opciones" ON public.catalogo_opciones USING (organization_id = public.current_organization_id());

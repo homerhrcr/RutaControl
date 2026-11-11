@@ -274,6 +274,13 @@
       "when": 1794264726610,
       "tag": "0038_pedidos_detalle_precio_manual",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794430683908,
+      "tag": "0039_scope_select_policies_by_company",
+      "breakpoints": true
     }
   ]
 }

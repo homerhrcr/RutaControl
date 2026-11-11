@@ -118,7 +118,7 @@ export function QuickSale({
       if (next <= 0) {
         delete copy[p.id];
       } else {
-        copy[p.id] = { producto_id: p.id, nombre: p.nombre, precio: prev[p.id]?.precio ?? Number(p.precio), cantidad: next };
+        copy[p.id] = { ...prev[p.id], producto_id: p.id, nombre: p.nombre, precio: prev[p.id]?.precio ?? Number(p.precio), cantidad: next };
       }
       return copy;
     });

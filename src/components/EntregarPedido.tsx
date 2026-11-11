@@ -86,7 +86,7 @@ export function EntregarPedido({ pedido, onClose, vendedorId }: { pedido: any; o
       if (error) throw error;
       toast.success("Pedido entregado y facturado");
       const abono = await extras(venta.id);
-      invalidate(["pedidos", "ventas", "productos", "creditos", "creditos-pendientes", "cargas_camion", "ventas-camion"]);
+      invalidate(["pedidos", "ventas", "productos", "creditos", "creditos-pendientes", "cargas_camion", "ventas-camion", "resumen-dia", "visitados-hoy", "saldos-map"]);
       setTiquete({
         venta_id: venta.id,
         cliente_id: pedido.cliente_id,

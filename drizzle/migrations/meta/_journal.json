@@ -281,6 +281,13 @@
       "when": 1794430683908,
       "tag": "0039_scope_select_policies_by_company",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794430724859,
+      "tag": "0040_pos_subtotal_precio_real",
+      "breakpoints": true
     }
   ]
 }

@@ -35,6 +35,8 @@ export interface VentaParams {
   fecha_limite?: string | null;
   lat?: number | null;
   lng?: number | null;
+  /** Hora real de la venta; se respeta al sincronizar tarde. */
+  fecha?: string;
   medio_pago?: string | null;
   referencia_pago?: string | null;
 }
@@ -230,7 +232,7 @@ async function enqueue(
 }
 
 export function queueVenta(params: VentaParams) {
-  return enqueue("ventas", { ...params, id: params.id ?? crypto.randomUUID() }, params.vendedor_id);
+  return enqueue("ventas", { ...params, id: params.id ?? crypto.randomUUID(), fecha: params.fecha ?? new Date().toISOString() }, params.vendedor_id);
 }
 
 export function queuePedido(p: PedidoParams, uid: string) { return enqueue("pedidos", p, uid); }
@@ -238,7 +240,7 @@ export function queuePedidoEstado(ids: string[], estado: string, uid: string) {
   return enqueue("pedido_estado", { id: crypto.randomUUID(), ids, estado }, uid);
 }
 export function queueEntrega(pedido_id: string, venta: VentaParams) {
-  return enqueue("entregas", { id: crypto.randomUUID(), pedido_id, venta }, venta.vendedor_id);
+  return enqueue("entregas", { id: crypto.randomUUID(), pedido_id, venta: { ...venta, fecha: venta.fecha ?? new Date().toISOString() } }, venta.vendedor_id);
 }
 export function queueDevolucion(p: DevolucionParams, uid: string) { return enqueue("devoluciones", p, uid); }
 

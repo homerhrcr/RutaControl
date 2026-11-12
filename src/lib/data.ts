@@ -207,6 +207,7 @@ async function registrarVentaInterna(params: {
   fecha_limite?: string | null;
   lat?: number | null;
   lng?: number | null;
+  fecha?: string;
 }) {
   if (params.pos) {
     const { data, error } = await supabase.rpc("pos_registrar_venta", { p: params as never });

@@ -32,3 +32,4 @@
 - Historical costs are frozen: detalle_ventas.costo_unitario is set on insert and cargas_camion_detalle.costo_unitario on closure (triggers); closed loads only change via the admin editar_costo_carga RPC — price-list edits never alter closed profitability.
 - Session limit: user_active_sessions keyed by device token + reclamar_sesion/sesion_vigente RPCs keep the 2 most recent devices of any type per user; AuthProvider polls and signs out locally when displaced; offline never logs out and platform admins are exempt — allows two PCs or two phones without breaking route work offline.
 - Preventas created while a route's load is en_ruta are auto-linked to that load by a BEFORE INSERT trigger on pedidos (no warehouse deduction) — they reserve onboard stock immediately so free stock never oversells.
+- Offline sales and deliveries carry their real sale time (fecha); vender_desde_camion keeps it unless future or before the load — late sync never inflates today's figures.

@@ -216,8 +216,8 @@ export function DashboardPage() {
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={data?.topProductos ?? []} layout="vertical" margin={{ left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                  <YAxis dataKey="nombre" type="category" width={90} tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: "var(--foreground)" }} stroke="var(--muted-foreground)" />
+                  <YAxis dataKey="nombre" type="category" width={90} tick={{ fontSize: 11, fill: "var(--foreground)" }} stroke="var(--muted-foreground)" />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="cant" radius={[0, 4, 4, 0]}>
                     {(data?.topProductos ?? []).map((_, i) => (

@@ -1,3 +1,4 @@
+import { desglosarMedio } from "@/lib/pago-mixto";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -176,12 +177,12 @@ export function RutaPage() {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
       const desde = start.toISOString();
-      let qv = supabase.from("ventas").select("total, cliente_id, metodo_pago");
+      let qv = supabase.from("ventas").select("total, cliente_id, metodo_pago, medio_pago");
       qv = cargaIds.length ? qv.in("carga_id", cargaIds) : qv.eq("vendedor_id", user!.id).gte("fecha", desde);
       const cobradores = vendedoresCarga.length ? vendedoresCarga : [user!.id];
       const [{ data: ventas, error: ev }, { data: abonos, error: ea }, { data: gastos }] = await Promise.all([
         qv,
-        supabase.from("abonos").select("monto, cliente_id").in("cobrador_id", cobradores).gte("fecha", desde),
+        supabase.from("abonos").select("monto, cliente_id, medio_pago").in("cobrador_id", cobradores).gte("fecha", desde),
         supabase.from("gastos").select("monto").gte("fecha", desde),
       ]);
       if (ev) throw ev;
@@ -192,7 +193,11 @@ export function RutaPage() {
       const cobrado = contado + (abonos ?? []).reduce((s, a) => s + Number(a.monto), 0);
       const gastosTotal = (gastos ?? []).reduce((s, g) => s + Number(g.monto), 0);
       const visitados = new Set([...(ventas ?? []), ...(abonos ?? [])].map((v) => v.cliente_id).filter(Boolean)).size;
-      return { totalVentas, credito, cobrado, gastosTotal, visitados };
+      let efectivo = 0, electronico = 0;
+      for (const x of [...(ventas ?? []).filter((v) => v.metodo_pago === "contado").map((v) => ({ m: v.medio_pago, t: Number(v.total) })), ...(abonos ?? []).map((a) => ({ m: a.medio_pago, t: Number(a.monto) }))]) {
+        const d = desglosarMedio(x.m, x.t); efectivo += d.efectivo; electronico += d.electronico;
+      }
+      return { totalVentas, credito, cobrado, gastosTotal, visitados, efectivo, electronico };
     },
   });
 
@@ -285,9 +290,11 @@ export function RutaPage() {
       <div className="space-y-4 p-4 md:p-6">
         {misCargas.map((c) => <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-primary bg-primary/10 p-3"><div className="flex items-center gap-3"><span className="relative flex h-3 w-3"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" /><span className="relative inline-flex h-3 w-3 rounded-full bg-primary" /></span><div><p className="font-bold">En ruta · {c.rutas?.nombre}</p><p className="text-xs text-muted-foreground">{c.vehiculo || "Camión"} · Carga del {c.fecha}</p></div></div><FinalizarRutaButton carga={c} disabled={!online} /></div>)}
         {/* resumen */}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
           <StatCard icon={ShoppingBag} label="Ventas hoy" value={formatCRC(resumen?.totalVentas ?? 0)} />
           <StatCard icon={Wallet} label="Cobrado hoy" value={formatCRC(resumen?.cobrado ?? 0)} tone="accent" />
+          <StatCard icon={Wallet} label="Cobrado en efectivo" value={formatCRC(resumen?.efectivo ?? 0)} tone="accent" />
+          <StatCard icon={Wallet} label="Cobrado SINPE / transferencia" value={formatCRC(resumen?.electronico ?? 0)} tone="accent" />
           <StatCard icon={HandCoins} label="Crédito hoy" value={formatCRC(resumen?.credito ?? 0)} tone="warning" />
           <StatCard icon={Receipt} label="Gastos hoy" value={formatCRC(resumen?.gastosTotal ?? 0)} tone="destructive" />
           <StatCard icon={Users} label="Clientes visitados" value={String(resumen?.visitados ?? 0)} />

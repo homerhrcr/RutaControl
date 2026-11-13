@@ -58,6 +58,7 @@ export function useProductosCliente(clienteId?: string, rutaId?: string | null) 
   const fecha = fechaComercial();
   const listo = (!clienteId || !!ficha) && productos.data !== undefined && precios.data !== undefined && listas.data !== undefined && especiales.data !== undefined && rutas.data !== undefined;
   const rutaInfo = rutas.data?.find((r) => r.id === ruta);
+  const listaCli = listas.data?.find((l) => l.id === ficha?.lista_precio_id);
   const listaRuta = listas.data?.find((l) => l.id === rutaInfo?.lista_precio_id);
   return {
     data: productos.data?.map((p) => {
@@ -69,7 +70,7 @@ export function useProductosCliente(clienteId?: string, rutaId?: string | null) 
     }),
     listo,
     rutaId: ruta,
-    listaNombre: listaRuta ? `Lista de la ruta: ${listaRuta.nombre}` : rutaInfo ? `Ruta ${rutaInfo.nombre} sin lista asignada` : "Precio general",
+    listaNombre: listaCli ? `Lista del cliente: ${listaCli.nombre}` : listaRuta ? `Lista de la ruta: ${listaRuta.nombre}` : rutaInfo ? `Ruta ${rutaInfo.nombre} sin lista asignada` : "Precio general",
     error: productos.error ?? (clienteId && !ficha ? cliente.error : null) ?? precios.error ?? especiales.error ?? listas.error ?? rutas.error,
   };
 }

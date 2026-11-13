@@ -57,8 +57,12 @@ test("conflicto: dos especiales vigentes del mismo alcance no se eligen", () => 
 test("8: cambiar la ruta recalcula el precio", () => {
   expect(resolverPrecio({ ...base, rutaId: "jue" }).precio).not.toBe(resolverPrecio({ ...base, rutaId: "sab" }).precio);
 });
-test("ruta sin lista no toma la lista del cliente ni el precio general", () => {
-  const r = resolverPrecio({ ...base, rutaId: "otra", listaClienteId: "L-sab" });
+test("la lista asignada al cliente manda sobre la lista de la ruta", () => {
+  const r = resolverPrecio({ ...base, rutaId: "jue", listaClienteId: "L-sab" });
+  expect(r.precio).toBe(3600); expect(r.fuente).toBe("lista_cliente");
+});
+test("ruta sin lista y cliente sin lista no toma el precio general", () => {
+  const r = resolverPrecio({ ...base, rutaId: "otra" });
   expect(r.precio).toBe(0); expect(r.valido).toBe(false); expect(r.fuente).toBe("sin_precio");
 });
 test("modificar una lista no cambia los precios de otra ruta", () => {

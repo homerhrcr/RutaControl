@@ -275,7 +275,7 @@ function ClientesPage() {
             <Field label="Teléfono">
               <Input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
             </Field>
-            <Field label="Lista de respaldo (si la ruta no tiene lista)">
+            <Field label="Lista de precios del cliente (manda sobre la de la ruta)">
               <select aria-label="Clasificación / lista de precios" className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.lista_precio_id} onChange={(e) => setForm({ ...form, lista_precio_id: e.target.value })}>
                 <option value="">Sin lista propia (usa la de la ruta)</option>
                 {listas.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}

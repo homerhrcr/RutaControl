@@ -1,3 +1,4 @@
+import { desglosarMedio } from "@/lib/pago-mixto";
 import { costoProductoRuta } from "@/lib/costos";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -225,11 +226,19 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const nombreProd = (id: string) => carga.cargas_camion_detalle.find((d) => d.producto_id === id)?.nombre_producto ?? productosTodos?.find((x) => x.id === id)?.nombre ?? "";
   const locales = pendientes.filter((p) => p.carga_id === carga.id);
   const { data: ventas } = useQuery({ queryKey: ["ventas-camion", carga.id], queryFn: async () => {
-    const { data, error } = await supabase.from("ventas").select("total, metodo_pago").eq("carga_id", carga.id);
+    const { data, error } = await supabase.from("ventas").select("total, metodo_pago, medio_pago").eq("carga_id", carga.id);
     if (error) throw error;
     return data;
   } });
   const total = (ventas ?? []).reduce((s, v) => s + Number(v.total), 0);
+  const { data: abonosCarga } = useQuery({ queryKey: ["abonos-carga", carga.id, carga.cerrada_en], queryFn: async () => {
+    let q = supabase.from("abonos").select("monto, medio_pago").eq("cobrador_id", carga.vendedor_id).gte("fecha", carga.created_at);
+    if (carga.cerrada_en) q = q.lte("fecha", carga.cerrada_en);
+    const { data, error } = await q; if (error) throw error; return data ?? [];
+  } });
+  const cobros = { efectivoVentas: 0, electronicoVentas: 0, efectivoAbonos: 0, electronicoAbonos: 0 };
+  for (const v of (ventas ?? []).filter((v) => v.metodo_pago === "contado")) { const d = desglosarMedio(v.medio_pago, Number(v.total)); cobros.efectivoVentas += d.efectivo; cobros.electronicoVentas += d.electronico; }
+  for (const a of abonosCarga ?? []) { const d = desglosarMedio(a.medio_pago, Number(a.monto)); cobros.efectivoAbonos += d.efectivo; cobros.electronicoAbonos += d.electronico; }
   const { data: devsTodas } = useQuery({ queryKey: ["devoluciones-carga", carga.id], queryFn: async () => {
     const fin = new Date(`${carga.fecha}T00:00:00`); fin.setDate(fin.getDate() + 1);
     const { data, error } = await supabase.from("devoluciones").select("devoluciones_detalle(producto_id, cantidad, destino)").eq("ruta_id", carga.ruta_id).gte("fecha", `${carga.fecha}T00:00:00`).lt("fecha", fin.toISOString());
@@ -256,6 +265,12 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     { label: "Ventas sincronizadas", valor: total, tipo: "moneda" },
     { label: "Contado", valor: (ventas ?? []).filter((v) => v.metodo_pago === "contado").reduce((s, v) => s + Number(v.total), 0), tipo: "moneda" },
     { label: "Crédito", valor: (ventas ?? []).filter((v) => v.metodo_pago === "credito").reduce((s, v) => s + Number(v.total), 0), tipo: "moneda" },
+    { label: "Ventas cobradas en efectivo", valor: cobros.efectivoVentas, tipo: "moneda" },
+    { label: "Ventas cobradas SINPE / transferencia", valor: cobros.electronicoVentas, tipo: "moneda" },
+    { label: "Abonos en efectivo", valor: cobros.efectivoAbonos, tipo: "moneda" },
+    { label: "Abonos SINPE / transferencia", valor: cobros.electronicoAbonos, tipo: "moneda" },
+    { label: "Total efectivo a entregar", valor: cobros.efectivoVentas + cobros.efectivoAbonos, tipo: "moneda" },
+    { label: "Total SINPE / transferencia a conciliar", valor: cobros.electronicoVentas + cobros.electronicoAbonos, tipo: "moneda" },
   ], secciones: [{ titulo: "Control de inventario", columnas: [
     { key: "nombre", titulo: "Producto", tipo: "texto" }, { key: "cargado", titulo: "Total cargado", tipo: "entero" }, { key: "preventa", titulo: "Preventa", tipo: "entero" },
     { key: "vendido", titulo: "Vendido", tipo: "entero" }, { key: "libre", titulo: "Disponible para vender", tipo: "entero" }, { key: "reservado", titulo: "Preventa pendiente", tipo: "entero" }, { key: "devcliente", titulo: "Devoluciones cliente", tipo: "entero" }, { key: "merma", titulo: "Merma", tipo: "entero" }, { key: "sobrante", titulo: "Sobrante bodega", tipo: "entero" },
@@ -302,6 +317,7 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     {locales.length > 0 && <p className="text-sm text-warning">{locales.length} venta(s) pendientes de sincronizar · Descontadas del disponible local</p>}
     {!cerrada && <p className="text-xs text-muted-foreground">{listaNombre}</p>}
     {!cerrada && preciosListos && estimacion.faltantes.length > 0 && <p className="text-sm text-warning">Complete los precios de esta ruta para calcular la utilidad estimada: {detalle.filter((d) => estimacion.faltantes.includes(d.producto_id)).map((d) => d.nombre_producto).join(", ")}. <Link to="/administracion" className="underline">Administración → Rutas / Precios</Link></p>}
+    <div className="grid gap-2 sm:grid-cols-3">{([["Efectivo a entregar (ventas + abonos)", cobros.efectivoVentas + cobros.efectivoAbonos], ["SINPE / transferencia a conciliar", cobros.electronicoVentas + cobros.electronicoAbonos], ["Vendido a crédito", (ventas ?? []).filter((v) => v.metodo_pago === "credito").reduce((s, v) => s + Number(v.total), 0)]] as [string, number][]).map(([l, v]) => <div key={l} className="rounded-md border-2 border-accent p-3"><div className="text-xs text-muted-foreground">{l}</div><div className="text-lg font-bold">{monedaEstimada(v)}</div></div>)}</div>
     <div className="grid gap-2 sm:grid-cols-3">{resumen.map(([l, v]) => <div key={l} className="rounded-md border p-3"><div className="text-xs text-muted-foreground">{l}</div><div className={`text-lg font-bold ${v !== null && v < 0 ? "text-destructive" : "text-primary"}`}>{!preciosListos || productosTodos === undefined ? "Cargando…" : monedaEstimada(v)}</div></div>)}</div>
     <section className="space-y-2"><h3 className="font-semibold">Valoración estimada de salida</h3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-2 text-left">Producto</th><th>Cargado</th><th>Precio costo</th><th>Total costo</th><th>Precio venta estimado</th><th>Total venta estimado</th></tr></thead><tbody>{detalle.map((d) => { const f = valorLinea(d.producto_id); return <tr key={d.id} className="border-b"><td className="py-2">{d.nombre_producto}</td><td className="text-right">{numero(cargado(d))}</td><td className="text-right">{monedaEstimada(f?.costo ?? null)}</td><td className="text-right">{monedaEstimada(f?.costoTotal ?? null)}</td><td className="text-right">{monedaEstimada(f?.venta ?? null)}</td><td className="text-right">{monedaEstimada(f?.ventaTotal ?? null)}</td></tr>; })}</tbody><tfoot><tr className="border-t font-bold"><td className="py-2" colSpan={3}>Total estimado</td><td className="text-right">{monedaEstimada(costoTotal)}</td><td></td><td className="text-right">{monedaEstimada(ventaTotal)}</td></tr></tfoot></table></div></section>
     <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="border-b text-muted-foreground"><th className="py-3 text-left">Producto</th><th>Total cargado</th><th>Preventa</th><th>Vendido</th><th>Disponible para vender</th><th>Preventa pendiente</th><th>Devoluciones cliente</th><th>Merma</th><th>{cerrada ? "Sobrante bodega" : "Queda en camión"}</th></tr></thead><tbody>{detalle.map((d) => <tr key={d.id} className="border-b"><td className="py-3 font-medium">{d.nombre_producto}</td>{[cargado(d), d.preventa, d.vendido, disponibleCamion(d), d.reservado, devCliente(d.producto_id), d.merma, sobranteDe(d)].map((n, i) => <td key={i} className={`text-center ${i === 3 ? (estadoStockCamion(disponibleCamion(d)) !== "disponible" && !cerrada ? "stock-bajo" : "font-bold text-primary") : ""}`}>{i === 3 && Number(n) === 0 && !cerrada ? "Agotado" : numero(Number(n))}</td>)}</tr>)}</tbody></table></div>

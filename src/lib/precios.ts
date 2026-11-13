@@ -47,7 +47,7 @@ export function listaVigente(l: ListaInfo | undefined, fecha: string): boolean {
 /**
  * Motor central de precios. Prioridad:
  * 1) especial del cliente para la ruta activa, 2) especial del cliente para todas las rutas,
- * 3) lista asignada a la ruta, sin respaldo en operaciones de ruta.
+ * 3) lista asignada al cliente, 4) lista asignada a la ruta, sin respaldo en operaciones de ruta.
  * Sin ruta: lista del cliente y precio general conservados para compatibilidad.
  * Varios especiales vigentes con la misma prioridad son un conflicto y no se elige ninguno.
  */

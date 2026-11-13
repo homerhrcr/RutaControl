@@ -1,3 +1,4 @@
+import { desglosarMedio } from "@/lib/pago-mixto";
 import { costoProductoRuta } from "@/lib/costos";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -225,11 +226,19 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
   const nombreProd = (id: string) => carga.cargas_camion_detalle.find((d) => d.producto_id === id)?.nombre_producto ?? productosTodos?.find((x) => x.id === id)?.nombre ?? "";
   const locales = pendientes.filter((p) => p.carga_id === carga.id);
   const { data: ventas } = useQuery({ queryKey: ["ventas-camion", carga.id], queryFn: async () => {
-    const { data, error } = await supabase.from("ventas").select("total, metodo_pago").eq("carga_id", carga.id);
+    const { data, error } = await supabase.from("ventas").select("total, metodo_pago, medio_pago").eq("carga_id", carga.id);
     if (error) throw error;
     return data;
   } });
   const total = (ventas ?? []).reduce((s, v) => s + Number(v.total), 0);
+  const { data: abonosCarga } = useQuery({ queryKey: ["abonos-carga", carga.id, carga.cerrada_en], queryFn: async () => {
+    let q = supabase.from("abonos").select("monto, medio_pago").eq("cobrador_id", carga.vendedor_id).gte("fecha", carga.created_at);
+    if (carga.cerrada_en) q = q.lte("fecha", carga.cerrada_en);
+    const { data, error } = await q; if (error) throw error; return data ?? [];
+  } });
+  const cobros = { efectivoVentas: 0, electronicoVentas: 0, efectivoAbonos: 0, electronicoAbonos: 0 };
+  for (const v of (ventas ?? []).filter((v) => v.metodo_pago === "contado")) { const d = desglosarMedio(v.medio_pago, Number(v.total)); cobros.efectivoVentas += d.efectivo; cobros.electronicoVentas += d.electronico; }
+  for (const a of abonosCarga ?? []) { const d = desglosarMedio(a.medio_pago, Number(a.monto)); cobros.efectivoAbonos += d.efectivo; cobros.electronicoAbonos += d.electronico; }
   const { data: devsTodas } = useQuery({ queryKey: ["devoluciones-carga", carga.id], queryFn: async () => {
     const fin = new Date(`${carga.fecha}T00:00:00`); fin.setDate(fin.getDate() + 1);
     const { data, error } = await supabase.from("devoluciones").select("devoluciones_detalle(producto_id, cantidad, destino)").eq("ruta_id", carga.ruta_id).gte("fecha", `${carga.fecha}T00:00:00`).lt("fecha", fin.toISOString());
@@ -256,6 +265,12 @@ function DetalleCarga({ carga, pendientes }: { carga: CargaCamion; pendientes: N
     { label: "Ventas sincronizadas", valor: total, tipo: "moneda" },
     { label: "Contado", valor: (ventas ?? []).filter((v) => v.metodo_pago === "contado").reduce((s, v) => s + Number(v.total), 0), tipo: "moneda" },
     { label: "Crédito", valor: (ventas ?? []).filter((v) => v.metodo_pago === "credito").reduce((s, v) => s + Number(v.total), 0), tipo: "moneda" },
+    { label: "Ventas cobradas en efectivo", valor: cobros.efectivoVentas, tipo: "moneda" },
+    { label: "Ventas cobradas SINPE / transferencia", valor: cobros.electronicoVentas, tipo: "moneda" },
+    { label: "Abonos en efectivo", valor: cobros.efectivoAbonos, tipo: "moneda" },
+    { label: "Abonos SINPE / transferencia", valor: cobros.electronicoAbonos, tipo: "moneda" },
+    { label: "Total efectivo a entregar", valor: cobros.efectivoVentas + cobros.efectivoAbonos, tipo: "moneda" },
+    { label: "Total SINPE / transferencia a conciliar", valor: cobros.electronicoVentas + cobros.electronicoAbonos, tipo: "moneda" },
   ], secciones: [{ titulo: "Control de inventario", columnas: [
     { key: "nombre", titulo: "Producto", tipo: "texto" }, { key: "cargado", titulo: "Total cargado", tipo: "entero" }, { key: "preventa", titulo: "Preventa", tipo: "entero" },
     { key: "vendido", titulo: "Vendido", tipo: "entero" }, { key: "libre", titulo: "Disponible para vender", tipo: "entero" }, { key: "reservado", titulo: "Preventa pendiente", tipo: "entero" }, { key: "devcliente", titulo: "Devoluciones cliente", tipo: "entero" }, { key: "merma", titulo: "Merma", tipo: "entero" }, { key: "sobrante", titulo: "Sobrante bodega", tipo: "entero" },

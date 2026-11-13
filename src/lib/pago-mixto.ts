@@ -29,3 +29,21 @@ export function errorPartes(partes: PartePago[] | undefined, total: number) {
   if (dif < 0) return `Las formas de pago suman ${crc(-dif)} de más`;
   return null;
 }
+
+/** Reparte un monto cobrado en efectivo y SINPE/transferencia/otros leyendo el texto guardado (incluye «Mixto: …»). */
+export function desglosarMedio(medio: string | null | undefined, monto: number): { efectivo: number; electronico: number } {
+  const txt = (medio ?? "").trim();
+  const esEfectivo = (s: string) => /efectivo|contado/i.test(s);
+  if (/^mixto:/i.test(txt)) {
+    let efectivo = 0, electronico = 0;
+    for (const parte of txt.replace(/^mixto:\s*/i, "").split(" + ")) {
+      const i = parte.indexOf("₡");
+      const valor = i >= 0 ? Number(parte.slice(i + 1).replace(/[^\d]/g, "")) || 0 : 0;
+      if (esEfectivo(i >= 0 ? parte.slice(0, i) : parte)) efectivo += valor; else electronico += valor;
+    }
+    const suma = efectivo + electronico;
+    if (suma > 0 && Math.abs(suma - monto) > 1) { efectivo = Math.round(monto * efectivo / suma * 100) / 100; electronico = monto - efectivo; }
+    return { efectivo, electronico };
+  }
+  return !txt || esEfectivo(txt) ? { efectivo: monto, electronico: 0 } : { efectivo: 0, electronico: monto };
+}

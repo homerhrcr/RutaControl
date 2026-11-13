@@ -23,7 +23,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { TrendingUp, CreditCard, AlertTriangle, Wallet, Map, Receipt, ClipboardList, Undo2 } from "lucide-react";
+import { TrendingUp, CreditCard, AlertTriangle, Wallet, Map, Receipt, ClipboardList, Undo2, PiggyBank, Landmark } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -96,6 +96,29 @@ export function DashboardPage() {
         supabase.from("devoluciones").select("fecha, total, devoluciones_detalle(cantidad, precio_unitario, destino)").gte("fecha", hace14.toISOString()),
       ]);
 
+      // Utilidad neta = ventas − costo de lo vendido − gastos (mes e histórica)
+      const todo = async <T,>(q: (f: number, t: number) => PromiseLike<{ data: T[] | null; error: unknown }>) => {
+        const out: T[] = [];
+        for (let f = 0; ; f += 1000) {
+          const r = await q(f, f + 999);
+          if (r.error) throw r.error;
+          out.push(...(r.data ?? []));
+          if ((r.data?.length ?? 0) < 1000) return out;
+        }
+      };
+      const [vHist, gHist, dHist] = await Promise.all([
+        todo<{ total: number; fecha: string }>((f, t) => supabase.from("ventas").select("total, fecha").range(f, t)),
+        todo<{ monto: number; fecha: string }>((f, t) => supabase.from("gastos").select("monto, fecha").range(f, t)),
+        todo<any>((f, t) => supabase.from("detalle_ventas").select("cantidad, costo_unitario, productos(costo), ventas!inner(fecha)").range(f, t)),
+      ]);
+      const enMes = (f: string) => new Date(f) >= startMonth;
+      const costoLinea = (d: any) => Number(d.cantidad) * Number(d.costo_unitario ?? d.productos?.costo ?? 0);
+      const sumV = (xs: { total: number }[]) => xs.reduce((s, x) => s + Number(x.total), 0);
+      const sumG = (xs: { monto: number }[]) => xs.reduce((s, x) => s + Number(x.monto), 0);
+      const sumC = (xs: any[]) => xs.reduce((s, x) => s + costoLinea(x), 0);
+      const utilidadHistorica = sumV(vHist) - sumC(dHist) - sumG(gHist);
+      const utilidadMes = sumV(vHist.filter((x) => enMes(x.fecha))) - sumC(dHist.filter((x) => enMes(x.ventas?.fecha))) - sumG(gHist.filter((x) => enMes(x.fecha)));
+
       const v = ventas.data ?? [];
       const hoy = v.filter((x) => new Date(x.fecha) >= startDay).reduce((s, x) => s + Number(x.total), 0);
       const mes = v.reduce((s, x) => s + Number(x.total), 0);
@@ -167,6 +190,7 @@ export function DashboardPage() {
       const merma = valorL(lineas.filter((l) => l.destino === "merma"));
 
       return {
+        utilidadMes, utilidadHistorica,
         hoy, mes, gastosHoy, gastosMes, creditoActivo, creditoVencido, creditoPorRuta, topProductos, porRuta, rutasDetalle,
         tendPedidos, tendDevol,
         pedidosAbiertos: pedidosAbiertos.length, montoPreventa, entregados,
@@ -184,11 +208,13 @@ export function DashboardPage() {
         subtitle={`Resumen del mes · En vivo${dataUpdatedAt ? ` · actualizado ${new Date(dataUpdatedAt).toLocaleTimeString("es-CR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : ""}`}
       />
       <div className="space-y-4 p-4 md:p-6">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat icon={Wallet} label="Ventas hoy" value={formatCRC(data?.hoy ?? 0)} to="/dashboard" />
           <Stat icon={TrendingUp} label="Ventas mes" value={formatCRC(data?.mes ?? 0)} tone="accent" to="/dashboard" />
           <Stat icon={Receipt} label="Gastos hoy" value={formatCRC(data?.gastosHoy ?? 0)} tone="destructive" to="/gastos" />
           <Stat icon={Receipt} label="Gastos mes" value={formatCRC(data?.gastosMes ?? 0)} tone="destructive" to="/gastos" />
+          <Stat icon={PiggyBank} label="Utilidad neta mes" value={formatCRC(data?.utilidadMes ?? 0)} tone={(data?.utilidadMes ?? 0) >= 0 ? "primary" : "destructive"} to="/reportes" />
+          <Stat icon={Landmark} label="Utilidad neta histórica" value={formatCRC(data?.utilidadHistorica ?? 0)} tone={(data?.utilidadHistorica ?? 0) >= 0 ? "primary" : "destructive"} to="/reportes" />
           <Stat icon={CreditCard} label="Crédito activo" value={formatCRC(data?.creditoActivo ?? 0)} tone="warning" to="/cobranza" />
           <Stat icon={AlertTriangle} label="Crédito vencido" value={formatCRC(data?.creditoVencido ?? 0)} tone="destructive" to="/cobranza" />
         </div>

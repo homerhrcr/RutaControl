@@ -86,7 +86,8 @@ export function resolverPrecio(args: {
     return { precio: Number(p.precio), moneda: "CRC", fuente, valido: true, listaId, listaNombre: lista?.nombre, vigencia: { desde: lista?.fecha_inicio ?? null, hasta: lista?.fecha_fin ?? null }, mensaje: `${ETIQUETA_FUENTE[fuente]}${lista ? `: ${lista.nombre}` : ""}` };
   };
   const ruta = rutaId ? args.rutas?.find((r) => r.id === rutaId) : undefined;
-   const r3 = rutaId ? deLista(ruta?.lista_precio_id, "lista_ruta") : deLista(args.listaClienteId, "lista_cliente");
+  // La lista asignada al cliente manda sobre la lista de la ruta.
+  const r3 = deLista(args.listaClienteId, "lista_cliente") ?? (rutaId ? deLista(ruta?.lista_precio_id, "lista_ruta") : null);
   if (r3) return r3;
    if (rutaId) return { precio: 0, moneda: "CRC", fuente: "sin_precio", valido: false, mensaje: "Este producto no tiene un precio vigente en la lista de esta ruta ni un precio especial aplicable" };
   const general = Number(producto.precio ?? 0);

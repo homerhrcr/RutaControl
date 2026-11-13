@@ -44,33 +44,44 @@ export async function verReportePdf(r: Reporte, emp: EmpresaDatos, ctx: Contexto
     [emp.telefono && `Tel. ${emp.telefono}`, emp.correo, emp.web].filter(Boolean).join("  ·  "),
     emp.direccion,
   ].filter(Boolean);
-  lineas.forEach((l, i) => doc.text(l, x, 20 + i * 4));
+  const anchoIzq = W / 2 + 20 - x;
+  let yIzq = 20;
+  for (const l of lineas) for (const t of doc.splitTextToSize(l, anchoIzq) as string[]) { doc.text(t, x, yIzq); yIzq += 4; }
 
   doc.setTextColor(...PRIMARIO).setFont("helvetica", "bold").setFontSize(13).text(r.titulo, W - M, 15, { align: "right" });
   doc.setTextColor(80).setFont("helvetica", "normal").setFontSize(8.5);
   [`Período: ${ctx.periodo}`, `Ruta: ${ctx.ruta}`, `Emitido: ${new Date().toLocaleString("es-CR")}`, ctx.usuario ? `Por: ${ctx.usuario}` : ""]
     .filter(Boolean)
     .forEach((l, i) => doc.text(l, W - M, 20 + i * 4, { align: "right" }));
-  const yLinea = Math.max(32, 20 + Math.max(lineas.length, 4) * 4);
+  const yLinea = Math.max(32, yIzq, 20 + 4 * 4);
   doc.setDrawColor(...PRIMARIO).setLineWidth(0.6).line(M, yLinea, W - M, yLinea);
   let y = yLinea + 5;
 
-  doc.setTextColor(90).setFontSize(8.5).text(doc.splitTextToSize(r.descripcion, W - 2 * M), M, y);
-  y += 6;
+  const desc = doc.splitTextToSize(r.descripcion, W - 2 * M) as string[];
+  doc.setTextColor(90).setFontSize(8.5).text(desc, M, y);
+  y += 2 + desc.length * 4;
 
   // Indicadores en tarjetas
   if (r.indicadores.length) {
-    const porFila = Math.min(6, r.indicadores.length);
+    const porFila = Math.min(5, r.indicadores.length);
     const ancho = (W - 2 * M - (porFila - 1) * 3) / porFila;
+    const alto = 17;
     r.indicadores.forEach((ind, i) => {
       const cx = M + (i % porFila) * (ancho + 3);
-      const cy = y + Math.floor(i / porFila) * 17;
-      doc.setFillColor(240, 246, 248).setDrawColor(205, 222, 228).roundedRect(cx, cy, ancho, 14, 1.5, 1.5, "FD");
-      doc.setTextColor(100).setFont("helvetica", "normal").setFontSize(7.5).text(ind.label.replace(/₡/g, "¢"), cx + 2.5, cy + 5);
-      doc.setTextColor(...PRIMARIO).setFont("helvetica", "bold").setFontSize(11)
-        .text(formatoValor(ind.valor, ind.tipo, ind.tipo !== "moneda" && tieneDecimales([ind.valor]), "¢"), cx + 2.5, cy + 11);
+      const cy = y + Math.floor(i / porFila) * (alto + 3);
+      doc.setFillColor(240, 246, 248).setDrawColor(205, 222, 228).roundedRect(cx, cy, ancho, alto, 1.5, 1.5, "FD");
+      doc.setTextColor(100).setFont("helvetica", "normal");
+      let fs = 7.5;
+      let et = doc.setFontSize(fs).splitTextToSize(ind.label.replace(/₡/g, "¢"), ancho - 5) as string[];
+      while (et.length > 2 && fs > 5.5) { fs -= 0.5; et = doc.setFontSize(fs).splitTextToSize(ind.label.replace(/₡/g, "¢"), ancho - 5) as string[]; }
+      doc.text(et.slice(0, 2), cx + 2.5, cy + 4.5);
+      const val = formatoValor(ind.valor, ind.tipo, ind.tipo !== "moneda" && tieneDecimales([ind.valor]), "¢");
+      let vs = 11;
+      doc.setTextColor(...PRIMARIO).setFont("helvetica", "bold");
+      while (vs > 7 && doc.setFontSize(vs).getTextWidth(val) > ancho - 5) vs -= 0.5;
+      doc.setFontSize(vs).text(val, cx + 2.5, cy + 14);
     });
-    y += Math.ceil(r.indicadores.length / porFila) * 17 + 2;
+    y += Math.ceil(r.indicadores.length / porFila) * (alto + 3) + 2;
   }
 
   for (const s of r.secciones) {
@@ -89,7 +100,7 @@ export async function verReportePdf(r: Reporte, emp: EmpresaDatos, ctx: Contexto
       foot: s.totales ? [fmt(s.totales)] : undefined,
       showFoot: "lastPage",
       theme: "striped",
-      styles: { fontSize: 8, cellPadding: 1.6, overflow: "linebreak" },
+      styles: { fontSize: s.columnas.length > 10 ? 7 : 8, cellPadding: s.columnas.length > 10 ? 1.2 : 1.6, overflow: "linebreak", valign: "middle" },
       headStyles: { fillColor: PRIMARIO, textColor: 255, fontStyle: "bold" },
       footStyles: { fillColor: [222, 234, 238], textColor: 20, fontStyle: "bold" },
       alternateRowStyles: { fillColor: [246, 249, 250] },
@@ -113,7 +124,7 @@ export async function verReportePdf(r: Reporte, emp: EmpresaDatos, ctx: Contexto
     const H = doc.internal.pageSize.getHeight();
     doc.setDrawColor(210).setLineWidth(0.2).line(M, H - 10, W - M, H - 10);
     doc.setTextColor(120).setFont("helvetica", "normal").setFontSize(7.5);
-    doc.text(emp.pie || `${emp.nombre} · Documento de uso interno`, M, H - 6);
+    doc.text((doc.splitTextToSize(emp.pie || `${emp.nombre} · Documento de uso interno`, W - 2 * M - 30) as string[])[0], M, H - 6);
     doc.text(`Página ${i} de ${n}`, W - M, H - 6, { align: "right" });
   }
 

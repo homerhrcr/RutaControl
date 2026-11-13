@@ -61,7 +61,7 @@
   --secondary: oklch(0.9 0.03 220);
   --secondary-foreground: oklch(0.3 0.05 240);
   --muted: oklch(0.92 0.02 220);
-  --muted-foreground: oklch(0.45 0.04 235);
+  --muted-foreground: oklch(0.4 0.04 235);
   --accent: oklch(0.6 0.14 160);
   --accent-foreground: oklch(0.99 0.01 160);
   --destructive: oklch(0.58 0.21 22);
@@ -103,7 +103,7 @@
   --secondary: oklch(0.25 0.05 240);
   --secondary-foreground: oklch(0.92 0.03 210);
   --muted: oklch(0.23 0.045 240);
-  --muted-foreground: oklch(0.7 0.04 225);
+  --muted-foreground: oklch(0.78 0.035 225);
   --accent: oklch(0.78 0.18 160);
   --accent-foreground: oklch(0.14 0.035 245);
   --destructive: oklch(0.65 0.22 20);
@@ -174,3 +174,10 @@
 }
 .stock-bajo { color: var(--destructive); font-weight: 700; animation: stock-parpadeo 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .stock-bajo { animation: none; } }
+
+/* Gráficos: textos siempre legibles en modo claro y oscuro */
+.recharts-default-tooltip { background: var(--popover) !important; border: 1px solid var(--border) !important; border-radius: 8px; color: var(--popover-foreground) !important; }
+.recharts-tooltip-label, .recharts-tooltip-item, .recharts-tooltip-item-name, .recharts-tooltip-item-value, .recharts-tooltip-item-separator { color: var(--popover-foreground) !important; }
+.recharts-legend-item-text { color: var(--foreground) !important; font-weight: 600; }
+.recharts-cartesian-axis-tick text, .recharts-text { fill: var(--foreground); }
+.recharts-pie-label-text { fill: var(--foreground) !important; font-weight: 600; }

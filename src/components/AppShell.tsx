@@ -37,6 +37,7 @@ import {
   ChevronDown,
   Settings,
   Menu,
+  Receipt,
 } from "lucide-react";
 
 interface NavItem {
@@ -57,6 +58,7 @@ const NAV: NavItem[] = [
   { to: "/devoluciones", label: "Devoluciones", icon: Undo2, group: "Rutas" },
   { to: "/liquidacion-ruta", label: "Liquidación de ruta", icon: ClipboardCheck, group: "Rutas" },
   { to: "/gastos", label: "Gastos", icon: Wallet },
+  { to: "/cuentas-por-pagar", label: "Cuentas por pagar", icon: Receipt },
   { to: "/cobranza", label: "Crédito y Cobros", icon: HandCoins, mobile: true },
   { to: "/clientes", label: "Clientes", icon: Users, mobile: true },
   { to: "/productos", label: "Productos", icon: Package },

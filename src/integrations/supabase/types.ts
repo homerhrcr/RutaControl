@@ -762,6 +762,68 @@ export type Database = {
           },
         ]
       }
+      cuentas_por_pagar: {
+        Row: {
+          cancelada_en: string | null
+          cantidad: number
+          created_at: string
+          estado: string
+          fecha: string
+          id: string
+          monto: number
+          notas: string | null
+          organization_id: string
+          pagado: number
+          producto: string
+          proveedor: string
+          unidad: string
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          cancelada_en?: string | null
+          cantidad?: number
+          created_at?: string
+          estado?: string
+          fecha?: string
+          id?: string
+          monto: number
+          notas?: string | null
+          organization_id?: string
+          pagado?: number
+          producto: string
+          proveedor: string
+          unidad?: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          cancelada_en?: string | null
+          cantidad?: number
+          created_at?: string
+          estado?: string
+          fecha?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          organization_id?: string
+          pagado?: number
+          producto?: string
+          proveedor?: string
+          unidad?: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuentas_por_pagar_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       detalle_ventas: {
         Row: {
           cantidad: number
@@ -1354,6 +1416,57 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pagos_cuentas_por_pagar: {
+        Row: {
+          created_at: string
+          cuenta_id: string
+          fecha: string
+          id: string
+          medio_pago: string | null
+          monto: number
+          organization_id: string
+          referencia: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          cuenta_id: string
+          fecha?: string
+          id?: string
+          medio_pago?: string | null
+          monto: number
+          organization_id?: string
+          referencia?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          cuenta_id?: string
+          fecha?: string
+          id?: string
+          medio_pago?: string | null
+          monto?: number
+          organization_id?: string
+          referencia?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_cuentas_por_pagar_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas_por_pagar"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_cuentas_por_pagar_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pedidos: {
         Row: {

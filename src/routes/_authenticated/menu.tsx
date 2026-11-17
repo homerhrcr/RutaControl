@@ -19,6 +19,7 @@ import {
   Send,
   Truck,
   Store,
+  Receipt,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/menu")({
@@ -42,6 +43,7 @@ const ITEMS = [
   { to: "/devoluciones", label: "Devoluciones", icon: Truck },
   { to: "/liquidacion-ruta", label: "Liquidación de ruta", icon: Truck },
   { to: "/gastos", label: "Gastos", icon: Wallet },
+  { to: "/cuentas-por-pagar", label: "Cuentas por pagar", icon: Receipt },
   { to: "/cobranza", label: "Crédito y Cobros", icon: CreditCard },
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/pos", label: "Punto de Venta", icon: Store },

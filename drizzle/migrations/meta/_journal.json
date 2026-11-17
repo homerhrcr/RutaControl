@@ -295,6 +295,13 @@
       "when": 1794494041595,
       "tag": "0041_venta_camion_fecha_real",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794951568153,
+      "tag": "0042_cuentas_por_pagar",
+      "breakpoints": true
     }
   ]
 }

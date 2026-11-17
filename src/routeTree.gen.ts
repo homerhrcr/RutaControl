@@ -20,6 +20,7 @@ import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedCobradorRouteImport } from './routes/_authenticated/cobrador'
 import { Route as AuthenticatedCobranzaRouteImport } from './routes/_authenticated/cobranza'
 import { Route as AuthenticatedCreditoRouteImport } from './routes/_authenticated/credito'
+import { Route as AuthenticatedCuentasPorPagarRouteImport } from './routes/_authenticated/cuentas-por-pagar'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDevolucionesRouteImport } from './routes/_authenticated/devoluciones'
 import { Route as AuthenticatedGanaderaRouteImport } from './routes/_authenticated/ganadera'
@@ -100,6 +101,12 @@ const AuthenticatedCreditoRoute = AuthenticatedCreditoRouteImport.update({
   path: '/credito',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCuentasPorPagarRoute =
+  AuthenticatedCuentasPorPagarRouteImport.update({
+    id: '/cuentas-por-pagar',
+    path: '/cuentas-por-pagar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -233,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/cobrador': typeof AuthenticatedCobradorRoute
   '/cobranza': typeof AuthenticatedCobranzaRoute
   '/credito': typeof AuthenticatedCreditoRoute
+  '/cuentas-por-pagar': typeof AuthenticatedCuentasPorPagarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/devoluciones': typeof AuthenticatedDevolucionesRoute
   '/ganadera': typeof AuthenticatedGanaderaRoute
@@ -268,6 +276,7 @@ export interface FileRoutesByTo {
   '/cobrador': typeof AuthenticatedCobradorRoute
   '/cobranza': typeof AuthenticatedCobranzaRoute
   '/credito': typeof AuthenticatedCreditoRoute
+  '/cuentas-por-pagar': typeof AuthenticatedCuentasPorPagarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/devoluciones': typeof AuthenticatedDevolucionesRoute
   '/ganadera': typeof AuthenticatedGanaderaRoute
@@ -305,6 +314,7 @@ export interface FileRoutesById {
   '/_authenticated/cobrador': typeof AuthenticatedCobradorRoute
   '/_authenticated/cobranza': typeof AuthenticatedCobranzaRoute
   '/_authenticated/credito': typeof AuthenticatedCreditoRoute
+  '/_authenticated/cuentas-por-pagar': typeof AuthenticatedCuentasPorPagarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/devoluciones': typeof AuthenticatedDevolucionesRoute
   '/_authenticated/ganadera': typeof AuthenticatedGanaderaRoute
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/cobrador'
     | '/cobranza'
     | '/credito'
+    | '/cuentas-por-pagar'
     | '/dashboard'
     | '/devoluciones'
     | '/ganadera'
@@ -377,6 +388,7 @@ export interface FileRouteTypes {
     | '/cobrador'
     | '/cobranza'
     | '/credito'
+    | '/cuentas-por-pagar'
     | '/dashboard'
     | '/devoluciones'
     | '/ganadera'
@@ -413,6 +425,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cobrador'
     | '/_authenticated/cobranza'
     | '/_authenticated/credito'
+    | '/_authenticated/cuentas-por-pagar'
     | '/_authenticated/dashboard'
     | '/_authenticated/devoluciones'
     | '/_authenticated/ganadera'
@@ -526,6 +539,13 @@ declare module '@tanstack/react-router' {
       path: '/credito'
       fullPath: '/credito'
       preLoaderRoute: typeof AuthenticatedCreditoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cuentas-por-pagar': {
+      id: '/_authenticated/cuentas-por-pagar'
+      path: '/cuentas-por-pagar'
+      fullPath: '/cuentas-por-pagar'
+      preLoaderRoute: typeof AuthenticatedCuentasPorPagarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -700,6 +720,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCobradorRoute: typeof AuthenticatedCobradorRoute
   AuthenticatedCobranzaRoute: typeof AuthenticatedCobranzaRoute
   AuthenticatedCreditoRoute: typeof AuthenticatedCreditoRoute
+  AuthenticatedCuentasPorPagarRoute: typeof AuthenticatedCuentasPorPagarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDevolucionesRoute: typeof AuthenticatedDevolucionesRoute
   AuthenticatedGanaderaRoute: typeof AuthenticatedGanaderaRoute
@@ -729,6 +750,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCobradorRoute: AuthenticatedCobradorRoute,
   AuthenticatedCobranzaRoute: AuthenticatedCobranzaRoute,
   AuthenticatedCreditoRoute: AuthenticatedCreditoRoute,
+  AuthenticatedCuentasPorPagarRoute: AuthenticatedCuentasPorPagarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDevolucionesRoute: AuthenticatedDevolucionesRoute,
   AuthenticatedGanaderaRoute: AuthenticatedGanaderaRoute,

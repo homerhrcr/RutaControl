@@ -191,6 +191,7 @@ export type Database = {
           organization_id: string
           preventa: number
           producto_id: string
+          regalia: number
           vendido: number
         }
         Insert: {
@@ -204,6 +205,7 @@ export type Database = {
           organization_id?: string
           preventa?: number
           producto_id: string
+          regalia?: number
           vendido?: number
         }
         Update: {
@@ -217,6 +219,7 @@ export type Database = {
           organization_id?: string
           preventa?: number
           producto_id?: string
+          regalia?: number
           vendido?: number
         }
         Relationships: [
@@ -763,6 +766,7 @@ export type Database = {
         Row: {
           cantidad: number
           costo_unitario: number | null
+          es_regalia: boolean
           id: string
           modificado_en: string | null
           modificado_por: string | null
@@ -779,6 +783,7 @@ export type Database = {
         Insert: {
           cantidad?: number
           costo_unitario?: number | null
+          es_regalia?: boolean
           id?: string
           modificado_en?: string | null
           modificado_por?: string | null
@@ -795,6 +800,7 @@ export type Database = {
         Update: {
           cantidad?: number
           costo_unitario?: number | null
+          es_regalia?: boolean
           id?: string
           modificado_en?: string | null
           modificado_por?: string | null

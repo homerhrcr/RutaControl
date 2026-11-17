@@ -57,6 +57,7 @@ async function enUso(def: DefCatalogo, f: Fila): Promise<number> {
   };
   if (def.key === "motivo_devolucion") return contar("devoluciones_detalle", "motivo", f.codigo);
   if (def.key === "categorias_gasto") return contar("gastos", "categoria", f.etiqueta);
+  if (def.key === "unidad_medida") return contar("cuentas_por_pagar", "unidad", f.etiqueta);
   if (def.key === "categorias") return contar("productos", "categoria_id", f.id);
   if (def.key === "rutas") return (await contar("clientes", "ruta_id", f.id)) + (await contar("cliente_rutas", "ruta_id", f.id)) + (await contar("ventas", "ruta_id", f.id));
   return 0;

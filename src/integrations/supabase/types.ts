@@ -772,6 +772,7 @@ export type Database = {
           id: string
           monto: number
           notas: string | null
+          numero_factura: string | null
           organization_id: string
           pagado: number
           producto: string
@@ -789,6 +790,7 @@ export type Database = {
           id?: string
           monto: number
           notas?: string | null
+          numero_factura?: string | null
           organization_id?: string
           pagado?: number
           producto: string
@@ -806,6 +808,7 @@ export type Database = {
           id?: string
           monto?: number
           notas?: string | null
+          numero_factura?: string | null
           organization_id?: string
           pagado?: number
           producto?: string
@@ -1942,6 +1945,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      proveedores: {
+        Row: {
+          activo: boolean
+          correo: string | null
+          created_at: string
+          id: string
+          identificacion: string | null
+          nombre: string
+          orden: number
+          organization_id: string
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          correo?: string | null
+          created_at?: string
+          id?: string
+          identificacion?: string | null
+          nombre: string
+          orden?: number
+          organization_id?: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          correo?: string | null
+          created_at?: string
+          id?: string
+          identificacion?: string | null
+          nombre?: string
+          orden?: number
+          organization_id?: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proveedores_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rutas: {
         Row: {

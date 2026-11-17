@@ -302,6 +302,13 @@
       "when": 1794951568153,
       "tag": "0042_cuentas_por_pagar",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794953413446,
+      "tag": "0043_cxp_proveedores_unidades",
+      "breakpoints": true
     }
   ]
 }

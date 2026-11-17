@@ -12,7 +12,15 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatCRC } from "@/lib/format";
 import { toast } from "sonner";
-import { Plus, Receipt, Search } from "lucide-react";
+import { Plus, Receipt, Search, Check, ChevronsUpDown, Trash2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Switch } from "@/components/ui/switch";
+import { Link } from "@tanstack/react-router";
+import { useProductos } from "@/lib/data";
+import { useOpciones } from "@/lib/catalogos";
+import { CatalogoDialog } from "@/components/CatalogSelect";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/cuentas-por-pagar")({
   head: () => ({
@@ -31,11 +39,10 @@ export const Route = createFileRoute("/_authenticated/cuentas-por-pagar")({
 type Pago = { id: string; fecha: string; monto: number; medio_pago: string | null; referencia: string | null };
 type Cuenta = {
   id: string; fecha: string; proveedor: string; producto: string; cantidad: number; unidad: string;
-  monto: number; pagado: number; estado: string; notas: string | null; cancelada_en: string | null;
+  monto: number; pagado: number; estado: string; notas: string | null; numero_factura: string | null; cancelada_en: string | null;
   pagos_cuentas_por_pagar: Pago[];
 };
 
-const UNIDADES = ["unidad", "kg", "g", "litro", "caja", "paquete", "saco", "quintal", "galón"];
 const MEDIOS = ["Efectivo", "SINPE Móvil", "Transferencia bancaria", "Tarjeta", "Cheque"];
 
 function hoy() {
@@ -78,9 +85,8 @@ function CuentasPorPagarPage() {
 
   const q = buscar.trim().toLowerCase();
   const lista = (tab === "pendientes" ? pendientes : historico).filter(
-    (c) => !q || c.proveedor.toLowerCase().includes(q) || c.producto.toLowerCase().includes(q),
+    (c) => !q || c.proveedor.toLowerCase().includes(q) || c.producto.toLowerCase().includes(q) || (c.numero_factura ?? "").toLowerCase().includes(q),
   );
-  const proveedores = Array.from(new Set(cuentas.map((c) => c.proveedor))).sort();
 
   return (
     <div className="space-y-4">
@@ -101,7 +107,7 @@ function CuentasPorPagarPage() {
         </Tabs>
         <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar proveedor o producto" value={buscar} onChange={(e) => setBuscar(e.target.value)} />
+          <Input className="pl-8" placeholder="Buscar proveedor, producto o factura" value={buscar} onChange={(e) => setBuscar(e.target.value)} />
         </div>
         <Button onClick={() => setNueva(true)}><Plus className="mr-1 h-4 w-4" />Registrar cuenta</Button>
       </div>
@@ -126,7 +132,7 @@ function CuentasPorPagarPage() {
               return (
                 <tr key={c.id} className="border-t">
                   <td className="p-2 whitespace-nowrap">{fFecha(c.fecha)}</td>
-                  <td className="p-2 font-medium">{c.proveedor}</td>
+                  <td className="p-2 font-medium">{c.proveedor}{c.numero_factura && <div className="text-xs font-normal text-muted-foreground">Fact. {c.numero_factura}</div>}</td>
                   <td className="p-2">{c.producto}</td>
                   <td className="p-2 text-right whitespace-nowrap">{Number(c.cantidad).toLocaleString("es-CR")} {c.unidad}</td>
                   <td className="p-2 text-right">{formatCRC(Number(c.monto))}</td>
@@ -143,7 +149,7 @@ function CuentasPorPagarPage() {
         </table>
       </Card>
 
-      {nueva && <NuevaCuenta proveedores={proveedores} onClose={() => setNueva(false)} onSaved={refrescar} />}
+      {nueva && <NuevaCuenta onClose={() => setNueva(false)} onSaved={refrescar} />}
       {pagando && <PagoDialog cuenta={pagando} onClose={() => setPagando(null)} onSaved={refrescar} />}
       <Dialog open={!!detalle} onOpenChange={(o) => !o && setDetalle(null)}>
         <DialogContent>
@@ -151,6 +157,7 @@ function CuentasPorPagarPage() {
           {detalle && (
             <div className="space-y-2 text-sm">
               <p>{detalle.producto} — {Number(detalle.cantidad).toLocaleString("es-CR")} {detalle.unidad} · {formatCRC(Number(detalle.monto))}</p>
+              {detalle.numero_factura && <p>Factura: {detalle.numero_factura}</p>}
               {detalle.notas && <p className="text-muted-foreground">{detalle.notas}</p>}
               {(detalle.pagos_cuentas_por_pagar ?? []).length === 0 ? <p className="text-muted-foreground">Sin pagos registrados.</p> :
                 [...detalle.pagos_cuentas_por_pagar].sort((a, b) => a.fecha.localeCompare(b.fecha)).map((p) => (
@@ -167,19 +174,160 @@ function CuentasPorPagarPage() {
   );
 }
 
-function NuevaCuenta({ proveedores, onClose, onSaved }: { proveedores: string[]; onClose: () => void; onSaved: () => void }) {
-  const [f, setF] = useState({ fecha: hoy(), proveedor: "", producto: "", cantidad: "1", unidad: "unidad", monto: "", notas: "" });
+type Prov = { id: string; nombre: string; identificacion: string | null; telefono: string | null; correo: string | null; activo: boolean };
+
+function useProveedores() {
+  return useQuery({
+    queryKey: ["proveedores"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("proveedores").select("id, nombre, identificacion, telefono, correo, activo").order("nombre");
+      if (error) throw error;
+      return (data ?? []) as Prov[];
+    },
+  });
+}
+
+/** Lista desplegable con buscador y opción para crear desde lo escrito. */
+function Combo({ value, onChange, opciones, placeholder, onCrear, crearTexto }: {
+  value: string; onChange: (v: string) => void; opciones: { value: string; label: string; hint?: string }[];
+  placeholder: string; onCrear?: (texto: string) => void; crearTexto?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [txt, setTxt] = useState("");
+  const existe = opciones.some((o) => o.label.toLowerCase() === txt.trim().toLowerCase());
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline" role="combobox" className="w-full justify-between font-normal">
+          <span className={value ? "truncate" : "truncate text-muted-foreground"}>{value || placeholder}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[260px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Buscar…" value={txt} onValueChange={setTxt} />
+          <CommandList>
+            <CommandEmpty>Sin resultados</CommandEmpty>
+            {onCrear && txt.trim() && !existe && (
+              <CommandGroup>
+                <CommandItem value={`__crear__${txt}`} onSelect={() => { onCrear(txt.trim()); setTxt(""); setOpen(false); }}>
+                  <Plus className="mr-2 h-4 w-4" />{crearTexto} «{txt.trim()}»
+                </CommandItem>
+              </CommandGroup>
+            )}
+            <CommandGroup>
+              {opciones.map((o) => (
+                <CommandItem key={o.value} value={o.label} onSelect={() => { onChange(o.label); setTxt(""); setOpen(false); }}>
+                  <Check className={`mr-2 h-4 w-4 ${value === o.label ? "opacity-100" : "opacity-0"}`} />
+                  <span className="truncate">{o.label}</span>
+                  {o.hint && <span className="ml-auto pl-2 text-xs text-muted-foreground">{o.hint}</span>}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ProveedoresDialog({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient();
+  const { isAdmin } = useAuth();
+  const { data: provs = [] } = useProveedores();
+  const [nuevo, setNuevo] = useState({ nombre: "", identificacion: "", telefono: "", correo: "" });
+  const refrescar = () => qc.invalidateQueries({ queryKey: ["proveedores"] });
+  async function actualizar(id: string, cambios: Partial<Prov>) {
+    const { error } = await supabase.from("proveedores").update(cambios).eq("id", id);
+    if (error) return toast.error(error.message.includes("proveedores_nombre_uq") ? "Ya existe un proveedor con ese nombre" : error.message);
+    refrescar();
+  }
+  async function agregar() {
+    if (!nuevo.nombre.trim()) return toast.error("Indique el nombre");
+    const { error } = await supabase.from("proveedores").insert({
+      nombre: nuevo.nombre.trim(), identificacion: nuevo.identificacion.trim() || null,
+      telefono: nuevo.telefono.trim() || null, correo: nuevo.correo.trim() || null,
+    });
+    if (error) return toast.error(error.message.includes("proveedores_nombre_uq") ? "Ya existe un proveedor con ese nombre" : error.message);
+    setNuevo({ nombre: "", identificacion: "", telefono: "", correo: "" }); refrescar();
+  }
+  async function eliminar(p: Prov) {
+    const { count } = await supabase.from("cuentas_por_pagar").select("id", { count: "exact", head: true }).eq("proveedor", p.nombre);
+    if (count) {
+      if (confirm(`"${p.nombre}" tiene ${count} cuenta(s) registradas y no se puede eliminar. ¿Desactivarlo para que no se ofrezca en compras nuevas?`)) actualizar(p.id, { activo: false });
+      return;
+    }
+    if (!confirm(`¿Eliminar el proveedor "${p.nombre}"?`)) return;
+    const { error } = await supabase.from("proveedores").delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    refrescar();
+  }
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader><DialogTitle>Proveedores</DialogTitle></DialogHeader>
+        <div className="grid gap-2 sm:grid-cols-5">
+          <Input className="sm:col-span-2" placeholder="Nombre *" value={nuevo.nombre} onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })} />
+          <Input placeholder="Cédula" value={nuevo.identificacion} onChange={(e) => setNuevo({ ...nuevo, identificacion: e.target.value })} />
+          <Input placeholder="Teléfono" value={nuevo.telefono} onChange={(e) => setNuevo({ ...nuevo, telefono: e.target.value })} />
+          <Button onClick={agregar}><Plus className="mr-1 h-4 w-4" />Agregar</Button>
+        </div>
+        <div className="max-h-[50vh] space-y-2 overflow-y-auto">
+          {provs.length === 0 && <p className="py-4 text-center text-sm text-muted-foreground">Aún no hay proveedores.</p>}
+          {provs.map((p) => (
+            <div key={p.id} className="grid items-center gap-2 rounded-md border p-2 sm:grid-cols-[2fr_1fr_1fr_auto_auto]">
+              <Input defaultValue={p.nombre} onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== p.nombre && actualizar(p.id, { nombre: e.target.value.trim() })} />
+              <Input placeholder="Cédula" defaultValue={p.identificacion ?? ""} onBlur={(e) => e.target.value !== (p.identificacion ?? "") && actualizar(p.id, { identificacion: e.target.value.trim() || null })} />
+              <Input placeholder="Teléfono" defaultValue={p.telefono ?? ""} onBlur={(e) => e.target.value !== (p.telefono ?? "") && actualizar(p.id, { telefono: e.target.value.trim() || null })} />
+              <label className="flex items-center gap-1 text-xs"><Switch checked={p.activo} onCheckedChange={(v) => actualizar(p.id, { activo: v })} />Activo</label>
+              {isAdmin ? <Button size="icon" variant="ghost" aria-label="Eliminar" onClick={() => eliminar(p)}><Trash2 className="h-4 w-4 text-destructive" /></Button> : <span />}
+            </div>
+          ))}
+        </div>
+        <DialogFooter><Button variant="outline" onClick={onClose}>Cerrar</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function NuevaCuenta({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const qc = useQueryClient();
+  const { isAdmin } = useAuth();
+  const { data: provs = [] } = useProveedores();
+  const { data: productos = [] } = useProductos(true);
+  const { data: unidades = [] } = useOpciones("unidad_medida");
+  const unidadPred = unidades.find((u) => u.predeterminado && u.activo)?.etiqueta ?? unidades.find((u) => u.activo)?.etiqueta ?? "unidad";
+  const [f, setF] = useState({ fecha: hoy(), proveedor: "", producto: "", cantidad: "1", unidad: "", monto: "", numero_factura: "", notas: "" });
   const [saving, setSaving] = useState(false);
+  const [adminProv, setAdminProv] = useState(false);
+  const [adminUni, setAdminUni] = useState(false);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
+  const unidad = f.unidad || unidadPred;
+
+  async function crearProveedor(nombre: string) {
+    const { error } = await supabase.from("proveedores").insert({ nombre });
+    if (error) return toast.error(error.message.includes("proveedores_nombre_uq") ? "Ya existe un proveedor con ese nombre" : error.message);
+    await qc.invalidateQueries({ queryKey: ["proveedores"] });
+    setF((x) => ({ ...x, proveedor: nombre }));
+    toast.success("Proveedor agregado");
+  }
+  async function crearProducto(nombre: string) {
+    const { error } = await supabase.from("productos").insert({ nombre, codigo: `CXP-${Date.now().toString(36).toUpperCase()}`, precio: 0, costo: 0 });
+    if (error) return toast.error(error.message);
+    await qc.invalidateQueries({ queryKey: ["productos"] });
+    setF((x) => ({ ...x, producto: nombre }));
+    toast.success("Producto agregado al catálogo. Complete su precio en Productos.");
+  }
 
   async function guardar() {
     const cantidad = Number(f.cantidad.replace(",", "."));
     const monto = Number(f.monto.replace(",", "."));
-    if (!f.proveedor.trim() || !f.producto.trim()) return toast.error("Indique proveedor y producto");
+    if (!f.proveedor.trim() || !f.producto.trim()) return toast.error("Seleccione proveedor y producto");
     if (!(cantidad > 0) || !(monto > 0)) return toast.error("Cantidad y monto deben ser mayores a cero");
     setSaving(true);
     const { error } = await supabase.from("cuentas_por_pagar").insert({
-      fecha: f.fecha, proveedor: f.proveedor.trim(), producto: f.producto.trim(), cantidad, unidad: f.unidad, monto: r2(monto), notas: f.notas.trim() || null,
+      fecha: f.fecha, proveedor: f.proveedor.trim(), producto: f.producto.trim(), cantidad, unidad, monto: r2(monto),
+      numero_factura: f.numero_factura.trim() || null, notas: f.notas.trim() || null,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -187,22 +335,38 @@ function NuevaCuenta({ proveedores, onClose, onSaved }: { proveedores: string[];
     onSaved(); onClose();
   }
 
+  const enlace = "text-xs font-medium text-primary hover:underline";
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-w-xl">
         <DialogHeader><DialogTitle>Registrar cuenta por pagar</DialogTitle></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1"><Label>Fecha de compra</Label><Input type="date" value={f.fecha} onChange={set("fecha")} /></div>
-          <div className="space-y-1"><Label>Proveedor</Label><Input list="cxp-proveedores" value={f.proveedor} onChange={set("proveedor")} />
-            <datalist id="cxp-proveedores">{proveedores.map((p) => <option key={p} value={p} />)}</datalist></div>
-          <div className="space-y-1 sm:col-span-2"><Label>Producto</Label><Input value={f.producto} onChange={set("producto")} /></div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between"><Label>Proveedor</Label><button type="button" className={enlace} onClick={() => setAdminProv(true)}>Administrar</button></div>
+            <Combo value={f.proveedor} onChange={(v) => setF({ ...f, proveedor: v })} placeholder="Seleccione proveedor"
+              opciones={provs.filter((p) => p.activo || p.nombre === f.proveedor).map((p) => ({ value: p.id, label: p.nombre, hint: p.identificacion ?? undefined }))}
+              onCrear={crearProveedor} crearTexto="Agregar proveedor" />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <div className="flex items-center justify-between"><Label>Producto</Label><Link to="/productos" className={enlace}>Administrar productos</Link></div>
+            <Combo value={f.producto} onChange={(v) => setF({ ...f, producto: v })} placeholder="Seleccione producto del catálogo"
+              opciones={productos.map((p: any) => ({ value: p.id, label: p.nombre, hint: p.categorias?.nombre ?? undefined }))}
+              onCrear={crearProducto} crearTexto="Agregar al catálogo" />
+          </div>
           <div className="space-y-1"><Label>Cantidad</Label><Input inputMode="decimal" value={f.cantidad} onChange={set("cantidad")} /></div>
-          <div className="space-y-1"><Label>Unidad de medida</Label><Input list="cxp-unidades" value={f.unidad} onChange={set("unidad")} />
-            <datalist id="cxp-unidades">{UNIDADES.map((u) => <option key={u} value={u} />)}</datalist></div>
-          <div className="space-y-1 sm:col-span-2"><Label>Monto total (₡)</Label><Input inputMode="decimal" value={f.monto} onChange={set("monto")} /></div>
-          <div className="space-y-1 sm:col-span-2"><Label>Notas / N.º de factura (opcional)</Label><Textarea rows={2} value={f.notas} onChange={set("notas")} /></div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between"><Label>Unidad de medida</Label>{isAdmin && <button type="button" className={enlace} onClick={() => setAdminUni(true)}>Administrar</button>}</div>
+            <Combo value={unidad} onChange={(v) => setF({ ...f, unidad: v })} placeholder="Unidad"
+              opciones={unidades.filter((u) => u.activo || u.etiqueta === unidad).map((u) => ({ value: u.id, label: u.etiqueta }))} />
+          </div>
+          <div className="space-y-1"><Label>Monto total (₡)</Label><Input inputMode="decimal" value={f.monto} onChange={set("monto")} /></div>
+          <div className="space-y-1"><Label>N.º de factura (opcional)</Label><Input value={f.numero_factura} onChange={set("numero_factura")} /></div>
+          <div className="space-y-1 sm:col-span-2"><Label>Notas u observaciones (opcional)</Label><Textarea rows={2} value={f.notas} onChange={set("notas")} /></div>
         </div>
         <DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button disabled={saving} onClick={guardar}>Guardar</Button></DialogFooter>
+        {adminProv && <ProveedoresDialog onClose={() => setAdminProv(false)} />}
+        <CatalogoDialog catalogo="unidad_medida" abierto={adminUni} cerrar={() => setAdminUni(false)} onRenamed={(a, n) => unidad === a && setF((x) => ({ ...x, unidad: n }))} />
       </DialogContent>
     </Dialog>
   );

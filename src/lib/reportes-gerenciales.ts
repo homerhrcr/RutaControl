@@ -3,7 +3,7 @@ import type { Reporte } from "@/lib/reporte-export";
 import type { Fila } from "@/lib/reporte-formato";
 
 export type DatosReportes = {
-  ventas: { fecha: string; total: number; metodo: string; clienteId: string | null; cliente: string; ruta: string }[];
+  ventas: { id?: string; fecha: string; total: number; metodo: string; clienteId: string | null; cliente: string; ruta: string }[];
   detalles: { productoId: string | null; producto: string; categoria: string; cantidad: number; total: number; costo: number; ruta: string; fecha?: string }[];
   gastos: { fecha: string; monto: number; categoria: string; descripcion: string; ruta: string }[];
   abonos: { fecha: string; monto: number }[];
@@ -420,7 +420,7 @@ export function detalleVentas(d: DatosReportes): Reporte {
         { key: "metodo", titulo: "Método", tipo: "texto" },
         { key: "total", titulo: "Total", tipo: "moneda" },
       ],
-      filas: d.ventas.map((v) => ({ ...v, metodo: v.metodo === "contado" ? "Contado" : "Crédito" })),
+      filas: d.ventas.map((v) => ({ ...v, _ventaId: v.id ?? null, _clienteId: v.clienteId, metodo: v.metodo === "contado" ? "Contado" : "Crédito" })),
       totales: { fecha: "TOTAL", total },
     }],
   };

@@ -1,6 +1,6 @@
 import { PreciosEspecialesCliente } from "@/components/PreciosEspecialesCliente";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { OpcionSelect } from "@/components/OpcionSelect";
 import { useClientes, useRutas, useInvalidate, eliminarCliente } from "@/lib/data";
@@ -41,6 +41,10 @@ import { useListasPrecios } from "@/lib/listas-precios";
 
 
 export const Route = createFileRoute("/_authenticated/clientes")({
+  validateSearch: (s: Record<string, unknown>): { cliente?: string; venta?: string } => ({
+    cliente: typeof s.cliente === "string" ? s.cliente : undefined,
+    venta: typeof s.venta === "string" ? s.venta : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Clientes — Ruta Directo" },
@@ -83,6 +87,15 @@ function ClientesPage() {
   const [form, setForm] = useState(empty);
   const [busy, setBusy] = useState(false);
   const [histCliente, setHistCliente] = useState<{ id: string; nombre: string } | null>(null);
+  const busqueda = Route.useSearch();
+  const navegar = Route.useNavigate();
+  const [ventaAbrir, setVentaAbrir] = useState<string | undefined>();
+  useEffect(() => {
+    if (!busqueda.cliente || !clientes) return;
+    const c = (clientes as any[]).find((x) => x.id === busqueda.cliente);
+    if (c) { setHistCliente({ id: c.id, nombre: c.nombre }); setVentaAbrir(busqueda.venta); }
+    navegar({ search: {}, replace: true });
+  }, [busqueda.cliente, busqueda.venta, clientes]);
   const [delCliente, setDelCliente] = useState<{ id: string; nombre: string } | null>(null);
   const [saldoCliente, setSaldoCliente] = useState<{ id: string; nombre: string; rutaIds: string[] } | null>(null);
 
@@ -337,7 +350,8 @@ function ClientesPage() {
       <HistorialCliente
         cliente={histCliente}
         open={!!histCliente}
-        onClose={() => setHistCliente(null)}
+        ventaInicial={ventaAbrir}
+        onClose={() => { setHistCliente(null); setVentaAbrir(undefined); }}
       />
 
       <SaldoHistoricoDialog

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useVentasCliente,
   useAbonosCliente,
@@ -47,6 +47,7 @@ export function HistorialCliente({
   soloDeuda = false,
   creditoIds,
   rutaNombre,
+  ventaInicial,
 }: {
   cliente: { id: string; nombre: string } | null;
   open: boolean;
@@ -54,6 +55,7 @@ export function HistorialCliente({
   soloDeuda?: boolean;
   creditoIds?: string[];
   rutaNombre?: string;
+  ventaInicial?: string;
 }) {
   const { isAdmin } = useAuth();
   const { data: empresa } = useEmpresa();
@@ -108,6 +110,13 @@ export function HistorialCliente({
       abono: null,
     });
   }
+
+  const [ventaAbierta, setVentaAbierta] = useState<string | undefined>();
+  useEffect(() => {
+    if (!open || !ventaInicial || ventaAbierta === ventaInicial || !ventas) return;
+    const v = (ventas as any[]).find((x) => x.id === ventaInicial);
+    if (v) { abrirTiquete(v); setVentaAbierta(ventaInicial); }
+  }, [open, ventaInicial, ventas, clienteFicha]);
 
   async function confirmarPrecio() {
     if (!editLinea) return;

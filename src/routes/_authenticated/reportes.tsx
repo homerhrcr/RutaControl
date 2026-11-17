@@ -1,5 +1,5 @@
 import { costoProductoRuta } from "@/lib/costos";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -176,7 +176,7 @@ function ReportesPage() {
 
     return {
       hoy: new Date(),
-      ventas: data.ventas.map((v: any) => ({ fecha: v.fecha, total: Number(v.total), metodo: v.metodo_pago, clienteId: v.cliente_id, cliente: cliNom.get(v.cliente_id) ?? "—", ruta: rutaDe(v.ruta_id, v.cliente_id) })).filter((v) => ok(v.ruta)),
+      ventas: data.ventas.map((v: any) => ({ id: v.id, fecha: v.fecha, total: Number(v.total), metodo: v.metodo_pago, clienteId: v.cliente_id, cliente: cliNom.get(v.cliente_id) ?? "—", ruta: rutaDe(v.ruta_id, v.cliente_id) })).filter((v) => ok(v.ruta)),
       detalles: data.detalles.map((x: any) => ({
         productoId: x.producto_id, producto: x.nombre_producto, categoria: x.productos?.categorias?.nombre ?? "Sin categoría",
         cantidad: Number(x.cantidad), total: Number(x.total_linea), costo: Number(x.cantidad) * (x.costo_unitario != null ? Number(x.costo_unitario) : costoProductoRuta({ productoId: x.producto_id, rutaId: x.ventas?.ruta_id, rutas: data.rutas, precios: data.preciosLista, costoBase: x.productos?.costo })),
@@ -312,7 +312,11 @@ function ReporteVista({ r }: { r: Reporte }) {
                     <tr key={i} className="border-b border-border/50">
                       {s.columnas.map((c, j) => (
                         <td key={c.key} className={cn("py-1.5 pr-3", esNumerica(c.tipo) && "text-right tabular-nums", typeof f[c.key] === "number" && (f[c.key] as number) < 0 && "text-destructive")}>
-                          {formatoValor(f[c.key], c.tipo, dec[j])}
+                          {c.key === "cliente" && f._clienteId && f._ventaId ? (
+                            <Link to="/clientes" search={{ cliente: String(f._clienteId), venta: String(f._ventaId) }} className="font-medium text-primary underline-offset-2 hover:underline" title="Abrir el tiquete de esta venta">
+                              {formatoValor(f[c.key], c.tipo, dec[j])}
+                            </Link>
+                          ) : formatoValor(f[c.key], c.tipo, dec[j])}
                         </td>
                       ))}
                     </tr>

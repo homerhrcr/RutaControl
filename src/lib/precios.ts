@@ -139,3 +139,22 @@ export function aplicarPrecioManual<T extends LineaPrecioManual>(
     motivoModificacion: motivo.trim(),
   };
 }
+
+/**
+ * Regalía dentro de la misma venta: separa `cantidad` de la línea como obsequio a ₡0
+ * con motivo obligatorio. Devuelve la línea cobrada restante (o null) y la línea de regalía.
+ */
+export function separarRegalia<T extends LineaPrecioManual & { nombre: string; cantidad: number }>(
+  linea: T,
+  cantidad: number,
+  motivo: string,
+): { cobrada: T | null; regalia: T & { esRegalia: true } } {
+  if (!motivo.trim()) throw new Error("Debe indicar el motivo de la regalía");
+  if (!Number.isFinite(cantidad) || cantidad <= 0 || cantidad > linea.cantidad + 1e-9) throw new Error("Cantidad de regalía inválida");
+  const resto = Math.round((linea.cantidad - cantidad) * 1000) / 1000;
+  const original = linea.precioOriginal ?? linea.precio;
+  return {
+    cobrada: resto > 0 ? { ...linea, cantidad: resto } : null,
+    regalia: { ...linea, nombre: `${linea.nombre.replace(/ \(Regalía\)$/, "")} (Regalía)`, cantidad, precio: 0, precioOriginal: original, precioModificado: true, motivoModificacion: `Regalía: ${motivo.trim()}`, esRegalia: true },
+  };
+}

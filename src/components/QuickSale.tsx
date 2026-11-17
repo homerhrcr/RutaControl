@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { registrarVenta, type CartItem, useVentasCliente, useCliente } from "@/lib/data";
 import { useProductosCliente } from "@/lib/listas-precios";
 import { EditarPrecioDialog } from "@/components/EditarPrecioDialog";
+import { separarRegalia } from "@/lib/precios";
 import { queueVenta } from "@/lib/offline";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tiquete, type TiqueteData } from "@/components/Tiquete";
 import { toast } from "sonner";
-import { Plus, Minus, Search, Repeat, X, Banknote, CreditCard, Pencil, ScanBarcode } from "lucide-react";
+import { Plus, Minus, Search, Repeat, X, Banknote, CreditCard, Pencil, ScanBarcode, Gift } from "lucide-react";
 import { buscarPorCodigo, useLectorPistola, avisoLectura } from "@/lib/codigo-barras";
 import { EscanerCamara } from "@/components/EscanerCamara";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,9 @@ export function QuickSale({
   const { data: ventasPrev } = useVentasCliente(cliente?.id, 1);
   const { data: clienteFull } = useCliente(cliente?.id);
   const [cart, setCart] = useState<Record<string, CartItem>>({});
+  const [regaliaDe, setRegaliaDe] = useState<CartItem | null>(null);
+  const [regaliaCant, setRegaliaCant] = useState("1");
+  const [regaliaMotivo, setRegaliaMotivo] = useState("");
   const [search, setSearch] = useState("");
   const [descuento, setDescuento] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -107,7 +111,7 @@ export function QuickSale({
     if (!carga) return toast.error(sinCamion);
     if (!preciosListos) return toast.error("No se han cargado los precios del cliente");
     if (delta > 0 && p.precioInfo && !p.precioInfo.valido) return toast.error(`${p.nombre}: ${p.precioInfo.mensaje}`);
-    if (carga && delta > 0 && (cart[p.id]?.cantidad ?? 0) + delta > disponibleCamion(inventario.find((d) => d.producto_id === p.id) ?? { producto_id: p.id, preventa: 0, extra: 0, vendido: 0, devuelto: 0, merma: 0 })) {
+    if (carga && delta > 0 && (cart[p.id]?.cantidad ?? 0) + (cart[`${p.id}#regalia`]?.cantidad ?? 0) + delta > disponibleCamion(inventario.find((d) => d.producto_id === p.id) ?? { producto_id: p.id, preventa: 0, extra: 0, vendido: 0, devuelto: 0, merma: 0 })) {
       toast.error("No hay más unidades disponibles en este camión");
       return;
     }
@@ -418,7 +422,7 @@ export function QuickSale({
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-2">
             {items.map((i) => (
-              <div key={i.producto_id} className="flex items-start justify-between gap-2 text-sm">
+              <div key={i.producto_id + ((i as any).esRegalia ? "#r" : "")} className="flex items-start justify-between gap-2 text-sm">
                 <span className="flex-1">
                   <span className="font-medium">{i.cantidad}×</span> {i.nombre}
                   {i.precioModificado && (
@@ -426,13 +430,22 @@ export function QuickSale({
                       className="ml-1 rounded bg-warning/20 px-1 text-[10px] font-semibold text-warning"
                       title={`Precio original ${formatCRC(i.precioOriginal ?? 0)} · ${i.motivoModificacion ?? ""}`}
                     >
-                      Modificado
+                      {(i as any).esRegalia ? "Regalía" : "Modificado"}
                     </span>
                   )}
                   <span className="block text-xs text-muted-foreground">{formatCRC(i.precio)} c/u</span>
                 </span>
                 <span className="font-semibold">{formatCRC(i.precio * i.cantidad)}</span>
-                <button
+                {!(i as any).esRegalia && <button
+                  type="button"
+                  className="-mt-1 rounded p-1.5 text-primary hover:bg-muted"
+                  aria-label={`Regalía de ${i.nombre}`}
+                  title="Dar parte de esta línea como regalía (₡0)"
+                  onClick={() => { setRegaliaDe(i); setRegaliaCant("1"); setRegaliaMotivo(""); }}
+                >
+                  <Gift className="h-4 w-4" />
+                </button>}
+                {(i as any).esRegalia ? <button type="button" className="-mt-1 rounded p-1.5 text-destructive hover:bg-muted" aria-label={`Quitar regalía de ${i.nombre}`} title="Quitar regalía" onClick={() => setCart((prev) => { const c = { ...prev }; delete c[`${i.producto_id}#regalia`]; const base = c[i.producto_id]; c[i.producto_id] = base ? { ...base, cantidad: Math.round((base.cantidad + i.cantidad) * 1000) / 1000 } : { ...i, nombre: i.nombre.replace(/ \(Regalía\)$/, ""), precio: i.precioOriginal ?? 0, precioModificado: false, precioOriginal: undefined, motivoModificacion: undefined, esRegalia: undefined } as CartItem; return c; })}><X className="h-4 w-4" /></button> : <button
                   type="button"
                   className="-mt-1 rounded p-1.5 text-primary hover:bg-muted"
                   aria-label={`Cambiar precio de ${i.nombre}`}
@@ -440,7 +453,7 @@ export function QuickSale({
                   onClick={() => setEditPrecio(i)}
                 >
                   <Pencil className="h-4 w-4" />
-                </button>
+                </button>}
               </div>
             ))}
           </div>
@@ -508,6 +521,32 @@ export function QuickSale({
       onClose={() => setEditPrecio(null)}
       onGuardar={(l) => setCart((prev) => ({ ...prev, [l.producto_id]: l }))}
     />
+
+    <Dialog open={!!regaliaDe} onOpenChange={(o) => !o && setRegaliaDe(null)}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle className="text-base">Regalía en esta venta</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm">{regaliaDe?.nombre} · en la venta: {regaliaDe?.cantidad}</p>
+          <div className="space-y-1"><label className="text-xs text-muted-foreground">Cantidad a regalar</label><Input type="number" min={0} step="0.001" inputMode="decimal" value={regaliaCant} onChange={(e) => setRegaliaCant(e.target.value)} /></div>
+          <div className="space-y-1"><label className="text-xs text-muted-foreground">Motivo (obligatorio)</label><Input value={regaliaMotivo} onChange={(e) => setRegaliaMotivo(e.target.value)} placeholder="Ej.: cliente nuevo, promoción" autoFocus /></div>
+          <p className="text-xs text-muted-foreground">Sale del camión a ₡0, no genera venta ni utilidad y queda registrada con su motivo.</p>
+          <Button className="w-full" onClick={() => {
+            if (!regaliaDe) return;
+            try {
+              const { cobrada, regalia } = separarRegalia(regaliaDe, Number(regaliaCant.replace(",", ".")), regaliaMotivo);
+              setCart((prev) => {
+                const c = { ...prev }; const k = `${regaliaDe.producto_id}#regalia`;
+                if (cobrada) c[regaliaDe.producto_id] = cobrada; else delete c[regaliaDe.producto_id];
+                const ya = c[k];
+                c[k] = ya ? { ...regalia, cantidad: Math.round((ya.cantidad + regalia.cantidad) * 1000) / 1000 } : regalia;
+                return c;
+              });
+              setRegaliaDe(null); toast.success("Regalía agregada a la venta");
+            } catch (e: any) { toast.error(e?.message ?? "No se pudo registrar la regalía"); }
+          }}>Confirmar regalía</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
 
     <Tiquete data={tiquete} open={!!tiquete} onClose={() => setTiquete(null)} />
     </>

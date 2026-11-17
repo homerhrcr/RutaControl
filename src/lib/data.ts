@@ -179,6 +179,7 @@ export interface CartItem {
   precioOriginal?: number;
   precioModificado?: boolean;
   motivoModificacion?: string;
+  esRegalia?: boolean;
 }
 
 export type PagoInfo = { medio_pago?: string | null; referencia_pago?: string | null };

@@ -34,6 +34,7 @@ import { editarPrecioLineaVenta } from "@/lib/precios.functions";
 import { TelegramEnviar } from "@/components/TelegramCliente";
 import { limitarCreditos } from "@/lib/cobranza-rutas";
 import { EditarCreditoDialog } from "@/components/EditarCreditoDialog";
+import { Tiquete, type TiqueteData } from "@/components/Tiquete";
 
 type Evento =
   | { tipo: "venta"; id: string; fecha: string; venta: any }
@@ -76,6 +77,37 @@ export function HistorialCliente({
   const enviarEC = useServerFn(enviarEstadoCuentaPorCorreo);
   const [correoEC, setCorreoEC] = useState<string | null>(null);
   const [enviandoEC, setEnviandoEC] = useState(false);
+  const [tiqueteVenta, setTiqueteVenta] = useState<TiqueteData | null>(null);
+
+  /** Arma el tiquete individual de una venta del historial (para copiar, imprimir o enviar). */
+  function abrirTiquete(vParcial: any, _saldo?: number) {
+    if (!vParcial) return;
+    const v = (ventas ?? []).find((x: any) => x.id === vParcial.id) ?? vParcial;
+    const items = (v.detalle_ventas ?? []).map((d: any) => ({
+      producto_id: d.producto_id,
+      nombre: d.nombre_producto,
+      precio: Number(d.precio_unitario ?? (Number(d.total_linea) / (Number(d.cantidad) || 1))),
+      cantidad: Number(d.cantidad),
+    }));
+    const subtotal = items.reduce((s: number, i: any) => s + i.precio * i.cantidad, 0);
+    const descuento = Number(v.descuento ?? 0);
+    const metodo = v.metodo_pago === "credito" ? "credito" : "contado";
+    setTiqueteVenta({
+      venta_id: v.id,
+      cliente_id: cliente?.id,
+      fecha: v.fecha ?? new Date().toISOString(),
+      cliente_nombre: cliente?.nombre ?? "Cliente",
+      cliente_telefono: (clienteFicha as any)?.telefono ?? null,
+      items,
+      subtotal,
+      descuento,
+      total: Number(v.total ?? subtotal - descuento),
+      metodo,
+      medio_pago: v.medio_pago ?? null,
+      referencia_pago: v.referencia_pago ?? null,
+      abono: null,
+    });
+  }
 
   async function confirmarPrecio() {
     if (!editLinea) return;
@@ -370,6 +402,11 @@ export function HistorialCliente({
                         <span>{formatCRC(Number(c.saldo))}</span>
                       </div>
                     </div>
+                    {c.ventas?.id && (
+                      <Button size="sm" variant="outline" className="mt-2 h-8 gap-1.5" onClick={() => abrirTiquete(c.ventas, Number(c.saldo))}>
+                        <Copy className="h-3.5 w-3.5" /> Tiquete de esta venta
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -449,7 +486,12 @@ export function HistorialCliente({
                     ))}
                   </div>
                   <div className="mt-2 flex items-center justify-between border-t pt-2">
-                    <TelegramEnviar tipo="tiquete" documentoId={v.id} />
+                    <div className="flex items-center gap-1.5">
+                      <TelegramEnviar tipo="tiquete" documentoId={v.id} />
+                      <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => abrirTiquete(v)}>
+                        <Printer className="h-3.5 w-3.5" /> Tiquete
+                      </Button>
+                    </div>
                     {Number(v.descuento) > 0 ? (
                       <span className="text-xs text-muted-foreground">Desc. {formatCRC(Number(v.descuento))}</span>
                     ) : (
@@ -485,6 +527,8 @@ export function HistorialCliente({
           </span>
         </div>)}
       </DialogContent>
+
+      <Tiquete data={tiqueteVenta} open={!!tiqueteVenta} onClose={() => setTiqueteVenta(null)} />
 
       <Dialog open={!!editLinea} onOpenChange={(o) => !o && setEditLinea(null)}>
         <DialogContent className="max-w-sm">

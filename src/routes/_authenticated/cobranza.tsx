@@ -20,6 +20,8 @@ import { useAuth } from "@/lib/auth";
 import { useEmpresa } from "@/lib/empresa";
 import { creditosDeRuta, rutaDeCredito } from "@/lib/cobranza-rutas";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HistoricoAbonos } from "@/components/HistoricoAbonos";
 
 export const Route = createFileRoute("/_authenticated/cobranza")({
   head: () => ({
@@ -87,7 +89,7 @@ export function CobranzaPage() {
   const total = deRuta.reduce((s, c) => s + Number(c.saldo), 0);
   const buckets: Record<string, number> = { "0-30 días": 0, "31-60 días": 0, "61-90 días": 0, "+90 días": 0 };
   for (const c of deRuta) buckets[agingBucket(daysBetween(c.fecha))] += Number(c.saldo);
-  const actualizar = () => invalidate(["creditos-pendientes", "creditos-ruta", "creditos-cliente", "creditos-cliente-detalle", "abonos-cliente", "saldos-map", "resumen-dia"]);
+  const actualizar = () => invalidate(["creditos-pendientes", "creditos-ruta", "creditos-cliente", "creditos-cliente-detalle", "abonos-cliente", "abonos-historico", "saldos-map", "resumen-dia"]);
 
   async function abonarRuta(id: string, saldo: number) {
     const m = montos[id] ?? 0;
@@ -106,7 +108,11 @@ export function CobranzaPage() {
   return (
     <div>
       <PageHeader title="Crédito y Cobros" subtitle={nombreRuta ? `${nombreRuta} · Pendiente: ${formatCRC(total)}` : "Por ruta"} />
-      <div className="space-y-4 p-4 md:p-6">
+      <Tabs defaultValue="deudas" className="p-4 md:p-6">
+        <TabsList className="mb-2"><TabsTrigger value="deudas">Deudas pendientes</TabsTrigger><TabsTrigger value="historico">Histórico de abonos</TabsTrigger></TabsList>
+        <TabsContent value="historico"><HistoricoAbonos /></TabsContent>
+        <TabsContent value="deudas">
+      <div className="space-y-4">
         <div className="max-w-md space-y-1.5">
           <Label htmlFor="ruta-cobranza">Ruta</Label>
           <Select value={seleccion} onValueChange={(id) => { setRutaId(id); setQ(""); setMontos({}); setAbonoClient(null); setHistorialClient(null); }}>
@@ -139,6 +145,8 @@ export function CobranzaPage() {
           </div>
         </>}
       </div>
+        </TabsContent>
+      </Tabs>
       <AbonoDialog cliente={abonoClient} creditoIds={abonoClient?.creditoIds} rutaNombre={nombreRuta} open={!!abonoClient} onClose={() => setAbonoClient(null)} onDone={actualizar} />
       <HistorialCliente cliente={historialClient} creditoIds={historialClient?.creditoIds} rutaNombre={nombreRuta} open={!!historialClient} soloDeuda onClose={() => setHistorialClient(null)} />
       <SaldoHistoricoDialog open={!!saldoHist} clienteInicial={saldoHist?.cliente} rutaId={seleccion === "todas" ? "" : seleccion} rutaNombre={nombreRuta} rutasOpciones={seleccion === "todas" ? rutasReales : undefined} onClose={() => setSaldoHist(null)} onDone={actualizar} />

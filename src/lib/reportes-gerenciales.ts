@@ -1,3 +1,4 @@
+import { desglosarMedio } from "./pago-mixto";
 // Construye los reportes gerenciales a partir de los datos ya filtrados por período y ruta.
 import type { Reporte } from "@/lib/reporte-export";
 import type { Fila } from "@/lib/reporte-formato";
@@ -6,7 +7,7 @@ export type DatosReportes = {
   ventas: { id?: string; fecha: string; total: number; metodo: string; clienteId: string | null; cliente: string; ruta: string }[];
   detalles: { productoId: string | null; producto: string; categoria: string; cantidad: number; total: number; costo: number; ruta: string; fecha?: string }[];
   gastos: { fecha: string; monto: number; categoria: string; descripcion: string; ruta: string }[];
-  abonos: { fecha: string; monto: number }[];
+  abonos: { fecha: string; monto: number; cliente?: string; ruta?: string; medio?: string; referencia?: string; cobrador?: string; clienteId?: string | null }[];
   creditos: { cliente: string; ruta: string; saldo: number; fecha: string }[];
   devoluciones: { fecha: string; total: number; cliente: string; ruta: string; lineas: { producto: string; cantidad: number; monto: number; motivo: string; destino: string }[] }[];
   clientes: { id: string; nombre: string; ruta: string; ultimaCompra: string | null; compras90: number; total90: number }[];
@@ -422,6 +423,37 @@ export function detalleVentas(d: DatosReportes): Reporte {
       ],
       filas: d.ventas.map((v) => ({ ...v, _ventaId: v.id ?? null, _clienteId: v.clienteId, metodo: v.metodo === "contado" ? "Contado" : "Crédito" })),
       totales: { fecha: "TOTAL", total },
+    }],
+  };
+}
+
+export function historicoPagos(d: DatosReportes): Reporte {
+  const total = suma(d.abonos, (a) => a.monto);
+  let efectivo = 0, electronico = 0;
+  for (const a of d.abonos) { const x = desglosarMedio(a.medio, a.monto); efectivo += x.efectivo; electronico += x.electronico; }
+  return {
+    titulo: "Histórico de pagos de clientes",
+    descripcion: "Abonos recibidos de clientes en el período, con forma de pago, referencia y cobrador.",
+    indicadores: [
+      { label: "Abonos", valor: d.abonos.length, tipo: "entero" },
+      { label: "Total cobrado", valor: total, tipo: "moneda" },
+      { label: "Efectivo", valor: efectivo, tipo: "moneda" },
+      { label: "SINPE / transferencia", valor: electronico, tipo: "moneda" },
+      { label: "Promedio por abono", valor: d.abonos.length ? total / d.abonos.length : 0, tipo: "moneda" },
+    ],
+    secciones: [{
+      titulo: "Pagos",
+      columnas: [
+        { key: "fecha", titulo: "Fecha", tipo: "fecha" },
+        { key: "cliente", titulo: "Cliente", tipo: "texto" },
+        { key: "ruta", titulo: "Ruta", tipo: "texto" },
+        { key: "medio", titulo: "Forma de pago", tipo: "texto" },
+        { key: "referencia", titulo: "Referencia", tipo: "texto" },
+        { key: "cobrador", titulo: "Cobrador", tipo: "texto" },
+        { key: "monto", titulo: "Monto", tipo: "moneda" },
+      ],
+      filas: [...d.abonos].sort((a, b) => b.fecha.localeCompare(a.fecha)).map((a) => ({ ...a, medio: a.medio || "Efectivo", referencia: a.referencia || "—", cobrador: a.cobrador || "—" })),
+      totales: { fecha: "TOTAL", monto: total },
     }],
   };
 }

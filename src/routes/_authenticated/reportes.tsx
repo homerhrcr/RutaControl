@@ -19,7 +19,7 @@ import { esNumerica, formatoValor, tieneDecimales } from "@/lib/reporte-formato"
 import { descargarReporteExcel, verReportePdf, type Reporte } from "@/lib/reporte-export";
 import {
   carteraCobranza, clientesRiesgo, costosGastos, detalleGastos, detalleVentas, mermasDevoluciones,
-  productosRotacion, rentabilidadRutas, resumenEjecutivo, type DatosReportes,
+  productosRotacion, rentabilidadRutas, historicoPagos, resumenEjecutivo, type DatosReportes,
 } from "@/lib/reportes-gerenciales";
 
 export const Route = createFileRoute("/_authenticated/reportes")({
@@ -108,6 +108,7 @@ const REPORTES = [
   { key: "clientes", label: "Clientes", fn: clientesRiesgo },
   { key: "productos", label: "Productos", fn: productosRotacion },
   { key: "ventas", label: "Ventas", fn: detalleVentas },
+  { key: "pagos", label: "Histórico de pagos", fn: historicoPagos },
   { key: "gastos", label: "Gastos", fn: detalleGastos },
   { key: "costos", label: "Costos y gastos", fn: costosGastos },
 ] as const;
@@ -131,21 +132,22 @@ function ReportesPage() {
       const a = new Date(`${ini}T00:00:00`).toISOString();
       const b = new Date(`${fin}T23:59:59.999`).toISOString();
       const hace90 = new Date(Date.now() - 90 * 86_400_000).toISOString();
-      const [rutas, clientes, ventas, detalles, gastos, abonos, creditos, devoluciones, productos, historial, preciosLista] = await Promise.all([
+      const [rutas, clientes, ventas, detalles, gastos, abonos, creditos, devoluciones, productos, historial, preciosLista, perfiles] = await Promise.all([
         todo<any>((f, t) => supabase.from("rutas").select("id,nombre,lista_precio_id").range(f, t)),
         todo<any>((f, t) => supabase.from("clientes").select("id,nombre,activo,cliente_rutas(rutas(nombre))").range(f, t)),
         todo<any>((f, t) => supabase.from("ventas").select("id,fecha,total,metodo_pago,cliente_id,ruta_id").gte("fecha", a).lte("fecha", b).order("fecha").range(f, t)),
         todo<any>((f, t) => supabase.from("detalle_ventas").select("producto_id,nombre_producto,cantidad,total_linea,costo_unitario,productos(costo,categorias(nombre)),ventas!inner(fecha,ruta_id,cliente_id)").gte("ventas.fecha", a).lte("ventas.fecha", b).range(f, t)),
         todo<any>((f, t) => supabase.from("gastos").select("fecha,monto,categoria,descripcion,ruta_id").gte("fecha", a).lte("fecha", b).order("fecha").range(f, t)),
-        todo<any>((f, t) => supabase.from("abonos").select("fecha,monto,cliente_id,creditos(cliente_id,ruta_id,ventas(ruta_id))").gte("fecha", a).lte("fecha", b).range(f, t)),
+        todo<any>((f, t) => supabase.from("abonos").select("fecha,monto,cliente_id,medio_pago,referencia_pago,cobrador_id,creditos(cliente_id,ruta_id,ventas(ruta_id))").gte("fecha", a).lte("fecha", b).range(f, t)),
         todo<any>((f, t) => supabase.from("creditos").select("saldo,fecha,cliente_id,ruta_id,ventas(ruta_id)").gt("saldo", 0).range(f, t)),
         todo<any>((f, t) => supabase.from("devoluciones").select("fecha,total,cliente_id,ruta_id,devoluciones_detalle(nombre_producto,cantidad,precio_unitario,motivo,destino)").gte("fecha", a).lte("fecha", b).range(f, t)),
         todo<any>((f, t) => supabase.from("productos").select("id,nombre,existencia,costo,activo,categorias(nombre)").range(f, t)),
         todo<any>((f, t) => supabase.from("ventas").select("fecha,total,cliente_id").gte("fecha", hace90).range(f, t)),
         todo<any>((f, t) => supabase.from("precios_productos").select("lista_id,producto_id,costo").range(f, t)),
+        todo<any>((f, t) => supabase.from("profiles").select("id,nombre").range(f, t)),
       ]);
       // Última compra histórica de clientes sin compras en 90 días
-      return { rutas, clientes, ventas, detalles, gastos, abonos, creditos, devoluciones, productos, historial, preciosLista };
+      return { rutas, clientes, ventas, detalles, gastos, abonos, creditos, devoluciones, productos, historial, preciosLista, perfiles };
     },
   });
 
@@ -153,6 +155,7 @@ function ReportesPage() {
     if (!data) return null;
     const rutaNom = new Map<string, string>(data.rutas.map((r: any) => [r.id, r.nombre]));
     const cliNom = new Map<string, string>();
+    const perfNom = new Map<string, string>((data.perfiles ?? []).map((p: any) => [p.id, p.nombre]));
     const cliRutas = new Map<string, string[]>();
     for (const c of data.clientes) {
       cliNom.set(c.id, c.nombre);
@@ -183,7 +186,11 @@ function ReportesPage() {
         ruta: rutaDe(x.ventas?.ruta_id, x.ventas?.cliente_id), fecha: x.ventas?.fecha ?? "",
       })).filter((x) => ok(x.ruta)),
       gastos: data.gastos.map((g: any) => ({ fecha: g.fecha, monto: Number(g.monto), categoria: g.categoria, descripcion: g.descripcion ?? "", ruta: (g.ruta_id && rutaNom.get(g.ruta_id)) || "General" })).filter((g) => ok(g.ruta)),
-       abonos: data.abonos.filter((x: any) => incluirCobranza(ruta, atribuirCobranza(x.creditos, x.cliente_id, rutaNom, cliRutas))).map((x: any) => ({ fecha: x.fecha, monto: Number(x.monto) })),
+       abonos: data.abonos.filter((x: any) => incluirCobranza(ruta, atribuirCobranza(x.creditos, x.cliente_id, rutaNom, cliRutas))).map((x: any) => {
+         const at = atribuirCobranza(x.creditos, x.cliente_id, rutaNom, cliRutas);
+         const cid = x.cliente_id ?? x.creditos?.cliente_id ?? null;
+         return { fecha: x.fecha, monto: Number(x.monto), clienteId: cid, cliente: cid ? cliNom.get(cid) ?? "—" : `${at.ruta} (Cierre global)`, ruta: at.ruta, medio: x.medio_pago ?? "", referencia: x.referencia_pago ?? "", cobrador: perfNom.get(x.cobrador_id) ?? "" };
+       }),
        creditos: data.creditos.map((c: any) => ({
          c, atribucion: atribuirCobranza(c, c.cliente_id, rutaNom, cliRutas),
        })).filter(({ atribucion }) => incluirCobranza(ruta, atribucion)).map(({ c, atribucion }) => ({

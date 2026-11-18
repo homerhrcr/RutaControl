@@ -109,7 +109,7 @@ export function CobranzaPage() {
     <div>
       <PageHeader title="Crédito y Cobros" subtitle={nombreRuta ? `${nombreRuta} · Pendiente: ${formatCRC(total)}` : "Por ruta"} />
       <Tabs defaultValue="deudas" className="p-4 md:p-6">
-        <TabsList className="mb-2"><TabsTrigger value="deudas">Deudas pendientes</TabsTrigger><TabsTrigger value="historico">Histórico de abonos</TabsTrigger></TabsList>
+        <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 p-1"><TabsTrigger value="deudas" className="h-11 gap-1.5 text-sm font-semibold"><HandCoins className="h-4 w-4" />Deudas pendientes</TabsTrigger><TabsTrigger value="historico" className="h-11 gap-1.5 text-sm font-semibold"><Receipt className="h-4 w-4" />Histórico de abonos</TabsTrigger></TabsList>
         <TabsContent value="historico"><HistoricoAbonos /></TabsContent>
         <TabsContent value="deudas">
       <div className="space-y-4">

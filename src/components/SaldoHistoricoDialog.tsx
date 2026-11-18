@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useClientes } from "@/lib/data";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,35 @@ export function SaldoHistoricoDialog({
   rutasOpciones?: { id: string; nombre: string }[];
 }) {
   const [rutaSel, setRutaSel] = useState(rutaProp);
-  const rutaId = rutasOpciones ? rutaSel : rutaProp;
-  const rutaNombre = rutasOpciones ? (rutasOpciones.find((r) => r.id === rutaSel)?.nombre ?? "la ruta") : nombreProp;
-  const valida = !!rutaId && rutaId !== "sin-ruta";
-  const { data: clientes } = useClientes(valida ? rutaId : undefined);
   const [clienteId, setClienteId] = useState("");
+  // Rutas asignadas al cliente elegido: solo esas se ofrecen.
+  const { data: rutasCliente } = useQuery({
+    queryKey: ["cliente-rutas-saldo", clienteId],
+    enabled: !!rutasOpciones && !!clienteId,
+    queryFn: async () => {
+      const [cr, cl] = await Promise.all([
+        supabase.from("cliente_rutas").select("ruta_id").eq("cliente_id", clienteId),
+        supabase.from("clientes").select("ruta_id").eq("id", clienteId).maybeSingle(),
+      ]);
+      if (cr.error) throw cr.error;
+      const ids = new Set((cr.data ?? []).map((x) => x.ruta_id));
+      if (cl.data?.ruta_id) ids.add(cl.data.ruta_id);
+      return [...ids];
+    },
+  });
+  const opcionesCliente = useMemo(
+    () => (rutasOpciones ?? []).filter((r) => (rutasCliente ?? []).includes(r.id)),
+    [rutasOpciones, rutasCliente],
+  );
+  useEffect(() => {
+    if (!rutasOpciones) return;
+    if (opcionesCliente.length === 1) setRutaSel(opcionesCliente[0].id);
+    else if (!opcionesCliente.some((r) => r.id === rutaSel)) setRutaSel("");
+  }, [opcionesCliente]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rutaId = rutasOpciones ? rutaSel : rutaProp;
+  const rutaNombre = rutasOpciones ? (opcionesCliente.find((r) => r.id === rutaSel)?.nombre ?? "la ruta") : nombreProp;
+  const valida = !!rutaId && rutaId !== "sin-ruta";
+  const { data: clientes } = useClientes(rutasOpciones ? undefined : (valida ? rutaId : undefined));
   const [monto, setMonto] = useState(0);
   const [fecha, setFecha] = useState(hoyCR());
   const [busy, setBusy] = useState(false);
@@ -58,17 +83,6 @@ export function SaldoHistoricoDialog({
         <DialogHeader><DialogTitle>Registrar saldo histórico</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">Deuda anterior (fichas de papel) de {rutaNombre}. No afecta inventario.</p>
-          {rutasOpciones && (
-            <div className="space-y-1.5">
-              <Label>Ruta de la deuda</Label>
-              <Select value={rutaSel} onValueChange={setRutaSel}>
-                <SelectTrigger className="h-11"><SelectValue placeholder="Seleccionar ruta" /></SelectTrigger>
-                <SelectContent>
-                  {rutasOpciones.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
           <div className="space-y-1.5">
             <Label>Cliente</Label>
             <Select value={clienteId} onValueChange={setClienteId}>
@@ -79,6 +93,17 @@ export function SaldoHistoricoDialog({
               </SelectContent>
             </Select>
           </div>
+          {rutasOpciones && (
+            <div className="space-y-1.5">
+              <Label>Ruta de la deuda</Label>
+              {!clienteId ? <p className="text-xs text-muted-foreground">Primero seleccione el cliente.</p> : opcionesCliente.length === 0 ? <p className="text-xs text-destructive">Este cliente no tiene rutas asignadas. Asígnele una en Clientes.</p> : <Select value={rutaSel} onValueChange={setRutaSel}>
+                <SelectTrigger className="h-11"><SelectValue placeholder="Seleccionar ruta" /></SelectTrigger>
+                <SelectContent>
+                  {opcionesCliente.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}
+                </SelectContent>
+              </Select>}
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="sh-monto">Monto adeudado</Label>
             <Input id="sh-monto" type="number" inputMode="numeric" className="h-11" placeholder="₡0" value={monto || ""} onChange={(e) => setMonto(Number(e.target.value) || 0)} />

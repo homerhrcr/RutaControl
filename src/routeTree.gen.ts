@@ -23,6 +23,7 @@ import { Route as AuthenticatedCreditoRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCuentasPorPagarRouteImport } from './routes/_authenticated/cuentas-por-pagar'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDevolucionesRouteImport } from './routes/_authenticated/devoluciones'
+import { Route as AuthenticatedFacturasEliminadasRouteImport } from './routes/_authenticated/facturas-eliminadas'
 import { Route as AuthenticatedGanaderaRouteImport } from './routes/_authenticated/ganadera'
 import { Route as AuthenticatedGastosRouteImport } from './routes/_authenticated/gastos'
 import { Route as AuthenticatedInventarioRouteImport } from './routes/_authenticated/inventario'
@@ -116,6 +117,12 @@ const AuthenticatedDevolucionesRoute =
   AuthenticatedDevolucionesRouteImport.update({
     id: '/devoluciones',
     path: '/devoluciones',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFacturasEliminadasRoute =
+  AuthenticatedFacturasEliminadasRouteImport.update({
+    id: '/facturas-eliminadas',
+    path: '/facturas-eliminadas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedGanaderaRoute = AuthenticatedGanaderaRouteImport.update({
@@ -243,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/cuentas-por-pagar': typeof AuthenticatedCuentasPorPagarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/devoluciones': typeof AuthenticatedDevolucionesRoute
+  '/facturas-eliminadas': typeof AuthenticatedFacturasEliminadasRoute
   '/ganadera': typeof AuthenticatedGanaderaRoute
   '/gastos': typeof AuthenticatedGastosRoute
   '/inventario': typeof AuthenticatedInventarioRoute
@@ -279,6 +287,7 @@ export interface FileRoutesByTo {
   '/cuentas-por-pagar': typeof AuthenticatedCuentasPorPagarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/devoluciones': typeof AuthenticatedDevolucionesRoute
+  '/facturas-eliminadas': typeof AuthenticatedFacturasEliminadasRoute
   '/ganadera': typeof AuthenticatedGanaderaRoute
   '/gastos': typeof AuthenticatedGastosRoute
   '/inventario': typeof AuthenticatedInventarioRoute
@@ -317,6 +326,7 @@ export interface FileRoutesById {
   '/_authenticated/cuentas-por-pagar': typeof AuthenticatedCuentasPorPagarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/devoluciones': typeof AuthenticatedDevolucionesRoute
+  '/_authenticated/facturas-eliminadas': typeof AuthenticatedFacturasEliminadasRoute
   '/_authenticated/ganadera': typeof AuthenticatedGanaderaRoute
   '/_authenticated/gastos': typeof AuthenticatedGastosRoute
   '/_authenticated/inventario': typeof AuthenticatedInventarioRoute
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/cuentas-por-pagar'
     | '/dashboard'
     | '/devoluciones'
+    | '/facturas-eliminadas'
     | '/ganadera'
     | '/gastos'
     | '/inventario'
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/cuentas-por-pagar'
     | '/dashboard'
     | '/devoluciones'
+    | '/facturas-eliminadas'
     | '/ganadera'
     | '/gastos'
     | '/inventario'
@@ -428,6 +440,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cuentas-por-pagar'
     | '/_authenticated/dashboard'
     | '/_authenticated/devoluciones'
+    | '/_authenticated/facturas-eliminadas'
     | '/_authenticated/ganadera'
     | '/_authenticated/gastos'
     | '/_authenticated/inventario'
@@ -560,6 +573,13 @@ declare module '@tanstack/react-router' {
       path: '/devoluciones'
       fullPath: '/devoluciones'
       preLoaderRoute: typeof AuthenticatedDevolucionesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/facturas-eliminadas': {
+      id: '/_authenticated/facturas-eliminadas'
+      path: '/facturas-eliminadas'
+      fullPath: '/facturas-eliminadas'
+      preLoaderRoute: typeof AuthenticatedFacturasEliminadasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ganadera': {
@@ -723,6 +743,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCuentasPorPagarRoute: typeof AuthenticatedCuentasPorPagarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDevolucionesRoute: typeof AuthenticatedDevolucionesRoute
+  AuthenticatedFacturasEliminadasRoute: typeof AuthenticatedFacturasEliminadasRoute
   AuthenticatedGanaderaRoute: typeof AuthenticatedGanaderaRoute
   AuthenticatedGastosRoute: typeof AuthenticatedGastosRoute
   AuthenticatedInventarioRoute: typeof AuthenticatedInventarioRoute
@@ -753,6 +774,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCuentasPorPagarRoute: AuthenticatedCuentasPorPagarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDevolucionesRoute: AuthenticatedDevolucionesRoute,
+  AuthenticatedFacturasEliminadasRoute: AuthenticatedFacturasEliminadasRoute,
   AuthenticatedGanaderaRoute: AuthenticatedGanaderaRoute,
   AuthenticatedGastosRoute: AuthenticatedGastosRoute,
   AuthenticatedInventarioRoute: AuthenticatedInventarioRoute,

@@ -66,6 +66,7 @@ const NAV: NavItem[] = [
   { to: "/reportes", label: "Reportes", icon: BarChart3 },
   { to: "/ganadera", label: "Operaciones / Planta", icon: Wallet, adminOnly: true },
   { to: "/administracion", label: "Configuración", icon: UserCog, adminOnly: true, group: "Administración" },
+  { to: "/facturas-eliminadas", label: "Facturas eliminadas", icon: Receipt, adminOnly: true, group: "Administración" },
   { to: "/sincronizacion", label: "Sincronización", icon: RefreshCw, group: "Administración" },
   { to: "/telegram", label: "Telegram", icon: Send, group: "Administración" },
 ];

@@ -1079,6 +1079,68 @@ export type Database = {
         }
         Relationships: []
       }
+      facturas_eliminadas: {
+        Row: {
+          cliente_id: string | null
+          cliente_nombre: string | null
+          datos: Json
+          eliminada_en: string
+          eliminada_por: string | null
+          eliminada_por_nombre: string | null
+          fecha_venta: string | null
+          id: string
+          metodo_pago: string | null
+          motivo: string
+          organization_id: string
+          ruta_id: string | null
+          ruta_nombre: string | null
+          total: number
+          venta_id: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          cliente_nombre?: string | null
+          datos: Json
+          eliminada_en?: string
+          eliminada_por?: string | null
+          eliminada_por_nombre?: string | null
+          fecha_venta?: string | null
+          id?: string
+          metodo_pago?: string | null
+          motivo: string
+          organization_id?: string
+          ruta_id?: string | null
+          ruta_nombre?: string | null
+          total?: number
+          venta_id: string
+        }
+        Update: {
+          cliente_id?: string | null
+          cliente_nombre?: string | null
+          datos?: Json
+          eliminada_en?: string
+          eliminada_por?: string | null
+          eliminada_por_nombre?: string | null
+          fecha_venta?: string | null
+          id?: string
+          metodo_pago?: string | null
+          motivo?: string
+          organization_id?: string
+          ruta_id?: string | null
+          ruta_nombre?: string | null
+          total?: number
+          venta_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facturas_eliminadas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finca_gastos: {
         Row: {
           categoria: string
@@ -2458,6 +2520,10 @@ export type Database = {
           p_motivo: string
           p_producto: string
         }
+        Returns: undefined
+      }
+      eliminar_factura: {
+        Args: { p_motivo: string; p_venta: string }
         Returns: undefined
       }
       finalizar_ruta_carga: {

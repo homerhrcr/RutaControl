@@ -384,6 +384,12 @@ export async function registrarAbono(params: {
   });
 }
 
+// Eliminar factura (solo admin): guarda histórico con motivo, devuelve unidades y la saca de ventas/costos/créditos
+export async function eliminarFactura(ventaId: string, motivo: string) {
+  const { error } = await supabase.rpc("eliminar_factura", { p_venta: ventaId, p_motivo: motivo.trim() });
+  if (error) throw error;
+}
+
 // Eliminar una venta: restaura inventario y borra en cascada (detalle, créditos, abonos)
 export async function eliminarVenta(ventaId: string) {
   const { data: venta, error: ventaError } = await supabase.from("ventas").select("carga_id").eq("id", ventaId).maybeSingle();

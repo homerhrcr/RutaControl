@@ -33,3 +33,4 @@
 - Session limit: user_active_sessions keyed by device token + reclamar_sesion/sesion_vigente RPCs keep the 2 most recent devices of any type per user; AuthProvider polls and signs out locally when displaced; offline never logs out and platform admins are exempt — allows two PCs or two phones without breaking route work offline.
 - Preventas created while a route's load is en_ruta are auto-linked to that load by a BEFORE INSERT trigger on pedidos (no warehouse deduction) — they reserve onboard stock immediately so free stock never oversells.
 - Cuentas por pagar is independent of gastos; DB triggers recompute pagado/estado and block overpayment.
+- Invoice deletion uses the admin-only eliminar_factura RPC: it snapshots the sale into facturas_eliminadas with reason, returns units to the open truck load or warehouse, then hard-deletes the sale — reports/profit need no extra filters.

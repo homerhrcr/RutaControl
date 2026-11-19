@@ -51,6 +51,7 @@ const ITEMS = [
   { to: "/sincronizacion", label: "Sincronización", icon: Send },
   { to: "/telegram", label: "Telegram", icon: Send },
   { to: "/usuarios", label: "Usuarios", icon: UserCog, adminOnly: true },
+  { to: "/facturas-eliminadas", label: "Facturas eliminadas", icon: Receipt, adminOnly: true },
   { to: "/auditoria", label: "Auditoría", icon: ScrollText, adminOnly: true },
 ] as const;
 

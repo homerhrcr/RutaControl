@@ -4,7 +4,7 @@ import {
   useAbonosCliente,
   useCreditosClienteDetalle,
   useInvalidate,
-  eliminarVenta,
+  eliminarFactura,
   eliminarAbono,
   useCliente,
 } from "@/lib/data";
@@ -69,6 +69,7 @@ export function HistorialCliente({
   const [borrar, setBorrar] = useState<
     { tipo: "venta" | "abono"; id: string } | null
   >(null);
+  const [motivoBorrar, setMotivoBorrar] = useState("");
   const editarPrecio = useServerFn(editarPrecioLineaVenta);
   const [editLinea, setEditLinea] = useState<{ id: string; nombre: string; precio: number } | null>(null);
   const [nuevoPrecio, setNuevoPrecio] = useState("");
@@ -169,10 +170,12 @@ export function HistorialCliente({
 
   async function confirmarBorrar() {
     if (!borrar) return;
+    if (borrar.tipo === "venta" && !motivoBorrar.trim()) { toast.error("Escriba el motivo de la eliminación"); return; }
     try {
-      if (borrar.tipo === "venta") await eliminarVenta(borrar.id);
+      if (borrar.tipo === "venta") await eliminarFactura(borrar.id, motivoBorrar);
       else await eliminarAbono(borrar.id);
-      toast.success(borrar.tipo === "venta" ? "Venta eliminada" : "Abono eliminado");
+      toast.success(borrar.tipo === "venta" ? "Factura eliminada y guardada en el histórico" : "Abono eliminado");
+      setMotivoBorrar("");
       invalidate([
         "ventas-cliente",
         "abonos-cliente",
@@ -180,6 +183,9 @@ export function HistorialCliente({
         "creditos-cliente-detalle",
         "creditos-pendientes",
         "clientes",
+        "facturas-eliminadas",
+        "cargas_camion",
+        "productos",
       ]);
     } catch (e: any) {
       toast.error(e?.message ?? "Error al eliminar");
@@ -512,7 +518,7 @@ export function HistorialCliente({
                         <button
                           onClick={() => setBorrar({ tipo: "venta", id: e.id })}
                           className="grid h-7 w-7 place-items-center rounded-lg bg-destructive/15 text-destructive"
-                          title="Eliminar venta"
+                          title="Eliminar factura"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -570,18 +576,25 @@ export function HistorialCliente({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {borrar?.tipo === "venta" ? "¿Eliminar venta?" : "¿Eliminar abono?"}
+              {borrar?.tipo === "venta" ? "¿Eliminar factura?" : "¿Eliminar abono?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {borrar?.tipo === "venta"
-                ? "Se eliminará la venta y se restaurará el inventario. Esta acción no se puede deshacer."
+                ? "Las unidades vuelven al inventario y la factura deja de contar en ventas, costos, utilidades y créditos. Quedará en el histórico de facturas eliminadas."
                 : "Se eliminará el abono y se restaurará el saldo del crédito. Esta acción no se puede deshacer."}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {borrar?.tipo === "venta" && (
+            <div className="space-y-1">
+              <label className="text-sm font-medium" htmlFor="motivo-borrar">Motivo de la eliminación *</label>
+              <Input id="motivo-borrar" value={motivoBorrar} onChange={(e) => setMotivoBorrar(e.target.value)} placeholder="Ej.: factura duplicada" />
+            </div>
+          )}
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setMotivoBorrar("")}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmarBorrar}
+              disabled={borrar?.tipo === "venta" && !motivoBorrar.trim()}
+              onClick={(ev) => { ev.preventDefault(); confirmarBorrar(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Eliminar

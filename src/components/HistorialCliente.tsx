@@ -391,6 +391,7 @@ export function HistorialCliente({
                         <span className="font-semibold text-destructive">Saldo {formatCRC(Number(c.saldo))}</span>
                         {isAdmin && <>
                           <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Editar crédito" onClick={() => setCredEdit({ c, modo: "editar" })}><Pencil className="h-3.5 w-3.5" /></Button>
+                          {c.venta_id && <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" aria-label="Eliminar factura" title="Eliminar factura" onClick={() => { setMotivoBorrar(""); setBorrar({ tipo: "venta", id: c.venta_id }); }}><Trash2 className="h-3.5 w-3.5" /></Button>}
                           {!c.venta_id && abonosDe(c).length === 0 && <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" aria-label="Borrar crédito" onClick={() => setCredEdit({ c, modo: "borrar" })}><Trash2 className="h-3.5 w-3.5" /></Button>}
                         </>}
                       </span>

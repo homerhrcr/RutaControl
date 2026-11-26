@@ -3,7 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { sesionSigueVigente, limpiarTokenLocal } from "@/lib/sesion-unica";
+import { sesionSigueVigente, limpiarTokenLocal, liberarSesion } from "@/lib/sesion-unica";
 
 export type AppRole = "administrador" | "vendedor" | "cobrador";
 
@@ -139,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signOut() {
     localStorage.removeItem(CACHE_KEY);
+    await liberarSesion();
     limpiarTokenLocal();
     // Solo este equipo: no cerrar la sesión del otro tipo de dispositivo.
     await supabase.auth.signOut({ scope: "local" });

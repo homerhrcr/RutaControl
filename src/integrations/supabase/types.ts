@@ -2542,6 +2542,7 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _uid?: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      liberar_sesion: { Args: { p_token: string }; Returns: undefined }
       pos_abrir_caja: { Args: { p: Json }; Returns: string }
       pos_cerrar_caja: { Args: { p: Json }; Returns: Json }
       pos_registrar_venta: { Args: { p: Json }; Returns: Json }

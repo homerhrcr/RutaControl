@@ -330,6 +330,13 @@
       "when": 1795702401099,
       "tag": "0046_liberar_sesion",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1795798106687,
+      "tag": "0047_rutas_read_staff",
+      "breakpoints": true
     }
   ]
 }
